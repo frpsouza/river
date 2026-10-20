@@ -24,6 +24,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 10 | `render/canvas.js` | canvas em 2×, primitivas (`poly`, `ell`, `rrect`, `mix`) e paleta |
 | 11 | `render/terrain.js` | desenho da água, margens, ilhas, ponte e decoração (bosques, campos, vacas) |
 | 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
+| 13b | `render/retro.js` | modo Retro Oceano: pixel art em 240×320, quadros intermediários, paleta de 32 cores com pontilhado e fonte bitmap 5×7 |
 | 13 | `render/frame.js` | monta cada quadro (`draw`), painel, telas de título e de fim de jogo |
 | 14 | `main.js` | teclado e laço principal (`update` a 60 passos/s, `draw` a cada quadro) |
 | 14b | `gamepad.js` | joystick/controle físico (Gamepad API): analógico, direcional e botões nas mesmas entradas do teclado |
@@ -51,7 +52,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | Espaço (Z) | atirar (um míssil por vez) |
 | X ou B | soltar uma bomba do estoque (modo oceano) |
 | Enter ou Espaço | iniciar (na tela de título) |
-| setas, 1/2/3 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
+| setas, 1/2/3/4 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
 **Com joystick/controle (gamepad):**
 
@@ -627,6 +628,36 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - Como a câmera quase para durante a luta, eles descem devagar e dá tempo de pegar.
 - **Medido:** em 30 s de luta caíram 6 power-ups.
 - Para ajustar: `BOSS_DROPS` e o intervalo em `updateBoss()` (`js/ocean.js`).
+
+## Mudanças da versão 24 — modo Retro Oceano (pixel art 240×320)
+
+### 46. Retro Oceano (4ª opção do título)
+- **Jogo:** é o modo Oceano, com a mesma lógica: ilhas, nuvens, altitude, esquadrilhas, porta-aviões, quatro chefes, bombas em estoque e vida única. Muda o desenho.
+  - O código trata os dois como oceano por meio de `isOcean()`.
+- **Resolução real de 240×320:**
+  - A área de jogo tem 240 px de largura (`W`, que agora varia por modo) e 320 de altura.
+  - O canvas é desenhado em 1× e a página amplia os pixels sem suavizar (`image-rendering: pixelated`): 480×640 no PC e a largura toda no celular, na proporção 3:4.
+  - A tela de título continua a normal (`syncCanvas()` troca o canvas ao entrar e sair do retro).
+- **Sprites em pixel art (originais, gerados por código, com contorno escuro automático):** jato do jogador, caça inimigo, navio visto de cima, helicóptero, balão em gomos, balsa de combustível, power-ups com ícone, tiros e míssil.
+- **Animações intermediárias (para o movimento ficar fluido):**
+
+| Elemento | Quadros |
+|---|---|
+| jato | 9 quadros de inclinação: a asa que desce encurta e escurece, a cabine desliza para o lado; chama em 2 quadros |
+| caças | 32 rotações (a cada 11,25°) × 5 quadros de parafuso (achatamento e inversão) |
+| navios | 32 rumos; o canhão é uma linha de pixels que mira o jato, com clarão |
+| helicóptero | 4 quadros de rotor |
+| balão | 8 quadros dos gomos girando |
+| power-ups e tiros | brilho e pulso em 2 quadros |
+
+  - As rotações usam "vizinho mais próximo", então os pixels continuam duros. Os quadros são gerados uma vez e guardados em cache.
+- **Pixelização do resto:** mar, ilhas, nuvens, névoa, porta-aviões, chefes e explosões são desenhados em 1× e depois o quadro inteiro passa por **quantização**. Cada pixel vai para a cor mais próxima de uma paleta fixa de **32 cores**, com **pontilhado ordenado (Bayer 4×4)**, o que dá o pontilhado clássico nas nuvens, na névoa do voo alto e nas sombras. Uma tabela de 32.768 entradas torna isso uma consulta por pixel.
+- **HUD em pixel:**
+  - Os textos usam uma **fonte bitmap 5×7** própria (letras sem acento, números e símbolos ▲ ▼ ♥ ×), desenhada depois da quantização, com cores puras.
+  - O HUD mostra placar, barra de vida, bombas, modo e altitude, os power-ups ativos com tempo, o aviso de altitude e a barra do chefe com a defesa atual.
+  - Os rótulos dos power-ups e o quadro de fim de jogo também usam a fonte bitmap.
+- **Controles:** iguais aos do oceano, inclusive a BOMBA no 2º botão e na tela do celular.
+- **A verificar no aparelho:** o desempenho em celulares mais fracos. A quantização percorre os 76.800 pixels a cada quadro, e não foi possível medir o tempo no navegador de teste.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

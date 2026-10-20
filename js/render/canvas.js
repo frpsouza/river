@@ -11,6 +11,23 @@ const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 
 cv.width = W * SCALE; cv.height = SCREEN_H * SCALE;
 
+// O modo retro desenha em 240×320 reais (sem suavização) e a página só amplia os pixels.
+// Troca o tamanho do canvas quando entra/sai do retro; a tela de título é sempre a normal.
+let retroOn = false;
+function syncCanvas() {
+  const want = mode === 'retro' && state !== 'title';
+  if (want !== retroOn) {
+    retroOn = want;
+    cv.width = want ? 240 : W_NORMAL * SCALE; cv.height = want ? 320 : SCREEN_H * SCALE;
+    const touch = document.body.classList.contains('touch');
+    cv.style.width = want && !touch ? '480px' : ''; cv.style.height = want && !touch ? '640px' : '';
+    cv.style.aspectRatio = want ? '240 / 320' : '';
+    cv.style.imageRendering = want ? 'pixelated' : '';
+  }
+  if (state === 'title') W = W_NORMAL;
+  return retroOn;
+}
+
 const mix = (c1, c2, t) => {
   const a = parseInt(c1.slice(1), 16), b = parseInt(c2.slice(1), 16);
   const ch = sh => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);

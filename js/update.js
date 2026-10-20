@@ -11,12 +11,13 @@ function update() {
   const tp = taps; taps = [];
   if (state === 'title') {
     for (const t of tp) {
-      const M = ['classic', 'modern', 'ocean'], k = M.indexOf(mode);
-      if (t.key === 'ArrowDown' || t.key === 'ArrowRight') mode = M[(k + 1) % 3];
-      if (t.key === 'ArrowUp' || t.key === 'ArrowLeft') mode = M[(k + 2) % 3];
+      const M = ['classic', 'modern', 'ocean', 'retro'], k = M.indexOf(mode);
+      if (t.key === 'ArrowDown' || t.key === 'ArrowRight') mode = M[(k + 1) % 4];
+      if (t.key === 'ArrowUp' || t.key === 'ArrowLeft') mode = M[(k + 3) % 4];
       if (t.key === '1') mode = 'classic';
       if (t.key === '2') mode = 'modern';
       if (t.key === '3') mode = 'ocean';
+      if (t.key === '4') mode = 'retro';
     }
     if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame();
     return;
@@ -40,7 +41,7 @@ function update() {
   let sp;
   if (mode !== 'classic') {
     // moderno e oceano: a câmera anda em velocidade constante (no oceano, quase para durante o chefe) e o jato voa livre pela tela (↑↓ movem na vertical)
-    sp = (mode === 'ocean' && boss ? 0.3 : 1.25 * (mode === 'ocean' ? 1.15 - 0.3 * altT : 1)) * lvl;   // rasante parece mais rápido
+    sp = (isOcean() && boss ? 0.3 : 1.25 * (isOcean() ? 1.15 - 0.3 * altT : 1)) * lvl;   // rasante parece mais rápido
     camSp = sp;
     py = clamp(py + vert * 2, PLAYER_Y, VIEW_H - PH - 36);           // não entra embaixo do HUD
   } else {
@@ -55,7 +56,7 @@ function update() {
   // com TIRO TRIPLO, três em leque
   tickPowerups();
   if (safeT > 0) safeT--;
-  if (mode === 'ocean' && tp.some(t => 'xXbB'.includes(t.key) && t.key.length === 1)) useBomb();   // 2º botão: bomba
+  if (isOcean() && tp.some(t => 'xXbB'.includes(t.key) && t.key.length === 1)) useBomb();   // 2º botão: bomba
   if (hurtT > 0) hurtT--;
   if (fireCool > 0) fireCool--;
   const canFire = pw.rapid > 0 ? fireCool === 0 : missiles.length === 0;
@@ -102,7 +103,7 @@ function update() {
   // (no oceano não há ponte: o checkpoint é derrotar o chefe — ocean.js)
   const sec = Math.floor(pBot / BH / BLOCKS_PER_SECTION);
   const bridgeTop = (sec * BLOCKS_PER_SECTION + 15) * BH + 22 * LINE;
-  if (mode !== 'ocean' && pBot > bridgeTop && checkpoint < (sec + 1) * BLOCKS_PER_SECTION) checkpoint = (sec + 1) * BLOCKS_PER_SECTION;
+  if (!isOcean() && pBot > bridgeTop && checkpoint < (sec + 1) * BLOCKS_PER_SECTION) checkpoint = (sec + 1) * BLOCKS_PER_SECTION;
 
   // objetos visíveis
   const g0 = Math.floor(scroll / BH) - 1, g1 = Math.floor((scroll + VIEW_H) / BH) + 2;
@@ -149,7 +150,7 @@ function update() {
       if (!o.alive) continue;
       // colisão com jogador
       if (px1 > o.x + 1 && px0 < o.x + o.w - 1 && pTop > o.Y + 1 && pBot < o.Y + o.h - 1) {
-        if (mode === 'ocean' && oceanHigh() && o.type !== 'pu') { /* voando alto: a superfície está lá embaixo */ }
+        if (isOcean() && oceanHigh() && o.type !== 'pu') { /* voando alto: a superfície está lá embaixo */ }
         else if (o.type === 'fuel') {
           if (mode === 'classic') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
           else if (hp < 100) { hp = Math.min(100, hp + 0.8); if (frame % 4 === 0) beep(620 + hp * 3, 0.03, 'sine', 0.03); }   // posto: recupera a vida
@@ -157,7 +158,7 @@ function update() {
         else if (o.type === 'pu') collectPowerup(o);                         // coleta imediata
         else if (safeT > 0 && o.type !== 'house') { /* recém-renascido: atravessa sem bater */ }
         else if (mode !== 'classic' && (o.type === 'house' || o.type === 'tank' || o.type === 'carrier')) { /* no chão/no mar: o jato passa por cima */ }
-        else if (mode === 'ocean' && o.type === 'ship') { /* oceano: o jato sobrevoa os navios (mas eles atiram) */ }
+        else if (isOcean() && o.type === 'ship') { /* oceano: o jato sobrevoa os navios (mas eles atiram) */ }
         else if (pw.shield > 0 && o.type !== 'house') {
           o.alive = false; addScore(10); boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);   // o escudo absorve
         }
@@ -168,7 +169,7 @@ function update() {
   }
 
   // projéteis dos tanques
-  if (mode === 'ocean') { updateOcean(pBot, g0, g1); if (state !== 'play') return; }
+  if (isOcean()) { updateOcean(pBot, g0, g1); if (state !== 'play') return; }
 
   const extra = [];
   for (const sh of shells) {
@@ -189,10 +190,10 @@ function update() {
     if (mode === 'classic') {
       if (m.x < b.L[i] || m.x > b.R[i] || (b.IR[i] > b.IL[i] && m.x > b.IL[i] && m.x < b.IR[i])) hit = true;
     } else if (cliffHit(m.x, m.x + 2, my1, my1)) hit = true;            // moderno: só o paredão para o míssil
-    if (!hit && mode === 'ocean' && oceanMissileHit(m, my0, my1)) hit = true;
+    if (!hit && isOcean() && oceanMissileHit(m, my0, my1)) hit = true;
     if (!hit) {
       for (let g = Math.max(0, g0); g <= g1 && !hit; g++) for (const o of blocks[g].objs) {
-        if (!o.alive || o.type === 'house' || o.type === 'pu' || (mode === 'ocean' && oceanHigh())) continue;   // lá do alto não se acerta a superfície
+        if (!o.alive || o.type === 'house' || o.type === 'pu' || (isOcean() && oceanHigh())) continue;   // lá do alto não se acerta a superfície
         if (m.x + 2 > o.x && m.x < o.x + o.w && my1 > o.Y && my0 < o.Y + o.h) {
           hit = true;
           if (o.hp > 1) { o.hp--; o.flash = 4; addScore(10); break; }       // porta-aviões: aguenta vários tiros

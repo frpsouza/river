@@ -72,6 +72,8 @@ function pickupFx(x, y, def) {
 }
 const hexA = (hex, a) => 'rgba(' + [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16)).join(',') + ',' + a + ')';
 
+let fxNoLabel = false;                                // o retro desenha os rótulos com a fonte bitmap
+
 function stepFx() {
   for (const e of fx) {
     e.t--;
@@ -126,7 +128,7 @@ function drawExplosion(e) {
     }
   }
   ctx.globalAlpha = 1;
-  if (e.label) {                                                     // nome do power-up subindo
+  if (e.label && !fxNoLabel) {                                       // nome do power-up subindo
     const q = age / e.life;
     ctx.globalAlpha = Math.min(1, (1 - q) * 2.2);
     ctx.font = 'bold 10px Arial, sans-serif'; ctx.textAlign = 'center';

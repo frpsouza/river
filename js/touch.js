@@ -80,7 +80,7 @@ if (TOUCH) {
   };
   // troca o conjunto de botões quando muda a tela do jogo
   (function watch() {
-    const which = state === 'over' ? 'over' : state === 'title' ? 'title' : mode === 'ocean' ? 'playOcean' : 'play';
+    const which = state === 'over' ? 'over' : state === 'title' ? 'title' : isOcean() ? 'playOcean' : 'play';
     if (which !== shown) { for (const k in keys) keys[k] = false; stick.x = stick.y = 0; build(which); shown = which; }
     requestAnimationFrame(watch);
   })();
@@ -93,7 +93,7 @@ const titlePick = e => {
   const r = cv.getBoundingClientRect();
   const y = (e.clientY - r.top) / r.height * SCREEN_H;
   const k = Math.floor((y - TITLE_OPT_Y) / 40), off = (y - TITLE_OPT_Y) % 40;
-  return y >= TITLE_OPT_Y && off < 34 && k < 3 ? ['classic', 'modern', 'ocean'][k] : null;
+  return y >= TITLE_OPT_Y && off < 34 && k < 4 ? ['classic', 'modern', 'ocean', 'retro'][k] : null;
 };
 cv.addEventListener('pointerdown', e => {
   if (state !== 'title') return;

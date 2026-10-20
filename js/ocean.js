@@ -26,7 +26,7 @@ let camSp = 0;                                        // velocidade da câmera n
 // altitude: altT vai de 0 (rasante) a 1 (acima das nuvens), suavemente
 const ALT_LOW = 14 * 60, ALT_HIGH = 10 * 60;          // duração de cada fase (quadros)
 let altT = 0, altTarget = 0, altTimer = ALT_LOW, altMsg = 0, altText = '';
-const oceanHigh = () => mode === 'ocean' && altT > 0.25;   // alto: a superfície fica fora de alcance
+const oceanHigh = () => isOcean() && altT > 0.25;   // alto: a superfície fica fora de alcance
 
 const worldY = sy => scroll + VIEW_H - sy;            // tela → mundo
 const screenY = Y => VIEW_H - (Y - scroll);           // mundo → tela

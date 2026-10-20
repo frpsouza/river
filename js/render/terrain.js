@@ -13,7 +13,7 @@ function shoreStroke(pts, w, color) {
 }
 
 function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2: luz, decoração e água rasa das ilhas, 3: praia, 4: terra das ilhas, 5: detalhes das ilhas
-  const banks = mode !== 'ocean';                      // no oceano não há margens (só mar e ilhas)
+  const banks = !isOcean();                      // no oceano não há margens (só mar e ilhas)
   const yAt = i => VIEW_H - (blk.g * BH + i * LINE + LINE / 2 - scroll);
   const yBot = VIEW_H - (blk.g * BH - scroll) + 1, yTop = VIEW_H - ((blk.g + 1) * BH - scroll) - 1;
   const pal = blk.land === LAND_LIGHT ? PAL.light : PAL.dark;
@@ -98,7 +98,7 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
     // cada camada da ilha é desenhada em TODOS os blocos antes da seguinte, para que nada de um
     // bloco caia por cima da camada já pronta do vizinho (sem marcas nas emendas)
     if (phase === 2) { for (const o of outlines) { shoreStroke(o, 12, 'rgba(120,170,255,.20)'); shoreStroke(o, 6, 'rgba(8,12,70,.38)'); } continue; }
-    if (phase === 3) { if (mode === 'ocean') for (const o of outlines) { shoreStroke(o, 9, '#e9d8a6'); shoreStroke(o, 4, '#f5ecc8'); } continue; }   // praia
+    if (phase === 3) { if (isOcean()) for (const o of outlines) { shoreStroke(o, 9, '#e9d8a6'); shoreStroke(o, 4, '#f5ecc8'); } continue; }   // praia
     if (phase === 4) { fillPath(); ctx.fillStyle = PAL.dark.land; ctx.fill(); continue; }
     // fase 5: realces, lagoa e árvores
     fillPath(); ctx.save(); ctx.clip();
@@ -130,7 +130,7 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
       for (const tx of xs) {
         if (lag > 0 && span < 10) continue;
         const sc = 0.65 + r() * 0.4, pine = r() < 0.4;
-        if (mode === 'ocean') drawTreeTop(tx, yAt(i), sc * 1.1, PAL.dark);           // oceano: vista de cima
+        if (isOcean()) drawTreeTop(tx, yAt(i), sc * 1.1, PAL.dark);           // oceano: vista de cima
         else drawTree(tx, yAt(i), sc, pine, PAL.dark);
       }
     }

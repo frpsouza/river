@@ -9,7 +9,8 @@
 //   SC, JET_SC ........ escalas dos sprites, tendo a casa como régua (parede 24 px ≈ 10 m)
 'use strict';
 
-const W = 304, PANEL_H = 48, SCREEN_H = 368;
+const W_NORMAL = 304, PANEL_H = 48, SCREEN_H = 368;
+let W = W_NORMAL;                                    // largura da área de jogo (no retro: 240)
 let VIEW_H = SCREEN_H - PANEL_H;                     // muda por modo em newGame()
 
 const LINE = 2, LINES = 32, BH = LINE * LINES;      // bloco: 32 linhas de 2px = 64px

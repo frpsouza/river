@@ -44,11 +44,11 @@ function collectPowerup(o) {
   const def = PU[o.kind];
   o.alive = false;
   if (def.dur) pw[o.kind] = def.dur;
-  if (o.kind === 'life') { if (mode !== 'ocean') lives++; hp = 100; }   // no oceano (vida única) é só REPARO total
-  if (o.kind === 'bomb') { if (mode === 'ocean') bombs = Math.min(BOMB_MAX, bombs + 1); else smartBomb(); }
+  if (o.kind === 'life') { if (!isOcean()) lives++; hp = 100; }   // no oceano (vida única) é só REPARO total
+  if (o.kind === 'bomb') { if (isOcean()) bombs = Math.min(BOMB_MAX, bombs + 1); else smartBomb(); }
   addScore(50);
   def.notes.forEach((f, k) => setTimeout(() => beep(f, 0.12, 'triangle', 0.05), k * 60));   // arpejo
-  const label = mode !== 'ocean' ? def.name : o.kind === 'life' ? 'REPARO TOTAL' : o.kind === 'bomb' ? 'BOMBA +1 (' + bombs + ')' : def.name;
+  const label = !isOcean() ? def.name : o.kind === 'life' ? 'REPARO TOTAL' : o.kind === 'bomb' ? 'BOMBA +1 (' + bombs + ')' : def.name;
   pickupFx(o.x + o.w / 2, o.Y + o.h / 2, Object.assign({}, def, { name: label }));
 }
 

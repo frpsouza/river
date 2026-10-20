@@ -6,7 +6,8 @@
 // Usa: terrain.js, objects.js, effects.js (boom).
 'use strict';
 
-let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens
+let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens · 'ocean' · 'retro'
+const isOcean = () => mode === 'ocean' || mode === 'retro';   // o retro usa toda a lógica do oceano
 let bank = 0;
 let safeT = 0;
 let hp = 100, hurtT = 0;                             // voo livre: vida do jato (0–100) e invulnerabilidade após um dano                                       // proteção ao renascer: enquanto > 0, inimigos e tiros não derrubam
@@ -17,12 +18,13 @@ let shells = [];
 let state, scroll, px, fuel, lives, score, nextLife, checkpoint, missiles = [], fx, dyingT, keys, frame, audio;
 
 function newGame() {
-  VIEW_H = mode === 'classic' ? SCREEN_H - PANEL_H : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
+  W = mode === 'retro' ? 240 : W_NORMAL;                           // retro: resolução 240×320 de verdade
+  VIEW_H = mode === 'classic' ? SCREEN_H - PANEL_H : mode === 'retro' ? 320 : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
   newOceanGame();
   seed = (Math.random() * 1e9) | 0;
   rng = mulberry32(seed);
   blocks = [];
-  score = 0; lives = mode === 'ocean' ? 1 : 3;                 // oceano: uma vida só — vale a barra de vida nextLife = 10000;
+  score = 0; lives = isOcean() ? 1 : 3;                 // oceano: uma vida só — vale a barra de vida nextLife = 10000;
   checkpoint = 0;
   respawn();
 }
@@ -46,7 +48,7 @@ function addScore(n) {
   score += n;
   if (score >= nextLife) {                         // a cada 10.000 pontos: vida extra (no oceano, +30 de reparo)
     nextLife += 10000; beep(880, 0.3);
-    if (mode === 'ocean') hp = Math.min(100, hp + 30); else lives++;
+    if (isOcean()) hp = Math.min(100, hp + 30); else lives++;
   }
 }
 

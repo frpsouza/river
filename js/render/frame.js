@@ -6,25 +6,26 @@
 'use strict';
 
 function draw() {
+  if (syncCanvas()) return drawRetro();                             // modo retro: renderizador próprio (render/retro.js)
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, SCREEN_H);
   if (!blocks) { drawTitle(); return; }
 
-  ctx.fillStyle = mode === 'ocean' ? OCEAN_WATER : PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
+  ctx.fillStyle = isOcean() ? OCEAN_WATER : PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
   // oceano: quanto mais alto o voo, menor e mais enevoado fica o mar (a superfície encolhe para o centro)
-  const zs = mode === 'ocean' ? 1 - 0.28 * smooth(altT) : 1, ext = VIEW_H * (1 / zs - 1) / 2;
+  const zs = isOcean() ? 1 - 0.28 * smooth(altT) : 1, ext = VIEW_H * (1 / zs - 1) / 2;
   if (zs < 1) { ctx.save(); ctx.translate(W / 2, VIEW_H / 2); ctx.scale(zs, zs); ctx.translate(-W / 2, -VIEW_H / 2); }
   const g0 = Math.max(0, Math.floor((scroll - ext) / BH) - 1), g1 = Math.floor((scroll + VIEW_H + ext) / BH) + 1;
   for (let ph = 0; ph < 6; ph++) for (let g = g0; g <= g1; g++) drawTerrain(getBlock(g), ph);
   for (let g = g0; g <= g1; g++) { const blk = getBlock(g); if (blk.bridge) drawBridge(blk); }
   for (let g = g0; g <= g1; g++) drawCliffs(getBlock(g));          // paredões (modo moderno)
-  if (mode === 'ocean') drawCloudShadows();
+  if (isOcean()) drawCloudShadows();
   // objetos
   for (let g = g0; g <= g1; g++) for (const o of getBlock(g).objs) {
     if (!o.alive) continue;
     const sy = VIEW_H - (o.Y + o.h - scroll);
     if (sy > VIEW_H + ext || sy < -40 - ext) continue;
-    if (mode === 'ocean') {                                         // oceano: tudo visto de cima
+    if (isOcean()) {                                         // oceano: tudo visto de cima
       if (o.type === 'fuel') drawFuelTop(o.x, sy);
       else if (o.type === 'ship') {                                 // gira conforme o rumo; o canhão mira o jato
         const gp = shipGun(o), rot = -(o.hdg !== undefined ? o.hdg : (o.dir > 0 ? 0 : Math.PI));
@@ -51,11 +52,11 @@ function draw() {
     else if (o.type === 'plane' && o.active) drawPlane(o.x, sy, o.dir);
   }
   if (zs < 1) ctx.restore();
-  if (mode === 'ocean' && altT > 0) {                               // névoa da altitude + nuvens abaixo do jato
+  if (isOcean() && altT > 0) {                               // névoa da altitude + nuvens abaixo do jato
     ctx.fillStyle = 'rgba(205,225,245,' + (0.32 * altT).toFixed(3) + ')'; ctx.fillRect(0, 0, W, VIEW_H);
     drawCloudDeck(altT); drawClouds(altT, true);
   }
-  if (mode === 'ocean') drawOceanAir();
+  if (isOcean()) drawOceanAir();
   for (const sh of shells) drawShell(sh, VIEW_H - (sh.Y - scroll));
   // míssil
   for (const m of missiles) {
@@ -64,12 +65,12 @@ function draw() {
     ell(m.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
   if (state === 'play' && mode !== 'classic') {                      // voo livre: sombra do jato lá embaixo
-    const a = mode === 'ocean' ? altT : 0;                             // mais alto = sombra mais longe e mais fraca
+    const a = isOcean() ? altT : 0;                             // mais alto = sombra mais longe e mais fraca
     ell(px + PW / 2 + 7 + 22 * a, VIEW_H - py - PH * 0.35 + 9 + 34 * a, PW * 0.42 * (1 - 0.3 * a), 3, 'rgba(0,0,30,' + (0.28 - 0.18 * a).toFixed(2) + ')');
   }
   if (state === 'play') {
     if ((safeT > 0 || hurtT > 0) && frame % 10 < 5) ctx.globalAlpha = 0.35;   // pisca enquanto está protegido
-    drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC * (mode === 'ocean' ? 1 + 0.12 * altT : 1), true);   // no alto, mais perto da câmera
+    drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC * (isOcean() ? 1 + 0.12 * altT : 1), true);   // no alto, mais perto da câmera
     ctx.globalAlpha = 1;
   }
   if (state === 'play') drawShield(px + PW / 2, VIEW_H - py - PH / 2);
@@ -79,7 +80,7 @@ function draw() {
     rrect(bx, by, Math.max(3, 24 * hp / 100), 3, 1.5); ctx.fillStyle = hp > 50 ? '#3fbf6a' : hp > 25 ? '#ffc93c' : '#e5484d'; ctx.fill();
   }
   fx.forEach(drawExplosion);
-  if (mode === 'ocean') drawClouds(1 - altT);                       // no rasante, as nuvens passam por cima de tudo
+  if (isOcean()) drawClouds(1 - altT);                       // no rasante, as nuvens passam por cima de tudo
   if (mode === 'classic') drawPanel(); else drawHudTop();          // clássico: painel embaixo · voo livre: HUD no topo
   if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
@@ -131,13 +132,14 @@ const TITLE_OPT_Y = 102;                              // topo da 1ª opção de 
 function drawTitle() {
   ctx.fillStyle = PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
   ctx.fillStyle = PAL.dark.land; ctx.fillRect(0, 0, 70, VIEW_H); ctx.fillRect(W - 70, 0, 70, VIEW_H);
-  drawJet(W / 2, 270, 0, 1.6, true);
-  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 56, W - 32, 200, 8); ctx.fill();
+  drawJet(W / 2, 312, 0, 1.4, true);
+  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 56, W - 32, 240, 8); ctx.fill();
   ctx.textAlign = 'center'; ctx.fillStyle = '#ffe45a'; ctx.font = 'bold 24px Arial, sans-serif';
   ctx.fillText('RIVER RAID', W / 2, 88);
   const opts = [['classic', '1  CLÁSSICO', 'margens e ilhas matam, como no Atari'],
                 ['modern', '2  MODERNO', 'voo livre pela tela · paredões de rocha · power-ups'],
-                ['ocean', '3  OCEANO', 'mar aberto · porta-aviões · esquadrilhas · chefes · nuvens']];
+                ['ocean', '3  OCEANO', 'mar aberto · porta-aviões · esquadrilhas · chefes · nuvens'],
+                ['retro', '4  RETRO OCEANO', 'o oceano em pixel art, 240×320']];
   opts.forEach(([m, name, desc], k) => {
     const y = TITLE_OPT_Y + k * 40, on = mode === m;
     rrect(32, y, W - 64, 34, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
@@ -146,7 +148,7 @@ function drawTitle() {
   });
   ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
   ctx.font = '10px Arial, sans-serif';
-  ctx.fillText('setas ou clique escolhem · ENTER ou 2º clique joga', W / 2, 244);
+  ctx.fillText('setas ou clique escolhem · ENTER ou 2º clique joga', W / 2, 284);
 }
 
 // HUD dos modos de voo livre: no topo, por cima do cenário (pílulas translúcidas)
@@ -157,8 +159,8 @@ function drawHudTop() {
   ctx.textAlign = 'left'; ctx.font = 'bold 14px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
   ctx.fillText(String(score).padStart(6, '0'), 14, 20);
   ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = { modern: '#9fe0ff', ocean: '#4fd1e0' }[mode] || '#ffc93c';
-  ctx.fillText(({ modern: 'MODERNO', ocean: 'OCEANO' }[mode] || '') + (mode === 'ocean' ? (altTarget ? ' · ▲ ALTO' : ' · ▼ RASANTE') : ''), 14, 33);
-  if (mode === 'ocean' && altMsg > 0) {                              // aviso de troca de altitude
+  ctx.fillText(({ modern: 'MODERNO', ocean: 'OCEANO' }[mode] || '') + (isOcean() ? (altTarget ? ' · ▲ ALTO' : ' · ▼ RASANTE') : ''), 14, 33);
+  if (isOcean() && altMsg > 0) {                              // aviso de troca de altitude
     ctx.globalAlpha = Math.min(1, altMsg / 30); ctx.textAlign = 'center'; ctx.font = 'bold 12px Arial, sans-serif';
     ctx.fillStyle = 'rgba(12,15,28,.6)'; rrect(W / 2 - 80, 62, 160, 20, 10); ctx.fill();
     ctx.fillStyle = altTarget ? '#9ff3ff' : '#ffc93c'; ctx.fillText(altText, W / 2, 76); ctx.globalAlpha = 1; ctx.textAlign = 'left';
@@ -171,7 +173,7 @@ function drawHudTop() {
   if (f > 0) { rrect(hx + 2, 11, Math.max(8, hw * f), 8, 4); ctx.fillStyle = low ? '#ff8a8a' : f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill();
                rrect(hx + 2, 11, Math.max(8, hw * f), 3.5, 1.8); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fill(); }
   // oceano: bombas disponíveis (no lugar das vidas, que lá não existem)
-  if (mode === 'ocean') {
+  if (isOcean()) {
     const nb = Math.max(bombs, 1);
     pill(W - 14 - nb * 13, 5, nb * 13 + 8, 20);
     for (let k = 0; k < nb; k++) {
@@ -199,7 +201,7 @@ function drawPanel() {
   ctx.fillText(String(score).padStart(6, '0'), 10, y0 + 24);
   ctx.font = 'bold 8px Arial, sans-serif'; ctx.fillStyle = { classic: '#ffc93c', modern: '#9fe0ff', ocean: '#4fd1e0' }[mode];
   ctx.fillText({ classic: 'CLÁSSICO', modern: 'MODERNO', ocean: 'OCEANO' }[mode], 12, y0 + 40);
-  if (mode === 'ocean') {                                            // barra de vida do jato
+  if (isOcean()) {                                            // barra de vida do jato
     const f = hp / 100, hx = 74, hy = y0 + 42;
     rrect(hx, hy, 160, 4, 2); ctx.fillStyle = '#2b3042'; ctx.fill();
     if (f > 0) { rrect(hx, hy, Math.max(4, 160 * f), 4, 2); ctx.fillStyle = f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill(); }

@@ -22,7 +22,7 @@ function spawnObjs(blk) {
   }
   const k = r();
   let type = k < 0.26 ? 'fuel' : k < 0.46 ? 'ship' : k < 0.66 ? 'heli' : k < 0.78 ? 'house' : k < 0.9 ? 'tank' : 'balloon';
-  if (mode === 'ocean' && (type === 'house' || type === 'tank')) type = 'ship';   // no mar não há terra firme
+  if (isOcean() && (type === 'house' || type === 'tank')) type = 'ship';   // no mar não há terra firme
   const calm = blk.b < CALM_BLOCKS && type !== 'fuel' && type !== 'house';   // zona de respiro: sem inimigos
   const dims = { fuel: [18, 28], ship: [43, 14], heli: [27, 19], house: [36, 23], tank: [19, 10], balloon: [24, 36] }[type];
   const [w, h] = dims;
@@ -68,7 +68,7 @@ function spawnObjs(blk) {
       dir: r() < 0.5 ? -1 : 1, active: false, vx: 2.2 + Math.min(blk.s, 10) * 0.1 });
   spawnPowerup(blk, r);                              // modos moderno e oceano (powerups.js)
   // oceano: porta-aviões (lançam caças; aguentam vários tiros)
-  if (mode === 'ocean' && blk.b >= CALM_BLOCKS && blk.b < BOSS_AT && r() < 0.16)
+  if (isOcean() && blk.b >= CALM_BLOCKS && blk.b < BOSS_AT && r() < 0.16)
     for (let tries = 0; tries < 10; tries++) {
       const w = 96, h = 28, x = 4 + r() * (W - w - 8), Y = base + (2 + r() * 14) * LINE;
       if (!waterFree(x, x + w, Y, Y + h)) continue;
