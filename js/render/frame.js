@@ -84,7 +84,7 @@ function draw() {
   }
   fx.forEach(drawExplosion);
   if (isOcean()) drawClouds(1 - altT);                       // no rasante, as nuvens passam por cima de tudo
-  if (isClassic()) drawPanel(); else drawHudTop();          // clássico: painel embaixo · voo livre: HUD no topo
+  if (isClassic()) drawPanel(); else if (isOcean()) drawHudBottom(); else drawHudTop();   // clássico: painel · oceano: HUD embaixo · moderno: HUD no topo
   if (state === 'over') banner('GAME OVER', 'SPACE to return', ['↑ ↓ reverse scrolling · PgUp/PgDn or Shift+↑↓: bridges', '− / + scroll speed: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
 }
@@ -156,6 +156,49 @@ function drawTitle() {
 }
 
 // HUD dos modos de voo livre: no topo, por cima do cenário (pílulas translúcidas)
+// HUD do oceano: embaixo, sobre o cenário — placar à esquerda, vida no meio, bombas à direita.
+// As bombas ficam alinhadas à direita, 5 por linha; passando disso, a contagem continua na linha de cima.
+const HUD_BOMBS_PER_ROW = 5;
+function hudBomb(bx, cy, on) {
+  ctx.globalAlpha = on ? 1 : 0.3;
+  ell(bx, cy, 4.6, 4.6, on ? '#e5484d' : '#5c6378'); ctx.fillStyle = '#f5f2ea'; ctx.fillRect(bx + 1.6, cy - 7.4, 1.4, 2.6);
+  ell(bx - 1.4, cy - 1.4, 1.4, 1.4, 'rgba(255,255,255,.5)');
+  ctx.globalAlpha = 1;
+}
+function drawHudBottom() {
+  const pill = (x, y, w, h) => { rrect(x, y, w, h, h / 2); ctx.fillStyle = 'rgba(12,15,28,.55)'; ctx.fill(); };
+  const by = VIEW_H - 25;                                            // linha de baixo do HUD
+  // esquerda: placar, e a etiqueta de modo/altitude logo acima
+  pill(6, by, 66, 20);
+  ctx.textAlign = 'left'; ctx.font = 'bold 12px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
+  ctx.fillText(String(score).padStart(6, '0'), 12, by + 14);
+  ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = '#4fd1e0';
+  ctx.fillText('OCEAN' + (altTarget ? ' · ▲ HIGH' : ' · ▼ LOW'), 10, by - 4);
+  // direita: bombas alinhadas à direita, linhas extras para cima
+  const nb = Math.max(bombs, 1), rows = Math.ceil(nb / HUD_BOMBS_PER_ROW);
+  for (let r = 0; r < rows; r++) {
+    const cnt = Math.min(HUD_BOMBS_PER_ROW, nb - r * HUD_BOMBS_PER_ROW), y = by - r * 22, w = cnt * 13 + 8;
+    pill(W - 6 - w, y, w, 20);
+    for (let k = 0; k < cnt; k++) hudBomb(W - 16 - k * 13, y + 11, r * HUD_BOMBS_PER_ROW + k < bombs);
+  }
+  // meio: vida (ocupa o espaço entre o placar e a linha de bombas de baixo)
+  const bw = Math.min(HUD_BOMBS_PER_ROW, nb) * 13 + 8, hx = 90, f = hp / 100, low = f < 0.25 && frame % 20 < 10;
+  const hw = Math.max(36, W - hx - 16 - bw);
+  pill(hx - 14, by + 2, hw + 20, 16);
+  ctx.fillStyle = '#e5484d'; ctx.font = 'bold 10px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('♥', hx - 5, by + 14);
+  rrect(hx + 2, by + 6, hw, 8, 4); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+  if (f > 0) { rrect(hx + 2, by + 6, Math.max(8, hw * f), 8, 4); ctx.fillStyle = low ? '#ff8a8a' : f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill();
+               rrect(hx + 2, by + 6, Math.max(8, hw * f), 3.5, 1.8); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fill(); }
+  // power-ups ativos: logo acima da barra de vida
+  drawPowerHud(hx + 2, by - 18);
+  // aviso de troca de altitude (no topo, que agora fica livre)
+  if (altMsg > 0) {
+    ctx.globalAlpha = Math.min(1, altMsg / 30); ctx.textAlign = 'center'; ctx.font = 'bold 12px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(12,15,28,.6)'; rrect(W / 2 - 80, 30, 160, 20, 10); ctx.fill();
+    ctx.fillStyle = altTarget ? '#9ff3ff' : '#ffc93c'; ctx.fillText(altText, W / 2, 44); ctx.globalAlpha = 1; ctx.textAlign = 'left';
+  }
+}
+
 function drawHudTop() {
   const pill = (x, y, w, h) => { rrect(x, y, w, h, h / 2); ctx.fillStyle = 'rgba(12,15,28,.55)'; ctx.fill(); };
   const narrow = W < 300;                                            // oceano (240 px): HUD compacto

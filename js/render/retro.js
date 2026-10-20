@@ -311,38 +311,41 @@ function drawRetroHud() {
     const age = e.life - e.t; if (age > e.life * 0.8 && frame % 4 < 2) continue;
     ptext(e.label, e.x, Math.round(VIEW_H - (e.y - scroll) - 18 - age * 0.45), e.labelCol, 'center');
   }
-  prect(0, 0, W, 13, 'rgba(12,15,28,.7)');
-  ptext(String(score).padStart(6, '0'), 3, 3, '#ffffff');
-  // vida
-  const f = hp / 100, hx = 52, hw = 100;
-  ptext('♥', hx - 9, 3, '#e5484d');
-  prect(hx, 4, hw + 2, 6, '#0c0f1c'); prect(hx + 1, 5, hw, 4, '#26334f');
-  if (f > 0) prect(hx + 1, 5, Math.max(1, hw * f), 4, f > 0.5 ? '#3f9a4a' : f > 0.25 ? '#ffc93c' : (frame % 20 < 10 ? '#e5484d' : '#ff9d9a'));
-  if (f > 0) prect(hx + 1, 5, Math.max(1, hw * f), 1, '#ffffff');
-  // bombas
-  for (let k = 0; k < Math.max(bombs, 1); k++) {
-    const bx = W - 8 - k * 9, on = k < bombs;
-    prect(bx - 3, 4, 7, 6, on ? '#e5484d' : '#3a3f58'); prect(bx - 2, 3, 5, 8, on ? '#e5484d' : '#3a3f58');
-    prect(bx - 2, 5, 2, 2, on ? '#ff9d9a' : '#5c6378'); prect(bx + 1, 1, 1, 2, '#f5ecc8');
+  // HUD embaixo: placar à esquerda, vida no meio, bombas à direita (6 por linha; mais linhas para cima)
+  const by = VIEW_H - 11, PER = 6, nb = Math.max(bombs, 1), rows = Math.ceil(nb / PER);
+  prect(0, by - 2, W, 13, 'rgba(12,15,28,.7)');
+  for (let r = 1; r < rows; r++) { const cnt = Math.min(PER, nb - r * PER); prect(W - 6 - cnt * 9, by - 2 - r * 11, cnt * 9 + 6, 11, 'rgba(12,15,28,.7)'); }
+  ptext(String(score).padStart(6, '0'), 3, by, '#ffffff');
+  // bombas: alinhadas à direita, a contagem sobe de linha
+  for (let i = 0; i < nb; i++) {
+    const r = Math.floor(i / PER), k = i % PER, bx = W - 8 - k * 9, y = by + 1 - r * 11, on = i < bombs;
+    prect(bx - 3, y, 7, 6, on ? '#e5484d' : '#3a3f58'); prect(bx - 2, y - 1, 5, 8, on ? '#e5484d' : '#3a3f58');
+    prect(bx - 2, y + 1, 2, 2, on ? '#ff9d9a' : '#5c6378'); prect(bx + 1, y - 3, 1, 2, '#f5ecc8');
   }
-  // modo e altitude
-  ptext('RETRO ' + (altTarget ? '▲ HIGH' : '▼ LOW'), 3, 16, '#4fd1e0');
-  // power-ups ativos
-  let ix = 160;
+  // vida: entre o placar e as bombas da linha de baixo
+  const f = hp / 100, hx = 50, hw = Math.max(30, W - hx - 12 - Math.min(PER, nb) * 9);
+  ptext('♥', hx - 9, by, '#e5484d');
+  prect(hx, by + 1, hw + 2, 6, '#0c0f1c'); prect(hx + 1, by + 2, hw, 4, '#26334f');
+  if (f > 0) prect(hx + 1, by + 2, Math.max(1, hw * f), 4, f > 0.5 ? '#3f9a4a' : f > 0.25 ? '#ffc93c' : (frame % 20 < 10 ? '#e5484d' : '#ff9d9a'));
+  if (f > 0) prect(hx + 1, by + 2, Math.max(1, hw * f), 1, '#ffffff');
+  // modo e altitude, acima do placar
+  ptext('RETRO ' + (altTarget ? '▲ HIGH' : '▼ LOW'), 3, by - 11, '#4fd1e0');
+  // power-ups ativos, acima da barra de vida
+  let ix = hx + 50;
   for (const k of ['shield', 'triple', 'rapid']) {
     if (pw[k] <= 0) continue;
-    const s = puSprite(k, false); ctx.drawImage(s, ix, 15);
-    prect(ix + 1, 15 + s.height, (s.width - 2) * pw[k] / PU[k].dur, 1, PU[k].col);
-    ix += s.width + 2;
+    const sp = puSprite(k, false), iy = by - 4 - sp.height; ctx.drawImage(sp, ix, iy);
+    prect(ix + 1, iy + sp.height, (sp.width - 2) * pw[k] / PU[k].dur, 1, PU[k].col);
+    ix += sp.width + 2;
   }
   // aviso de altitude
-  if (altMsg > 0 && frame % 8 < 6) { prect(W / 2 - 66, 40, 132, 12, '#0c0f1c'); ptext(altText.replace(/\s+/g, ' '), W / 2, 43, altTarget ? '#9fe0ff' : '#ffc93c', 'center', null); }
+  if (altMsg > 0 && frame % 8 < 6) { prect(W / 2 - 66, 22, 132, 12, '#0c0f1c'); ptext(altText.replace(/\s+/g, ' '), W / 2, 25, altTarget ? '#9fe0ff' : '#ffc93c', 'center', null); }
   // barra do chefe
   if (boss) {
     const B = boss, bw = W - 40, bf = Math.max(0, B.hp / B.maxHp);
-    prect(20, 28, bw, 5, '#0c0f1c'); prect(21, 29, (bw - 2) * bf, 3, bf > 0.3 ? '#e5484d' : '#ff8a3d');
+    prect(20, 3, bw, 5, '#0c0f1c'); prect(21, 4, (bw - 2) * bf, 3, bf > 0.3 ? '#e5484d' : '#ff8a3d');
     const st = B.kind === 'gunship' && B.shield > 0 ? ' · SHIELD' : B.kind === 'airship' && B.turrets.some(t => t.hp > 0) ? ' · ARMORED' : B.kind === 'interceptor' && B.mode === 'dash' ? ' · UNTOUCHABLE' : '';
-    ptext(BOSS_INFO[B.kind].name + st, 21, 35, '#ffffff');
+    ptext(BOSS_INFO[B.kind].name + st, 21, 10, '#ffffff');
   }
   // fim de jogo
   if (state === 'over') {

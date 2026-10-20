@@ -815,6 +815,26 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **HUD compacto no Ocean**, para caber na largura menor: placar menor à esquerda, barra de vida no meio (ocupando o espaço que sobra) e o estoque de bombas como **um ícone com contador** ("×9") à direita. Fora do oceano o HUD do topo não muda.
 - A troca do tamanho do canvas fica em `syncCanvas()` (`js/render/canvas.js`), na tabela `SCREENS`.
 
+## Mudanças da versão 33 — HUD embaixo no Ocean e no Retro Ocean
+
+### 57. HUD na parte de baixo da tela (modos 3 e 4)
+- **Antes:** o HUD ficava no topo.
+- **Agora fica embaixo, sobre o cenário:**
+
+| Posição | Conteúdo |
+|---|---|
+| esquerda | placar (e, logo acima, a etiqueta de modo e altitude: OCEAN/RETRO · ▲ HIGH / ▼ LOW) |
+| meio | barra de vida (♥), ocupando o espaço entre o placar e as bombas; acima dela, os power-ups ativos com o tempo restante |
+| direita | bombas, **alinhadas à direita** |
+
+- **Bombas:** quando o estoque passa do que cabe numa linha (**5** no Ocean, **6** no Retro), a contagem **continua numa linha acima**, também alinhada à direita.
+  - Ex.: 7 bombas no Ocean = 5 na linha de baixo + 2 na de cima.
+  - O estoque vazio mostra um ícone apagado.
+- **Topo da tela:** fica livre. A barra do chefe subiu para lá, com um fundo escuro para o nome continuar legível sobre as nuvens, e o aviso de troca de altitude também aparece lá em cima.
+- **O jato voa sempre acima do HUD:** a altura mínima passou para `OCEAN_PY_MIN = 40`, e ele também renasce nessa altura.
+- O Classic, o Modern e o PICO-8 não mudam.
+- Para ajustar: `drawHudBottom()` e `HUD_BOMBS_PER_ROW` (`js/render/frame.js`); o HUD em pixel em `drawRetroHud()` (`js/render/retro.js`).
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

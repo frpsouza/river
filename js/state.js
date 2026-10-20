@@ -8,6 +8,7 @@
 
 let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens · 'ocean' · 'retro'
 const isOcean = () => mode === 'ocean' || mode === 'retro';   // o retro usa toda a lógica do oceano
+const pyMin = () => isOcean() ? OCEAN_PY_MIN : PLAYER_Y;      // altura mínima do jato (acima do HUD de baixo no oceano)
 const isClassic = () => mode === 'classic' || mode === 'pico'; // o PICO-8 usa toda a lógica do clássico
 let bank = 0;
 let safeT = 0;
@@ -38,7 +39,7 @@ function respawn() {
     spawnObjs(blocks[g]);
   }
   scroll = checkpoint * BH + (checkpoint > 0 ? 40 : 0);   // renasce um pouco depois da saída da ponte, onde o rio já abriu
-  py = PLAYER_Y; safeT = SPAWN_SAFE; hp = 100; hurtT = 0;
+  py = pyMin(); safeT = SPAWN_SAFE; hp = 100; hurtT = 0;
   burstT = 0; burstShots = 0; burstLock = !!(keys[' '] || keys.z);       // rajada nova; se o gatilho já está apertado, solte primeiro
   resetOcean();
   const { b, i } = lineAt(scroll + py);

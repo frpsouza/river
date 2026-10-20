@@ -47,7 +47,7 @@ function update() {
     // moderno e oceano: a câmera anda em velocidade constante (no oceano, quase para durante o chefe) e o jato voa livre pela tela (↑↓ movem na vertical)
     sp = (isOcean() && boss ? 0.3 : 1.25 * (isOcean() ? 1.15 - 0.3 * altT : 1)) * lvl;   // rasante parece mais rápido
     camSp = sp;
-    py = clamp(py + vert * 2, PLAYER_Y, VIEW_H - PH - 36);           // não entra embaixo do HUD
+    py = clamp(py + vert * 2, pyMin(), VIEW_H - PH - (isOcean() ? 12 : 36));   // não entra embaixo do HUD
   } else {
     // clássico: o jato fica embaixo; ↑ acelera e ↓ freia a rolagem
     sp = (1.1 + (vert > 0 ? vert * 0.8 : vert * 0.5)) * lvl;          // de 0,6 (freando) a 1,9 (acelerando)

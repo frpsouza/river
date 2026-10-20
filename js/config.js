@@ -25,6 +25,7 @@ const SPAWN_SAFE = 150;                                // quadros de proteção 
 
 const smooth = t => t * t * (3 - 2 * t);               // curva suave (sem degraus)
 
+const OCEAN_PY_MIN = 40;                              // ocean/retro: o HUD fica embaixo, o jato voa acima dele
 const PLAYER_Y = 6;                                   // altura inicial do jato: rente ao painel de placar
 
 const JET_SC = 1.25;                                  // escalas relativas à casa (parede de 24 px ≈ 10 m)

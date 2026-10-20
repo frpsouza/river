@@ -650,7 +650,8 @@ function drawBomber(B) {
 
 function drawBossBar(B) {
   const w = W - 60, f = Math.max(0, B.hp / B.maxHp);
-  const by = 48;                                        // abaixo do HUD do topo
+  const by = 6;                                         // no topo (o HUD do oceano fica embaixo)
+  rrect(24, by - 3, W - 48, 30, 8); ctx.fillStyle = 'rgba(12,15,28,.55)'; ctx.fill();   // fundo: legível sobre as nuvens
   rrect(30, by, w, 7, 3.5); ctx.fillStyle = 'rgba(12,15,28,.75)'; ctx.fill();
   rrect(30, by, Math.max(7, w * f), 7, 3.5); ctx.fillStyle = f > 0.3 ? '#e5484d' : '#ff8a3d'; ctx.fill();
   ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'left';
