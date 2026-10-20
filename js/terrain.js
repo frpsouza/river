@@ -1,5 +1,5 @@
 // terrain.js — GERAÇÃO PROCEDURAL DO RIO
-// Segue river-raid-comentarios.md: o rio é dividido em seções de 16 blocos; cada bloco
+// Inspirado na estrutura do jogo original: o rio é dividido em seções de 16 blocos; cada bloco
 // sorteia largura e posição do rio (e às vezes uma ilha); o último bloco é a ponte.
 // Os blocos são gerados sob demanda (getBlock) e guardados em `blocks`.
 //

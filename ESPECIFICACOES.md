@@ -1,6 +1,8 @@
 # River Raid (clone) — especificações e mudanças
 
-Arquivos: `index.html` (página), `js/` (o jogo, em módulos — veja **Arquitetura**), `android/` (app Android, veja `ANDROID.md`), `scripts/export-android.sh`, `manifest.webmanifest` + `sw.js` + `icons/` (PWA), `sprites/` (sprites extraídos de `river.png`, só como referência).
+Arquivos: `index.html` (página), `js/` (o jogo, em módulos — veja **Arquitetura**), `android/` (app Android, veja `ANDROID.md`), `scripts/export-android.sh`, `manifest.webmanifest` + `sw.js` + `icons/` (PWA).
+
+O material de referência de terceiros usado no início (mapa original, sprites recortados dele e a transcrição de comentários do código original) **não faz parte do repositório**: fica só na pasta local `referencias/`, ignorada pelo git. O jogo não usa nenhum desses arquivos; todos os desenhos são originais.
 Para jogar: abrir `index.html` no navegador e apertar **Enter**.
 
 ## Arquitetura (pasta `js/`)
@@ -76,7 +78,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | PgDn ou Shift+↓ | voltar para a ponte anterior |
 | + (ou =) / − | aumentar / diminuir a velocidade da rolagem (passos de 1,5×, de 0,23× a 11×) |
 
-### Geração automática do mapa (segundo `river-raid-comentarios.md`)
+### Geração automática do mapa (inspirada na estrutura do jogo original)
 - Uma **seção** tem 16 blocos; o último é a **ponte**.
 - Cada **bloco** tem 32 linhas de 2 px (64 px de altura) e sorteia o formato do rio: largura, posição e, às vezes, uma ilha.
 - Cada bloco recebe um objeto sorteado: combustível, navio, helicóptero, casa, tanque ou balão. Aviões aparecem de vez em quando, e a ponte pode ter um tanque atravessando.
@@ -104,7 +106,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 - Logo depois de cada ponte há uma **zona de respiro**: rio largo, sem ilhas, paredões nem inimigos, e o jato renasce protegido por 2,5 s (veja a mudança 31).
 
 ### Sprites
-Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, helicóptero (hélice animada), navio, avião, casa com árvore, tanque visto de lado (esteiras e rodas animadas), balão, árvores, cercas, vacas e o jato do jogador. Os PNGs extraídos de `river.png` continuam em `sprites/` como referência, mas o jogo não os usa mais.
+Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, helicóptero (hélice animada), navio, avião, casa com árvore, tanque visto de lado (esteiras e rodas animadas), balão, árvores, cercas, vacas e o jato do jogador. (Os PNGs de referência do início saíram do repositório; ver o topo do documento.)
 
 ## Mudanças desta versão
 
