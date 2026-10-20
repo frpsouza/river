@@ -130,6 +130,32 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - A decoração é gerada uma vez por bloco, sempre igual para o mesmo bloco. Os elementos são desenhados de cima para baixo, para os da frente cobrirem os de trás. Nada é colocado sobre a estrada da ponte.
 - Para ajustar: `getDeco()`, `drawTree()`, `drawField()` e `drawCow()` no `game.js`.
 
+## Mudanças da versão 6 — sprites minimalistas e ondas animadas
+
+### 11. Sprites minimalistas (flat design)
+- **Antes:** os sprites tinham degradês, reflexos, janelas, rodas, marcas de esteira e contornos.
+- **Agora:** cada sprite é feito de poucas formas geométricas chapadas. Cada parte tem uma cor de base e uma cor de sombra, sem degradês nem contornos. A luz vem de cima à esquerda, e a sombra fica no lado direito ou embaixo.
+- A paleta é única para todos: vermelho `#e5484d`/`#b8363b`, creme `#f5f2ea`/`#ddd8cc`, azul `#3b63e0`/`#2c4bb5`, amarelo `#ffc93c`/`#c9901c`, verde-oliva para os tanques e azul-marinho `#26334f` para detalhes.
+- **Como cada sprite ficou:**
+  - Combustível: galão vermelho com faixa creme e "FUEL".
+  - Helicóptero: corpo oval com janela e hélice de um traço.
+  - Navio: casco em trapézio com cabine e chaminé.
+  - Avião: flecha em dois tons.
+  - Casa: parede e telhado triangular. Uma variação tem telhado escuro e a outra, vermelho.
+  - Tanque: esteira em pílula com rodas lisas, casco, cúpula e canhão.
+  - Balão: gota com uma listra e o cesto.
+  - Árvore: círculo ou triângulo metade claro, metade sombreado.
+  - Vaca: corpo, uma mancha, cabeça e duas pernas.
+  - Campo: retângulo arredondado com cerca fina.
+  - Jato: fuselagem e asas em dois tons, cabine e chama. A inclinação das asas continua.
+- O deck da ponte perdeu as tábuas.
+
+### 12. Ondas animadas no rio
+- **Antes:** a água tinha marolas fixas, riscos retos.
+- **Agora:** a água tem 9 pequenas ondas por bloco, desenhadas como senoides. Elas correm ao longo do traço, balançam de um lado para o outro e pulsam de opacidade, cada uma com fase e velocidade próprias.
+- As posições são sempre iguais para o mesmo bloco, e as ondas não encostam nas margens nem nas ilhas.
+- Para ajustar: o laço "ondas animadas" em `drawTerrain()`, fase 0.
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.
