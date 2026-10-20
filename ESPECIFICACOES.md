@@ -357,6 +357,18 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
   - Fora dos cantos vale o braço tocado, ou seja, o eixo dominante. O centro continua sendo uma zona morta.
 - A área total de toque é o quadrado inteiro do direcional, sem nenhuma parte "morta" nos cantos.
 
+## Mudanças da versão 15 — tiros inimigos mais visíveis
+
+### 29. Projéteis dos tanques em laranja, branco e vermelho
+- **Antes:** uma bolinha escura de 1,4 px com um brilho laranja fraco, fácil de perder sobre a água.
+- **Agora:** um projétil incandescente com quatro camadas:
+  - um rastro de três gotas atrás, na direção oposta ao movimento, indo do amarelo ao vermelho;
+  - um halo vermelho translúcido que pulsa;
+  - um corpo laranja de raio 3,2 px, com contorno azul-marinho, que destaca tanto na água clara quanto na terra verde;
+  - um núcleo branco, como metal em brasa.
+- A área de colisão não mudou. Só o desenho ficou maior e mais contrastado.
+- Para ajustar: `drawShell()` em `js/render/frame.js`.
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

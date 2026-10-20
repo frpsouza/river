@@ -29,10 +29,7 @@ function draw() {
     else if (o.type === 'pu') drawPowerup(o, sy);
     else if (o.type === 'plane' && o.active) drawPlane(o.x, sy, o.dir);
   }
-  for (const sh of shells) {
-    const sy = VIEW_H - (sh.Y - scroll);
-    ell(sh.x, sy, 2.6, 2.6, 'rgba(255,140,40,.35)'); ell(sh.x, sy, 1.4, 1.4, '#1c1c22');
-  }
+  for (const sh of shells) drawShell(sh, VIEW_H - (sh.Y - scroll));
   // míssil
   for (const m of missiles) {
     const my = VIEW_H - (m.Y + 8 - scroll);
@@ -47,6 +44,21 @@ function draw() {
   drawPanel();
   if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
+}
+
+// projétil dos tanques: bem visível, com contraste laranja/branco/vermelho
+// (rastro atrás, halo vermelho pulsando, corpo laranja com contorno escuro e núcleo branco)
+function drawShell(sh, sy) {
+  const back = -Math.sign(sh.vx) || -1, pulse = 0.5 + 0.5 * Math.sin(frame * 0.4 + sh.x * 0.1);
+  for (let k = 3; k >= 1; k--)                                       // rastro: vermelho → laranja
+    ell(sh.x + back * k * 3.2, sy, 3.2 - k * 0.6, 2.2 - k * 0.4, ['#ffc93c', '#ff8a3d', '#e5484d'][k - 1]);
+  ctx.globalAlpha = 0.35 + 0.25 * pulse;
+  ell(sh.x, sy, 5.5 + pulse * 1.5, 5.5 + pulse * 1.5, '#e5484d');   // halo vermelho pulsando
+  ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.arc(sh.x, sy, 3.2, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff8a3d'; ctx.fill();
+  ctx.strokeStyle = '#26334f'; ctx.lineWidth = 0.8; ctx.stroke();    // contorno escuro: destaca na água clara
+  ell(sh.x, sy, 1.7, 1.7, '#ffffff');                                 // núcleo branco
 }
 
 function banner(a, b, c) {
