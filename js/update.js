@@ -111,7 +111,7 @@ function update() {
     }
   }
   // checkpoint ao passar pela ponte
-  // (no oceano não há ponte: o checkpoint é derrotar o chefe — ocean.js)
+  // (no oceano não há ponte: o checkpoint é derrotar o chefe — ocean/bosses.js)
   const sec = Math.floor(pBot / BH / BLOCKS_PER_SECTION);
   const bridgeTop = (sec * BLOCKS_PER_SECTION + 15) * BH + 22 * LINE;
   if (!isOcean() && pBot > bridgeTop && checkpoint < (sec + 1) * BLOCKS_PER_SECTION) checkpoint = (sec + 1) * BLOCKS_PER_SECTION;

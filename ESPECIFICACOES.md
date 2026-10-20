@@ -39,7 +39,12 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 4 | `terrain.js` | geração procedural do rio: blocos, seções, ponte, ilhas, dificuldade |
 | 5 | `objects.js` | objetos de cada bloco (inimigos, combustível, casas, tanques, balões) e altitude dos helicópteros |
 | 5b | `cliffs.js` | paredões de rocha do modo moderno, ao longo da beira do rio: geração e colisão |
-| 5d | `ocean.js` | modo oceano: mar com ilhas, esquadrilhas acrobáticas, porta-aviões, chefes, nuvens e desenhos vistos de cima |
+| 5d | `ocean/world.js` | modo oceano: estado do modo, conversão tela ↔ mundo (`worldY`/`screenY`), mar com ilhas (`genOceanBlock`) |
+| 5e | `ocean/squads.js` | esquadrilhas acrobáticas (`PATTERNS`), navios e helicópteros, acerto do míssil (`oceanMissileHit`) |
+| 5f | `ocean/bosses.js` | os quatro chefes: ataques, defesas, tiros e a queda no mar (`bossDie`) |
+| 5g | `ocean/altitude.js` | voo rasante × alto (`altT`) e as manobras de looping/mergulho (`maneuverPose`) |
+| 5h | `ocean/bombs.js` | bomba do oceano com onda de choque (`oceanBomb`, `bombQueue`) e power-ups de recompensa (`BOSS_DROPS`) |
+| 5i | `ocean/update.js` | `updateOcean()`: o passo do modo oceano, chamado pelo `update` |
 | 5c | `powerups.js` | power-ups do modo moderno: sorteio, coleta, efeitos, som, desenho e ícones no painel |
 | 6 | `state.js` | estado da partida e modo de jogo (`mode`): começar, renascer no checkpoint, pontuar, morrer |
 | 7 | `effects.js` | explosões: receitas por tipo, física das partículas e desenho |
@@ -48,6 +53,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 10 | `render/canvas.js` | canvas em 2×, primitivas (`poly`, `ell`, `rrect`, `mix`) e paleta |
 | 11 | `render/terrain.js` | desenho da água, margens, ilhas, ponte e decoração (bosques, campos, vacas) |
 | 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
+| 12b | `render/ocean.js` | desenho do oceano (vetorial, vista de cima): aviões, chefes e barra de vida, porta-aviões, nuvens |
 | 13c | `render/pico.js` | modo CLASSIC - PICO-8: o clássico em 128×128 com a paleta de 16 cores, sprites em pixel art e fonte 3×5 |
 | 13b | `render/retro.js` | modo Retro Oceano: pixel art em 240×320, quadros intermediários, paleta de 32 cores com pontilhado e fonte bitmap 5×7 |
 | 13 | `render/frame.js` | monta cada quadro (`draw`), painel, telas de título e de fim de jogo |
@@ -501,7 +507,7 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
   - O tiro faz o dano normal de tiro inimigo (−12 de vida).
 - O navio continua valendo 30 pontos ao ser destruído com o míssil.
 - Nos modos clássico e moderno, os navios não mudaram: não atiram e colidem.
-- Para ajustar: `shipFire()` em `js/ocean.js` e o canhão em `drawShipTop()`.
+- Para ajustar: `shipFire()` em `js/ocean/squads.js` e o canhão em `drawShipTop()`.
 
 ## Mudanças da versão 20 — ilhas e nuvens variadas e alongadas
 
@@ -652,7 +658,7 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Sorteio:** bomba 30%, escudo 20%, tiro triplo 20%, tiro rápido 15%, reparo 15%.
 - Como a câmera quase para durante a luta, eles descem devagar e dá tempo de pegar.
 - **Medido:** em 30 s de luta caíram 6 power-ups.
-- Para ajustar: `BOSS_DROPS` e o intervalo em `updateBoss()` (`js/ocean.js`).
+- Para ajustar: `BOSS_DROPS` e o intervalo em `updateBoss()` (`js/ocean/bosses.js`).
 
 ## Mudanças da versão 24 — modo Retro Oceano (pixel art 240×320)
 
@@ -723,7 +729,7 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Destruição em cascata:** cada alvo só é atingido quando a onda de choque chega até ele (6 px por quadro), do mais perto ao mais longe. As explosões se espalham pela tela em sequência, em vez de tudo sumir de uma vez. O orçamento de dano continua o mesmo.
 - **Som:** estrondo em cinco notas descendo, seguido de um ronco grave prolongado.
 - **Medido:** com 12 caças espalhados, eles caíram em sequência entre ~0,5 s e 1 s depois da detonação.
-- Para ajustar: `useBomb()` (`js/powerups.js`), `BOMB_WAVE` (`js/ocean.js`) e `shake()` / `freezeT` (`js/effects.js`).
+- Para ajustar: `useBomb()` (`js/powerups.js`), `BOMB_WAVE` (`js/ocean/bombs.js`) e `shake()` / `freezeT` (`js/effects.js`).
 
 ## Mudanças da versão 26 — controle físico em todas as versões
 
@@ -790,7 +796,7 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
   - a esquadrilha derrubada soltou exatamente 1 power-up;
   - o porta-aviões afundado soltou bomba + reparo.
 - Os modos clássico e moderno não mudam.
-- Para ajustar: `BOMB_START`, `BOMB_MAX`, `OCEAN_PU_CHANCE` e `OCEAN_PU_W` (`js/powerups.js`); `BOSS_DROPS`, `dropPowerup()` e `carrierDrops()` (`js/ocean.js`).
+- Para ajustar: `BOMB_START`, `BOMB_MAX`, `OCEAN_PU_CHANCE` e `OCEAN_PU_W` (`js/powerups.js`); `BOSS_DROPS`, `dropPowerup()` e `carrierDrops()` (`js/ocean/bombs.js`).
 
 ## Mudanças da versão 30 — tiro em rajada
 
@@ -873,7 +879,7 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Durante a manobra o jato está fora do plano de combate:** não atira e não leva dano (tiros, trombadas e caças passam). Ao terminar, tudo volta ao normal.
 - **Onde vale:** em toda troca de altitude, inclusive na subida para a luta com o chefe e na descida depois dela, no vetorial (Ocean) e na pixel art (Retro, escalando por vizinho mais próximo).
 - **Medido:** no meio do looping, um tiro em cima do jato não tirou vida e o gatilho não disparou. Depois da manobra, o tiro voltou.
-- Para ajustar: `maneuverPose()`, `stepManeuver()` e as durações em `setAltitude()` (`js/ocean.js`).
+- Para ajustar: `maneuverPose()`, `stepManeuver()` e as durações em `setAltitude()` (`js/ocean/altitude.js`).
 
 ## Mudanças da versão 35 — chefe derrotado cai em chamas no oceano
 
@@ -890,7 +896,7 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Só então** vêm os pontos, o checkpoint, a cura de +40 e a volta ao voo rasante (com o mergulho em parafuso).
 - **Durante a queda,** o chefe não atira, não colide e não recebe mais tiros.
 - **Medido:** queda de 150 quadros; escala 1,00 → 0,86 → 0,72 → 0,58 → 0,44; ~90 nuvens de fumaça na tela; ao fim, +4010 pontos, checkpoint avançado, vida 50 → 90 e respingo criado.
-- Para ajustar: `bossDie()`, `BOSS_FALL` e `bossFallScale()` (`js/ocean.js`).
+- Para ajustar: `bossDie()`, `BOSS_FALL` e `bossFallScale()` (`js/ocean/bosses.js`).
 
 ## Mudanças da versão 36 — catálogo de gráficos
 
@@ -917,6 +923,26 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Fundo:** os sprites têm fundo transparente, mostrado em xadrez no relatório.
 - **Ilhas e terreno:** são recortes de mapas gerados de verdade.
 - **Mudança mínima no jogo:** cada bloco do oceano guarda o tipo da ilha que começa nele (`blk.isleKind`), para o catálogo encontrá-la.
+
+## Mudanças da versão 37 — `ocean.js` dividido em módulos
+
+### 61. O modo oceano em sete arquivos
+- **Antes:** um único `js/ocean.js` com 835 linhas. O grafo do código mostrava que ele concentrava 63 ligações, 43 delas internas.
+- **Agora:** a pasta `js/ocean/` com seis arquivos de lógica, mais `js/render/ocean.js` com o desenho:
+
+| Arquivo | Linhas | Conteúdo |
+|---|---|---|
+| `ocean/world.js` | ~90 | estado compartilhado (`fliers`, `boss`, `camSp`), `worldY`/`screenY`, ilhas (`genOceanBlock`) |
+| `ocean/squads.js` | ~130 | esquadrilhas, navios, helicópteros, `oceanMissileHit()` |
+| `ocean/bosses.js` | ~180 | os quatro chefes e a queda |
+| `ocean/altitude.js` | ~70 | `altT`, `setAltitude()`, manobras |
+| `ocean/bombs.js` | ~70 | `oceanBomb()`, cascata, `dropPowerup()` |
+| `ocean/update.js` | ~55 | `updateOcean()` |
+| `render/ocean.js` | ~265 | aviões, chefes, barra do chefe, porta-aviões, nuvens |
+
+- **Por que assim:** o desenho só desenha, como nos outros `render/*`, e o Retro Ocean e o PICO-8 já reaproveitam partes dele. Os chefes não são chamados de fora do arquivo. A altitude é lida por três outros módulos (`update`, `frame`, `retro`), e agora essa dependência fica visível.
+- **Sem mudança de jogo:** só o código mudou de lugar. Os nomes são os mesmos e a ordem de carga está no `index.html`, no `sw.js` e na página do catálogo.
+- **Conferido:** um teste sem janela jogou 9.000 quadros em cada um dos 5 modos, sem erros (chefes derrotados e caindo no Ocean e no Retro). O catálogo regenerado só difere nas imagens com sorteio, as mesmas 31 que já mudam entre duas execuções da versão 36.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

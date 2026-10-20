@@ -36,7 +36,7 @@ function genBlock(g) {
     land: s % 2 ? LAND_LIGHT : LAND_DARK,
     seed: (rng() * 4294967296) | 0, objs: [],
   };
-  if (isOcean()) {                             // oceano: mar aberto, sem ponte (ocean.js)
+  if (isOcean()) {                             // oceano: mar aberto, sem ponte (ocean/world.js)
     blk.bridge = false;
     genOceanBlock(blk);
     blocks.push(blk); genCliffs(blk, null); spawnObjs(blk);
