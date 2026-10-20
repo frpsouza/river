@@ -81,6 +81,7 @@ function genBlock(g) {
     }
   }
   blocks.push(blk);   // antes de gerar objetos, que consultam o próprio bloco
+  blk.mtns = genMountains(blk);                       // só no modo moderno (mountains.js)
   spawnObjs(blk);
   return blk;
 }

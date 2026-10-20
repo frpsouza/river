@@ -38,6 +38,7 @@ function spawnObjs(blk) {
       if (left && lmin >= 52) x = 6 + r() * (lmin - w - 12);
       else if (!left && W - rmax >= 52) x = rmax + 6 + r() * (W - rmax - w - 12);
       if (x === null) continue;
+      if (blk.mtns.some(p => x + w > p.x - p.hw && x < p.x + p.hw && Y < p.Y + p.h && Y + h > p.Y)) continue;
       if (type === 'house') blk.objs.push({ type, x, Y, w, h, alive: true, spr: r() < 0.5 ? 'house1' : 'house2' });
       else {
         // tanque na margem: patrulha em terra e atira para o lado do rio

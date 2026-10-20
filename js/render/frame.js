@@ -14,6 +14,7 @@ function draw() {
   const g0 = Math.max(0, Math.floor(scroll / BH) - 1), g1 = Math.floor((scroll + VIEW_H) / BH) + 1;
   for (let ph = 0; ph < 3; ph++) for (let g = g0; g <= g1; g++) drawTerrain(getBlock(g), ph);
   for (let g = g0; g <= g1; g++) { const blk = getBlock(g); if (blk.bridge) drawBridge(blk); }
+  for (let g = g0; g <= g1 + 1; g++) drawMountains(getBlock(g));   // por cima: picos podem passar do bloco
   // objetos
   for (let g = g0; g <= g1; g++) for (const o of getBlock(g).objs) {
     if (!o.alive) continue;
@@ -37,6 +38,8 @@ function draw() {
     rrect(missile.x - 0.3, my, 2.6, 8, 1.2); ctx.fillStyle = '#ffd23a'; ctx.fill();
     ell(missile.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
+  if (state === 'play' && mode === 'modern')                         // moderno: sombra do jato lá embaixo
+    ell(px + PW / 2 + 7, VIEW_H - PLAYER_Y - PH * 0.35 + 9, PW * 0.42, 3, 'rgba(0,0,30,.28)');
   if (state === 'play') drawJet(px + PW / 2, VIEW_H - (PLAYER_Y + PH), bank, JET_SC, true);
   fx.forEach(drawExplosion);
   drawPanel();
@@ -57,8 +60,20 @@ function banner(a, b, c) {
 function drawTitle() {
   ctx.fillStyle = PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
   ctx.fillStyle = PAL.dark.land; ctx.fillRect(0, 0, 70, VIEW_H); ctx.fillRect(W - 70, 0, 70, VIEW_H);
-  drawJet(W / 2, 220, 0, 1.6, true);
-  banner('RIVER RAID', 'ENTER para jogar');
+  drawJet(W / 2, 250, 0, 1.6, true);
+  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 70, W - 32, 168, 8); ctx.fill();
+  ctx.textAlign = 'center'; ctx.fillStyle = '#ffe45a'; ctx.font = 'bold 24px Arial, sans-serif';
+  ctx.fillText('RIVER RAID', W / 2, 104);
+  const opts = [['classic', '1  CLÁSSICO', 'margens e ilhas matam, como no Atari'],
+                ['modern', '2  MODERNO', 'voe sobre as margens; cuidado com as montanhas']];
+  opts.forEach(([m, name, desc], k) => {
+    const y = 128 + k * 42, on = mode === m;
+    rrect(32, y, W - 64, 34, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
+    ctx.fillStyle = on ? '#26334f' : '#e8ecf5'; ctx.font = 'bold 13px Arial, sans-serif'; ctx.fillText(name, W / 2, y + 15);
+    ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '9px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 27);
+  });
+  ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
+  ctx.fillText('setas escolhem · ENTER ou ESPAÇO joga', W / 2, 226);
 }
 
 function drawPanel() {
@@ -69,6 +84,8 @@ function drawPanel() {
   ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(0, y0, W, 1);
   ctx.textAlign = 'left'; ctx.font = 'bold 20px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
   ctx.fillText(String(score).padStart(6, '0'), 10, y0 + 24);
+  ctx.font = 'bold 8px Arial, sans-serif'; ctx.fillStyle = mode === 'modern' ? '#9fe0ff' : '#ffc93c';
+  ctx.fillText(mode === 'modern' ? 'MODERNO' : 'CLÁSSICO', 12, y0 + 40);
   // medidor de combustível
   const gx = 74, gy = y0 + 28, gw = 160, f = fuel / 100;
   rrect(gx, gy, gw, 9, 4.5); ctx.fillStyle = '#2b3042'; ctx.fill();

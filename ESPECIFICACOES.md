@@ -1,6 +1,6 @@
 # River Raid (clone) — especificações e mudanças
 
-Arquivos: `index.html` (página), `js/` (o jogo, em módulos — veja **Arquitetura**), `sprites/` (sprites extraídos de `river.png`, só como referência).
+Arquivos: `index.html` (página), `js/` (o jogo, em módulos — veja **Arquitetura**), `android/` (app Android, veja `ANDROID.md`), `scripts/export-android.sh`, `manifest.webmanifest` + `sw.js` + `icons/` (PWA), `sprites/` (sprites extraídos de `river.png`, só como referência).
 Para jogar: abrir `index.html` no navegador e apertar **Enter**.
 
 ## Arquitetura (pasta `js/`)
@@ -14,7 +14,8 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 3 | `audio.js` | bipes sintetizados (Web Audio) |
 | 4 | `terrain.js` | geração procedural do rio: blocos, seções, ponte, ilhas, dificuldade |
 | 5 | `objects.js` | objetos de cada bloco (inimigos, combustível, casas, tanques, balões) e altitude dos helicópteros |
-| 6 | `state.js` | estado da partida: começar, renascer no checkpoint, pontuar, morrer |
+| 5b | `mountains.js` | montanhas do modo moderno: geração por bloco e colisão (triângulos) |
+| 6 | `state.js` | estado da partida e modo de jogo (`mode`): começar, renascer no checkpoint, pontuar, morrer |
 | 7 | `effects.js` | explosões: receitas por tipo, física das partículas e desenho |
 | 8 | `gameover.js` | tela de fim de jogo navegável (rolagem, pontes, velocidade) |
 | 9 | `update.js` | um passo da simulação: controles, colisões, inimigos, míssil |
@@ -23,6 +24,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
 | 13 | `render/frame.js` | monta cada quadro (`draw`), painel, telas de título e de fim de jogo |
 | 14 | `main.js` | teclado e laço principal (`update` a 60 passos/s, `draw` a cada quadro) |
+| 15 | `touch.js` | controles na tela para celular/Android: botões que escrevem nas mesmas `keys`/`taps` do teclado |
 
 **Fluxo de um quadro:** `main.js` chama `update()`, que usa `state`, `terrain`, `objects`, `effects` e `gameover`. Depois chama `draw()`, que usa os módulos de `render/` e o `effects`.
 
@@ -258,6 +260,29 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - **Agora:** 14 arquivos em `js/` e `js/render/`, separando a lógica do jogo do desenho (veja **Arquitetura** no topo). Cada arquivo começa com um cabeçalho didático: o que faz, as funções principais e de quais outros módulos depende.
 - O código foi movido sem mudar nenhuma linha. Saíram apenas os separadores de seção, que viraram os cabeçalhos. O comportamento é o mesmo.
 - Os nomes de arquivo citados nas mudanças anteriores (`game.js`) agora correspondem a estes módulos. Por exemplo, `genBlock()` está em `terrain.js`, `drawJet()` em `render/sprites.js` e `FX` em `effects.js`.
+
+## Mudanças da versão 10 — modos clássico e moderno, montanhas e versão Android
+
+### 19. Modos de jogo, escolhidos na tela de início
+- A tela de título mostra as duas opções. As setas (ou as teclas 1 e 2) escolhem o modo, e Enter ou Espaço começa. No celular, um toque na opção escolhe e outro toque começa. O modo atual aparece no painel.
+- **Clássico:** como antes. Margens, ilhas e a ponte inteira matam, e o míssil para ao chegar na terra.
+- **Moderno:** o jato voa por cima das margens e das ilhas, e só não pode sair da tela.
+  - Casas e tanques em terra ficam lá embaixo e não colidem. O míssil voa sobre a terra, então dá para acertar os tanques das margens.
+  - A ponte não bloqueia o voo, mas continua valendo pontos se for destruída.
+  - O jato projeta uma sombra no chão, para dar a sensação de altura.
+
+### 20. Montanhas (só no modo moderno)
+- Surgem a partir da 3ª seção (`MTN_FROM = 2`). A chance (30% → 75% por margem) e a altura (24–40 px → 24–62 px) crescem com a dificuldade.
+- São vistas de lado, como as casas: rocha em dois tons, neve no topo, um pico menor atrás e sombra no chão.
+- A colisão usa o mesmo triângulo do desenho, testando o bico, as asas e a cauda do jato. O míssil também para nelas.
+- Casas e tanques não nascem dentro de montanhas.
+- Para ajustar: `js/mountains.js`.
+
+### 21. Versão Android com controles na tela
+- **Controles na tela** (`js/touch.js`): botões grandes que mudam conforme a tela (título, jogo, fim de jogo). Eles aparecem em aparelhos com toque ou com `?touch=1` na URL.
+- **PWA:** manifesto, ícone próprio e service worker. Instala no Android pelo Chrome e funciona offline quando servido por http(s).
+- **App Android** (`android/`): um WebView em tela cheia, em retrato, com a tela sempre acesa.
+- **Exportação:** `scripts/export-android.sh` copia o jogo para o app e gera `dist/river-raid.apk` quando há JDK 17 e Android SDK. A máquina ainda não tem esses dois. Veja o `ANDROID.md`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

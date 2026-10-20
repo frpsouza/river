@@ -6,6 +6,7 @@
 // Usa: terrain.js, objects.js, effects.js (boom).
 'use strict';
 
+let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens
 let bank = 0;
 
 let shells = [];

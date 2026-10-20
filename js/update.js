@@ -7,7 +7,15 @@
 function update() {
   frame++;
   const tp = taps; taps = [];
-  if (state === 'title') { if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame(); return; }
+  if (state === 'title') {
+    for (const t of tp) {
+      if (t.key.startsWith('Arrow')) mode = mode === 'classic' ? 'modern' : 'classic';   // qualquer seta alterna
+      if (t.key === '1') mode = 'classic';
+      if (t.key === '2') mode = 'modern';
+    }
+    if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame();
+    return;
+  }
 
   stepFx();
 
@@ -39,11 +47,18 @@ function update() {
 
   // colisão com terreno e ponte
   const pBot = scroll + PLAYER_Y, pTop = pBot + PH;
-  for (let Y = pBot; Y <= pTop; Y += LINE) {
-    const { b, i } = lineAt(Y);
-    if (px < b.L[i] || px + PW > b.R[i]) { kill(); return; }
-    if (b.IL[i] >= 0 && px + PW > b.IL[i] && px < b.IR[i]) { kill(); return; }
-    if (b.bridge && !b.broken && i >= 10 && i <= 21) { kill(); return; }
+  if (mode === 'classic') {
+    // clássico: margens, ilhas e ponte inteira matam
+    for (let Y = pBot; Y <= pTop; Y += LINE) {
+      const { b, i } = lineAt(Y);
+      if (px < b.L[i] || px + PW > b.R[i]) { kill(); return; }
+      if (b.IL[i] >= 0 && px + PW > b.IL[i] && px < b.IR[i]) { kill(); return; }
+      if (b.bridge && !b.broken && i >= 10 && i <= 21) { kill(); return; }
+    }
+  } else {
+    // moderno: voa por cima de tudo, só não pode sair da tela nem bater nas montanhas
+    px = clamp(px, 0, W - PW);
+    if (mountainHit(px, px + PW, pBot, pTop)) { kill(); return; }
   }
   // checkpoint ao passar pela ponte
   const sec = Math.floor(pBot / BH / BLOCKS_PER_SECTION);
@@ -96,6 +111,7 @@ function update() {
       // colisão com jogador
       if (px1 > o.x + 1 && px0 < o.x + o.w - 1 && pTop > o.Y + 1 && pBot < o.Y + o.h - 1) {
         if (o.type === 'fuel') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
+        else if (mode === 'modern' && (o.type === 'house' || o.type === 'tank')) { /* no chão: o jato passa por cima */ }
         else if (o.type !== 'house') { o.alive = false; boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o); kill(); return; }
         else { kill(); return; }
       }
@@ -116,7 +132,9 @@ function update() {
     const my0 = missile.Y, my1 = missile.Y + 8;
     let hit = missile.Y > scroll + VIEW_H;
     const { b, i } = lineAt(my1);
-    if (missile.x < b.L[i] || missile.x > b.R[i] || (b.IL[i] >= 0 && missile.x > b.IL[i] && missile.x < b.IR[i])) hit = true;
+    if (mode === 'classic') {
+      if (missile.x < b.L[i] || missile.x > b.R[i] || (b.IL[i] >= 0 && missile.x > b.IL[i] && missile.x < b.IR[i])) hit = true;
+    } else if (peakHit(missile.x + 1, my1)) hit = true;                  // moderno: só a montanha para o míssil
     if (!hit) {
       for (let g = Math.max(0, g0); g <= g1 && !hit; g++) for (const o of blocks[g].objs) {
         if (!o.alive || o.type === 'house') continue;
@@ -129,7 +147,7 @@ function update() {
       }
     }
     // a ponte é testada depois dos objetos, para o tanque sobre ela poder ser atingido
-    if (!hit && b.bridge && !b.broken && i >= 10 && i <= 21) {
+    if (!hit && b.bridge && !b.broken && i >= 10 && i <= 21 && missile.x > b.L[16] - 3 && missile.x < b.R[16] + 3) {
       b.broken = true; hit = true; addScore(500);
       boom(b.endC, b.g * BH + 16 * LINE, 'bridge');
     }

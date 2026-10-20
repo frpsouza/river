@@ -173,6 +173,20 @@ function drawCow(x, y, dir, phase) {
   ctx.restore();
 }
 
+function drawMountains(blk) {
+  // picos de trás primeiro; cada pico: rocha em dois tons, neve no topo, sombra no chão
+  for (const p of [...blk.mtns].sort((a, b) => (b.back ? 1 : 0) - (a.back ? 1 : 0))) {
+    const yb = VIEW_H - (p.Y - scroll), yt = yb - p.h;
+    ell(p.x + p.hw * 0.25, yb + 1, p.hw * 1.05, 2.4, 'rgba(0,0,30,.22)');
+    const rock = p.back ? '#7d8394' : '#9097a8', rockSh = p.back ? '#5f6577' : '#6f7588';
+    poly([p.x - p.hw, yb, p.x, yt, p.x + p.hw, yb], rock);
+    poly([p.x, yt, p.x + p.hw, yb, p.x + p.hw * 0.15, yb], rockSh);
+    const s = 0.34, sx = p.hw * s, sy = yt + p.h * s;                       // neve: terço de cima
+    poly([p.x, yt, p.x + sx, sy, p.x + sx * 0.35, sy - 2.2, p.x - sx * 0.2, sy + 1.2, p.x - sx, sy], '#f5f2ea');
+    poly([p.x, yt, p.x + sx, sy, p.x + sx * 0.35, sy - 2.2, p.x + 0.4, sy - 1], '#ddd8cc');
+  }
+}
+
 function drawBridge(blk) {
   const yTop = VIEW_H - ((blk.g * BH + 22 * LINE) - scroll), yBot = yTop + 12 * LINE;
   const Lm = blk.L[16], Rm = blk.R[16], h = yBot - yTop;
