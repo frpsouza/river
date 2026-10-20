@@ -73,6 +73,7 @@ function genOceanBlock(blk) {
     if (!st && i === startAt) {
       const kinds = ['long', 'long', 'chain', 'atoll', 'round', 'round'], kind = kinds[Math.floor(rng() * kinds.length)], T = ISLE_TYPES[kind];
       const w = T.w[0] + rng() * (T.w[1] - T.w[0]);
+      blk.isleKind = kind;                                                  // (usado pelo catálogo de gráficos)
       st = { kind, t: 0, len: Math.round(T.len[0] + rng() * (T.len[1] - T.len[0])), w,
         cx: w / 2 + 6 + rng() * (W - w - 12), ph: rng() * 6.28, k: 3 + Math.floor(rng() * 3) };
     }

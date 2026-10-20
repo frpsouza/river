@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Catálogo de gráficos</title>
+<style>
+  :root { --bg:#f4f5f8; --fg:#1b2033; --muted:#5d6475; --card:#fff; --line:#dfe2ea; --accent:#2c4bb5; --chk1:#e8eaf0; --chk2:#f7f8fb; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1220; --fg:#e8ecf5; --muted:#9aa3b8; --card:#181c2e; --line:#2a3048; --accent:#9fb7ff; --chk1:#22273b; --chk2:#2b3148; } }
+  * { box-sizing:border-box }
+  body { margin:0; font:15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--fg) }
+  header { padding:28px 20px 8px; max-width:1200px; margin:0 auto }
+  h1 { margin:0 0 4px; font-size:26px }
+  header p { margin:0; color:var(--muted) }
+  nav { position:sticky; top:0; z-index:2; background:var(--bg); border-bottom:1px solid var(--line); padding:10px 20px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center }
+  nav a { color:var(--fg); text-decoration:none; padding:4px 10px; border:1px solid var(--line); border-radius:999px; font-size:13px; background:var(--card) }
+  nav a span { color:var(--muted) }
+  main { max-width:1200px; margin:0 auto; padding:0 20px 60px }
+  h2 { margin:36px 0 2px; font-size:20px }
+  .lead { margin:0 0 14px; color:var(--muted) }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px }
+  .card { margin:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column }
+  .img { display:flex; align-items:center; justify-content:center; min-height:150px; padding:12px;
+          background:repeating-conic-gradient(var(--chk1) 0 25%, var(--chk2) 0 50%) 0 0/16px 16px }
+  .img img { max-width:100%; max-height:260px; object-fit:contain }
+  .img.pix img { image-rendering:pixelated }
+  figcaption { padding:10px 12px 12px; font-size:13px; display:flex; flex-direction:column; gap:3px }
+  figcaption b { font-size:14px }
+  code { font-size:12px; color:var(--accent) }
+  small, .modes { color:var(--muted); font-size:12px }
+  figcaption p { margin:4px 0 0; color:var(--muted) }
+  #telas .grid { grid-template-columns:repeat(auto-fill,minmax(260px,1fr)) }
+</style></head>
+<body>
+<header><h1>Catálogo de gráficos — River Raid (clone)</h1>
+<p>136 gráficos em 15 grupos, desenhados pelas próprias funções do jogo. Clique numa imagem para abrir o PNG.
+Gerado em 2026-10-20 20:21 por <code>scripts/gerar-catalogo.py</code>.</p></header>
+<nav><a href="#jato">Jato do jogador <span>19</span></a><a href="#navios">Navios e porta-aviões <span>10</span></a><a href="#helis">Helicópteros <span>10</span></a><a href="#avioes">Aviões e caças <span>11</span></a><a href="#tanques">Tanques <span>3</span></a><a href="#baloes">Balões <span>8</span></a><a href="#chefes">Chefes (aviões gigantes) <span>7</span></a><a href="#itens">Itens e power-ups <span>14</span></a><a href="#projeteis">Projéteis <span>5</span></a><a href="#cenario">Construções e cenário <span>17</span></a><a href="#nuvens">Nuvens <span>4</span></a><a href="#ilhas">Ilhas <span>5</span></a><a href="#terreno">Terreno: rio, margens, paredões e pontes <span>5</span></a><a href="#efeitos">Explosões e efeitos <span>11</span></a><a href="#telas">Telas completas <span>7</span></a></nav>
+<main><section id="jato"><h2>Jato do jogador</h2><p class="lead">O caça do jogador em cada estilo, com os quadros de inclinação das asas usados ao virar.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/jato/jato_vetor_esq_max.png" target="_blank"><img src="png/jato/jato_vetor_esq_max.png" alt="Jato flat — inclinado à esquerda (máx.)" loading="lazy"></a>
+  <figcaption><b>Jato flat — inclinado à esquerda (máx.)</b>
+    <code>jato_vetor_esq_max.png</code> <small>156×168 px</small>
+    <span class="modes">Classic, Modern, Ocean</span>
+    <p>Asa que desce encurta e escurece; a cabine desliza para o lado da curva. drawJet(bank = -1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/jato/jato_vetor_esq.png" target="_blank"><img src="png/jato/jato_vetor_esq.png" alt="Jato flat — inclinado à esquerda" loading="lazy"></a>
+  <figcaption><b>Jato flat — inclinado à esquerda</b>
+    <code>jato_vetor_esq.png</code> <small>156×168 px</small>
+    <span class="modes">Classic, Modern, Ocean</span>
+    <p>Asa que desce encurta e escurece; a cabine desliza para o lado da curva. drawJet(bank = -0.5).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/jato/jato_vetor_nivel.png" target="_blank"><img src="png/jato/jato_vetor_nivel.png" alt="Jato flat — nivelado" loading="lazy"></a>
+  <figcaption><b>Jato flat — nivelado</b>
+    <code>jato_vetor_nivel.png</code> <small>156×168 px</small>
+    <span class="modes">Classic, Modern, Ocean</span>
+    <p>Asa que desce encurta e escurece; a cabine desliza para o lado da curva. drawJet(bank = 0).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/jato/jato_vetor_dir.png" target="_blank"><img src="png/jato/jato_vetor_dir.png" alt="Jato flat — inclinado à direita" loading="lazy"></a>
+  <figcaption><b>Jato flat — inclinado à direita</b>
+    <code>jato_vetor_dir.png</code> <small>156×168 px</small>
+    <span class="modes">Classic, Modern, Ocean</span>
+    <p>Asa que desce encurta e escurece; a cabine desliza para o lado da curva. drawJet(bank = 0.5).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/jato/jato_vetor_dir_max.png" target="_blank"><img src="png/jato/jato_vetor_dir_max.png" alt="Jato flat — inclinado à direita (máx.)" loading="lazy"></a>
+  <figcaption><b>Jato flat — inclinado à direita (máx.)</b>
+    <code>jato_vetor_dir_max.png</code> <small>156×168 px</small>
+    <span class="modes">Classic, Modern, Ocean</span>
+    <p>Asa que desce encurta e escurece; a cabine desliza para o lado da curva. drawJet(bank = 1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_m4.png" target="_blank"><img src="png/jato/jato_retro_m4.png" alt="Jato pixel — quadro de inclinação -4" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação -4</b>
+    <code>jato_retro_m4.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(-4).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_m3.png" target="_blank"><img src="png/jato/jato_retro_m3.png" alt="Jato pixel — quadro de inclinação -3" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação -3</b>
+    <code>jato_retro_m3.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(-3).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_m2.png" target="_blank"><img src="png/jato/jato_retro_m2.png" alt="Jato pixel — quadro de inclinação -2" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação -2</b>
+    <code>jato_retro_m2.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(-2).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_m1.png" target="_blank"><img src="png/jato/jato_retro_m1.png" alt="Jato pixel — quadro de inclinação -1" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação -1</b>
+    <code>jato_retro_m1.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(-1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_p0.png" target="_blank"><img src="png/jato/jato_retro_p0.png" alt="Jato pixel — quadro de inclinação 0" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação 0</b>
+    <code>jato_retro_p0.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(0).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_p1.png" target="_blank"><img src="png/jato/jato_retro_p1.png" alt="Jato pixel — quadro de inclinação 1" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação 1</b>
+    <code>jato_retro_p1.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_p2.png" target="_blank"><img src="png/jato/jato_retro_p2.png" alt="Jato pixel — quadro de inclinação 2" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação 2</b>
+    <code>jato_retro_p2.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(2).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_p3.png" target="_blank"><img src="png/jato/jato_retro_p3.png" alt="Jato pixel — quadro de inclinação 3" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação 3</b>
+    <code>jato_retro_p3.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(3).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_retro_p4.png" target="_blank"><img src="png/jato/jato_retro_p4.png" alt="Jato pixel — quadro de inclinação 4" loading="lazy"></a>
+  <figcaption><b>Jato pixel — quadro de inclinação 4</b>
+    <code>jato_retro_p4.png</code> <small>152×176 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 9 quadros intermediários de inclinação (−4 a +4). jetSprite(4).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_pico_m2.png" target="_blank"><img src="png/jato/jato_pico_m2.png" alt="Jato PICO-8 — inclinação -2" loading="lazy"></a>
+  <figcaption><b>Jato PICO-8 — inclinação -2</b>
+    <code>jato_pico_m2.png</code> <small>108×120 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>Um dos 5 quadros de inclinação, paleta de 16 cores. jetP8(-2).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_pico_m1.png" target="_blank"><img src="png/jato/jato_pico_m1.png" alt="Jato PICO-8 — inclinação -1" loading="lazy"></a>
+  <figcaption><b>Jato PICO-8 — inclinação -1</b>
+    <code>jato_pico_m1.png</code> <small>108×120 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>Um dos 5 quadros de inclinação, paleta de 16 cores. jetP8(-1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_pico_p0.png" target="_blank"><img src="png/jato/jato_pico_p0.png" alt="Jato PICO-8 — inclinação 0" loading="lazy"></a>
+  <figcaption><b>Jato PICO-8 — inclinação 0</b>
+    <code>jato_pico_p0.png</code> <small>108×120 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>Um dos 5 quadros de inclinação, paleta de 16 cores. jetP8(0).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_pico_p1.png" target="_blank"><img src="png/jato/jato_pico_p1.png" alt="Jato PICO-8 — inclinação 1" loading="lazy"></a>
+  <figcaption><b>Jato PICO-8 — inclinação 1</b>
+    <code>jato_pico_p1.png</code> <small>108×120 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>Um dos 5 quadros de inclinação, paleta de 16 cores. jetP8(1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/jato/jato_pico_p2.png" target="_blank"><img src="png/jato/jato_pico_p2.png" alt="Jato PICO-8 — inclinação 2" loading="lazy"></a>
+  <figcaption><b>Jato PICO-8 — inclinação 2</b>
+    <code>jato_pico_p2.png</code> <small>108×120 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>Um dos 5 quadros de inclinação, paleta de 16 cores. jetP8(2).</p></figcaption>
+</figure></div></section><section id="navios"><h2>Navios e porta-aviões</h2><p class="lead">Embarcações inimigas: vista de lado (rio) e vista de cima (oceano).</p><div class="grid"><figure class="card">
+  <a class="img " href="png/navios/navio_lado_esq.png" target="_blank"><img src="png/navios/navio_lado_esq.png" alt="Navio de patrulha — de lado, proa à esquerda" loading="lazy"></a>
+  <figcaption><b>Navio de patrulha — de lado, proa à esquerda</b>
+    <code>navio_lado_esq.png</code> <small>276×102 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Casco vermelho em dois tons, cabine creme e chaminé. drawShip(dir = −1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/navios/navio_lado_dir.png" target="_blank"><img src="png/navios/navio_lado_dir.png" alt="Navio de patrulha — de lado, proa à direita" loading="lazy"></a>
+  <figcaption><b>Navio de patrulha — de lado, proa à direita</b>
+    <code>navio_lado_dir.png</code> <small>276×102 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Mesmo navio espelhado. drawShip(dir = 1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/navios/navio_cima.png" target="_blank"><img src="png/navios/navio_cima.png" alt="Navio de patrulha — visto de cima" loading="lazy"></a>
+  <figcaption><b>Navio de patrulha — visto de cima</b>
+    <code>navio_cima.png</code> <small>400×90 px</small>
+    <span class="modes">Ocean</span>
+    <p>Proa afilada, ponte de comando, canhão giratório e esteira. drawShipTop().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/navios/navio_cima_disparo.png" target="_blank"><img src="png/navios/navio_cima_disparo.png" alt="Navio de patrulha — disparando" loading="lazy"></a>
+  <figcaption><b>Navio de patrulha — disparando</b>
+    <code>navio_cima_disparo.png</code> <small>400×130 px</small>
+    <span class="modes">Ocean</span>
+    <p>Canhão mirando o jato com clarão na boca. drawShipTop(flash).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/navios/navio_pixel_0.png" target="_blank"><img src="png/navios/navio_pixel_0.png" alt="Navio pixel — rumo 0°" loading="lazy"></a>
+  <figcaption><b>Navio pixel — rumo 0°</b>
+    <code>navio_pixel_0.png</code> <small>288×288 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 32 rumos pré-girados. shipSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/navios/navio_pixel_23.png" target="_blank"><img src="png/navios/navio_pixel_23.png" alt="Navio pixel — rumo 23°" loading="lazy"></a>
+  <figcaption><b>Navio pixel — rumo 23°</b>
+    <code>navio_pixel_23.png</code> <small>288×288 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 32 rumos pré-girados. shipSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/navios/navio_pixel_90.png" target="_blank"><img src="png/navios/navio_pixel_90.png" alt="Navio pixel — rumo 90°" loading="lazy"></a>
+  <figcaption><b>Navio pixel — rumo 90°</b>
+    <code>navio_pixel_90.png</code> <small>288×288 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 32 rumos pré-girados. shipSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/navios/navio_pico.png" target="_blank"><img src="png/navios/navio_pico.png" alt="Navio PICO-8" loading="lazy"></a>
+  <figcaption><b>Navio PICO-8</b>
+    <code>navio_pico.png</code> <small>216×72 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>Navio de lado em pixel, 18×6. SHIP_P8.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/navios/porta_avioes.png" target="_blank"><img src="png/navios/porta_avioes.png" alt="Porta-aviões" loading="lazy"></a>
+  <figcaption><b>Porta-aviões</b>
+    <code>porta_avioes.png</code> <small>520×136 px</small>
+    <span class="modes">Ocean</span>
+    <p>Casco cinza, convés com pista tracejada, ilha de comando e caças estacionados; lança caças. drawCarrier().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/navios/porta_avioes_avariado.png" target="_blank"><img src="png/navios/porta_avioes_avariado.png" alt="Porta-aviões — avariado" loading="lazy"></a>
+  <figcaption><b>Porta-aviões — avariado</b>
+    <code>porta_avioes_avariado.png</code> <small>520×160 px</small>
+    <span class="modes">Ocean</span>
+    <p>Com barra de vida (4 de 10). drawCarrier(hp = 4).</p></figcaption>
+</figure></div></section><section id="helis"><h2>Helicópteros</h2><p class="lead">Helicópteros inimigos; a hélice gira em quadros e a altitude muda o tamanho.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/helis/heli_lado_q0.png" target="_blank"><img src="png/helis/heli_lado_q0.png" alt="Helicóptero — de lado, hélice quadro 1" loading="lazy"></a>
+  <figcaption><b>Helicóptero — de lado, hélice quadro 1</b>
+    <code>heli_lado_q0.png</code> <small>180×204 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Cabine azul com vidro, cauda e esquis. drawHeli().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/helis/heli_lado_q3.png" target="_blank"><img src="png/helis/heli_lado_q3.png" alt="Helicóptero — de lado, hélice quadro 2" loading="lazy"></a>
+  <figcaption><b>Helicóptero — de lado, hélice quadro 2</b>
+    <code>heli_lado_q3.png</code> <small>180×204 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Cabine azul com vidro, cauda e esquis. drawHeli().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/helis/heli_cima.png" target="_blank"><img src="png/helis/heli_cima.png" alt="Helicóptero — visto de cima" loading="lazy"></a>
+  <figcaption><b>Helicóptero — visto de cima</b>
+    <code>heli_cima.png</code> <small>220×220 px</small>
+    <span class="modes">Ocean</span>
+    <p>Cabine em gota e disco do rotor girando. drawHeliTop(alt = 1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/helis/heli_cima_baixo.png" target="_blank"><img src="png/helis/heli_cima_baixo.png" alt="Helicóptero — de cima, voando baixo" loading="lazy"></a>
+  <figcaption><b>Helicóptero — de cima, voando baixo</b>
+    <code>heli_cima_baixo.png</code> <small>220×220 px</small>
+    <span class="modes">Ocean</span>
+    <p>Menor e com sombra mais perto. drawHeliTop(alt = 0,6).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/helis/heli_pixel_q0.png" target="_blank"><img src="png/helis/heli_pixel_q0.png" alt="Helicóptero pixel — rotor quadro 1" loading="lazy"></a>
+  <figcaption><b>Helicóptero pixel — rotor quadro 1</b>
+    <code>heli_pixel_q0.png</code> <small>174×174 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 4 quadros do rotor. heliSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/helis/heli_pixel_q1.png" target="_blank"><img src="png/helis/heli_pixel_q1.png" alt="Helicóptero pixel — rotor quadro 2" loading="lazy"></a>
+  <figcaption><b>Helicóptero pixel — rotor quadro 2</b>
+    <code>heli_pixel_q1.png</code> <small>174×174 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 4 quadros do rotor. heliSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/helis/heli_pixel_q2.png" target="_blank"><img src="png/helis/heli_pixel_q2.png" alt="Helicóptero pixel — rotor quadro 3" loading="lazy"></a>
+  <figcaption><b>Helicóptero pixel — rotor quadro 3</b>
+    <code>heli_pixel_q2.png</code> <small>174×174 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 4 quadros do rotor. heliSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/helis/heli_pixel_q3.png" target="_blank"><img src="png/helis/heli_pixel_q3.png" alt="Helicóptero pixel — rotor quadro 4" loading="lazy"></a>
+  <figcaption><b>Helicóptero pixel — rotor quadro 4</b>
+    <code>heli_pixel_q3.png</code> <small>174×174 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos 4 quadros do rotor. heliSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/helis/heli_pico_q0.png" target="_blank"><img src="png/helis/heli_pico_q0.png" alt="Helicóptero PICO-8 — rotor quadro 1" loading="lazy"></a>
+  <figcaption><b>Helicóptero PICO-8 — rotor quadro 1</b>
+    <code>heli_pico_q0.png</code> <small>168×96 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>HELI_P8 + HELI_BODY.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/helis/heli_pico_q1.png" target="_blank"><img src="png/helis/heli_pico_q1.png" alt="Helicóptero PICO-8 — rotor quadro 2" loading="lazy"></a>
+  <figcaption><b>Helicóptero PICO-8 — rotor quadro 2</b>
+    <code>heli_pico_q1.png</code> <small>168×96 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>HELI_P8 + HELI_BODY.</p></figcaption>
+</figure></div></section><section id="avioes"><h2>Aviões e caças</h2><p class="lead">Aviões que cruzam a tela e os caças das esquadrilhas.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/avioes/aviao_azul.png" target="_blank"><img src="png/avioes/aviao_azul.png" alt="Avião de travessia" loading="lazy"></a>
+  <figcaption><b>Avião de travessia</b>
+    <code>aviao_azul.png</code> <small>189×105 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Flecha azul-clara que cruza o rio. drawPlane().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/avioes/caca_vermelho.png" target="_blank"><img src="png/avioes/caca_vermelho.png" alt="Caça de esquadrilha" loading="lazy"></a>
+  <figcaption><b>Caça de esquadrilha</b>
+    <code>caca_vermelho.png</code> <small>189×105 px</small>
+    <span class="modes">Ocean</span>
+    <p>Flecha vermelha que voa em formação e atira. drawPlane(FLIER_PAL).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/caca_pixel_0.png" target="_blank"><img src="png/avioes/caca_pixel_0.png" alt="Caça pixel — rotação 0°" loading="lazy"></a>
+  <figcaption><b>Caça pixel — rotação 0°</b>
+    <code>caca_pixel_0.png</code> <small>132×132 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Uma das 32 rotações pré-calculadas. fighterSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/caca_pixel_45.png" target="_blank"><img src="png/avioes/caca_pixel_45.png" alt="Caça pixel — rotação 45°" loading="lazy"></a>
+  <figcaption><b>Caça pixel — rotação 45°</b>
+    <code>caca_pixel_45.png</code> <small>132×132 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Uma das 32 rotações pré-calculadas. fighterSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/caca_pixel_90.png" target="_blank"><img src="png/avioes/caca_pixel_90.png" alt="Caça pixel — rotação 90°" loading="lazy"></a>
+  <figcaption><b>Caça pixel — rotação 90°</b>
+    <code>caca_pixel_90.png</code> <small>132×132 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Uma das 32 rotações pré-calculadas. fighterSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/caca_pixel_135.png" target="_blank"><img src="png/avioes/caca_pixel_135.png" alt="Caça pixel — rotação 135°" loading="lazy"></a>
+  <figcaption><b>Caça pixel — rotação 135°</b>
+    <code>caca_pixel_135.png</code> <small>132×132 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Uma das 32 rotações pré-calculadas. fighterSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/caca_pixel_parafuso1.png" target="_blank"><img src="png/avioes/caca_pixel_parafuso1.png" alt="Caça pixel — parafuso, quadro 1" loading="lazy"></a>
+  <figcaption><b>Caça pixel — parafuso, quadro 1</b>
+    <code>caca_pixel_parafuso1.png</code> <small>132×132 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Quadros do giro no próprio eixo. fighterSprite(roll = 1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/caca_pixel_parafuso2.png" target="_blank"><img src="png/avioes/caca_pixel_parafuso2.png" alt="Caça pixel — parafuso, quadro 2" loading="lazy"></a>
+  <figcaption><b>Caça pixel — parafuso, quadro 2</b>
+    <code>caca_pixel_parafuso2.png</code> <small>132×132 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Quadros do giro no próprio eixo. fighterSprite(roll = 2).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/caca_pixel_parafuso3.png" target="_blank"><img src="png/avioes/caca_pixel_parafuso3.png" alt="Caça pixel — parafuso, quadro 3" loading="lazy"></a>
+  <figcaption><b>Caça pixel — parafuso, quadro 3</b>
+    <code>caca_pixel_parafuso3.png</code> <small>132×132 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Quadros do giro no próprio eixo. fighterSprite(roll = 3).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/caca_pixel_parafuso4.png" target="_blank"><img src="png/avioes/caca_pixel_parafuso4.png" alt="Caça pixel — parafuso, quadro 4" loading="lazy"></a>
+  <figcaption><b>Caça pixel — parafuso, quadro 4</b>
+    <code>caca_pixel_parafuso4.png</code> <small>132×132 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Quadros do giro no próprio eixo. fighterSprite(roll = 4).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/avioes/aviao_pico.png" target="_blank"><img src="png/avioes/aviao_pico.png" alt="Avião PICO-8" loading="lazy"></a>
+  <figcaption><b>Avião PICO-8</b>
+    <code>aviao_pico.png</code> <small>144×72 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>PLANE_P8.</p></figcaption>
+</figure></div></section><section id="tanques"><h2>Tanques</h2><p class="lead">Tanques de guerra vistos de lado, na margem ou atravessando a ponte.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/tanques/tanque_dir.png" target="_blank"><img src="png/tanques/tanque_dir.png" alt="Tanque — canhão à direita" loading="lazy"></a>
+  <figcaption><b>Tanque — canhão à direita</b>
+    <code>tanque_dir.png</code> <small>192×112 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Esteira com rodas, casco oliva, cúpula e canhão. drawTank(aim = 1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/tanques/tanque_esq.png" target="_blank"><img src="png/tanques/tanque_esq.png" alt="Tanque — canhão à esquerda" loading="lazy"></a>
+  <figcaption><b>Tanque — canhão à esquerda</b>
+    <code>tanque_esq.png</code> <small>192×112 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>drawTank(aim = −1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/tanques/tanque_pico.png" target="_blank"><img src="png/tanques/tanque_pico.png" alt="Tanque PICO-8" loading="lazy"></a>
+  <figcaption><b>Tanque PICO-8</b>
+    <code>tanque_pico.png</code> <small>120×60 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>TANK_P8.</p></figcaption>
+</figure></div></section><section id="baloes"><h2>Balões</h2><p class="lead">Balões de ar quente que flutuam devagar.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/baloes/balao_lado_0.png" target="_blank"><img src="png/baloes/balao_lado_0.png" alt="Balão vermelho e branco — de lado" loading="lazy"></a>
+  <figcaption><b>Balão vermelho e branco — de lado</b>
+    <code>balao_lado_0.png</code> <small>170×260 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Envelope listrado, cordas e cesto. drawBalloon().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/baloes/balao_cima_0.png" target="_blank"><img src="png/baloes/balao_cima_0.png" alt="Balão vermelho e branco — visto de cima" loading="lazy"></a>
+  <figcaption><b>Balão vermelho e branco — visto de cima</b>
+    <code>balao_cima_0.png</code> <small>240×250 px</small>
+    <span class="modes">Ocean</span>
+    <p>Gomos e cesto no centro; sombra longe. drawBalloonTop().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/baloes/balao_pixel_0.png" target="_blank"><img src="png/baloes/balao_pixel_0.png" alt="Balão vermelho e branco — pixel" loading="lazy"></a>
+  <figcaption><b>Balão vermelho e branco — pixel</b>
+    <code>balao_pixel_0.png</code> <small>150×150 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos quadros de gomos girando. balloonSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/baloes/balao_pico_0.png" target="_blank"><img src="png/baloes/balao_pico_0.png" alt="Balão vermelho e branco — PICO-8" loading="lazy"></a>
+  <figcaption><b>Balão vermelho e branco — PICO-8</b>
+    <code>balao_pico_0.png</code> <small>120×144 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>BALLOON_P8.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/baloes/balao_lado_1.png" target="_blank"><img src="png/baloes/balao_lado_1.png" alt="Balão amarelo — de lado" loading="lazy"></a>
+  <figcaption><b>Balão amarelo — de lado</b>
+    <code>balao_lado_1.png</code> <small>170×260 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Envelope listrado, cordas e cesto. drawBalloon().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/baloes/balao_cima_1.png" target="_blank"><img src="png/baloes/balao_cima_1.png" alt="Balão amarelo — visto de cima" loading="lazy"></a>
+  <figcaption><b>Balão amarelo — visto de cima</b>
+    <code>balao_cima_1.png</code> <small>240×250 px</small>
+    <span class="modes">Ocean</span>
+    <p>Gomos e cesto no centro; sombra longe. drawBalloonTop().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/baloes/balao_pixel_1.png" target="_blank"><img src="png/baloes/balao_pixel_1.png" alt="Balão amarelo — pixel" loading="lazy"></a>
+  <figcaption><b>Balão amarelo — pixel</b>
+    <code>balao_pixel_1.png</code> <small>150×150 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>Um dos quadros de gomos girando. balloonSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/baloes/balao_pico_1.png" target="_blank"><img src="png/baloes/balao_pico_1.png" alt="Balão amarelo — PICO-8" loading="lazy"></a>
+  <figcaption><b>Balão amarelo — PICO-8</b>
+    <code>balao_pico_1.png</code> <small>120×144 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>BALLOON_P8.</p></figcaption>
+</figure></div></section><section id="chefes"><h2>Chefes (aviões gigantes)</h2><p class="lead">Os quatro chefes do oceano, com as variações de defesa.</p><div class="grid"><figure class="card">
+  <a class="img pix" href="png/chefes/chefe_bombardeiro.png" target="_blank"><img src="png/chefes/chefe_bombardeiro.png" alt="Bombardeiro" loading="lazy"></a>
+  <figcaption><b>Bombardeiro</b>
+    <code>chefe_bombardeiro.png</code> <small>600×450 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Quatro motores com hélices, asas com pontas laranja, nariz de vidro.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/chefes/chefe_canhoneira.png" target="_blank"><img src="png/chefes/chefe_canhoneira.png" alt="Canhoneira" loading="lazy"></a>
+  <figcaption><b>Canhoneira</b>
+    <code>chefe_canhoneira.png</code> <small>600×450 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Asa delta escura, motores de brilho ciano e pods de foguete.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/chefes/chefe_canhoneira_escudo.png" target="_blank"><img src="png/chefes/chefe_canhoneira_escudo.png" alt="Canhoneira — com escudo frontal" loading="lazy"></a>
+  <figcaption><b>Canhoneira — com escudo frontal</b>
+    <code>chefe_canhoneira_escudo.png</code> <small>600×450 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Arco de energia que rebate tiros vindos de baixo.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/chefes/chefe_dirigivel.png" target="_blank"><img src="png/chefes/chefe_dirigivel.png" alt="Dirigível — blindado" loading="lazy"></a>
+  <figcaption><b>Dirigível — blindado</b>
+    <code>chefe_dirigivel.png</code> <small>600×450 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Envelope listrado, gôndola com hélices e 4 torres; anel dourado = núcleo blindado.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/chefes/chefe_dirigivel_avariado.png" target="_blank"><img src="png/chefes/chefe_dirigivel_avariado.png" alt="Dirigível — torres destruídas" loading="lazy"></a>
+  <figcaption><b>Dirigível — torres destruídas</b>
+    <code>chefe_dirigivel_avariado.png</code> <small>600×450 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Sem torres, o núcleo fica vulnerável.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/chefes/chefe_interceptador.png" target="_blank"><img src="png/chefes/chefe_interceptador.png" alt="Interceptador" loading="lazy"></a>
+  <figcaption><b>Interceptador</b>
+    <code>chefe_interceptador.png</code> <small>600×450 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Caça enflechado preto e vermelho com pós-combustão.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/chefes/chefe_interceptador_mira.png" target="_blank"><img src="png/chefes/chefe_interceptador_mira.png" alt="Interceptador — mirando a investida" loading="lazy"></a>
+  <figcaption><b>Interceptador — mirando a investida</b>
+    <code>chefe_interceptador_mira.png</code> <small>600×450 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Linha tracejada vermelha até o alvo antes do mergulho.</p></figcaption>
+</figure></div></section><section id="itens"><h2>Itens e power-ups</h2><p class="lead">Combustível (postos de abastecimento) e os power-ups coletáveis.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/itens/combustivel_lado.png" target="_blank"><img src="png/itens/combustivel_lado.png" alt="Tambor de combustível — de lado" loading="lazy"></a>
+  <figcaption><b>Tambor de combustível — de lado</b>
+    <code>combustivel_lado.png</code> <small>132×192 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Galão vermelho com faixa &quot;FUEL&quot;. drawFuel().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/itens/combustivel_cima.png" target="_blank"><img src="png/itens/combustivel_cima.png" alt="Balsa de combustível — de cima" loading="lazy"></a>
+  <figcaption><b>Balsa de combustível — de cima</b>
+    <code>combustivel_cima.png</code> <small>132×192 px</small>
+    <span class="modes">Ocean</span>
+    <p>Dois tanques redondos marcados &quot;F&quot;. drawFuelTop().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/itens/combustivel_pixel.png" target="_blank"><img src="png/itens/combustivel_pixel.png" alt="Balsa de combustível — pixel" loading="lazy"></a>
+  <figcaption><b>Balsa de combustível — pixel</b>
+    <code>combustivel_pixel.png</code> <small>108×156 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>fuelSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/itens/combustivel_pico.png" target="_blank"><img src="png/itens/combustivel_pico.png" alt="Tambor de combustível — PICO-8" loading="lazy"></a>
+  <figcaption><b>Tambor de combustível — PICO-8</b>
+    <code>combustivel_pico.png</code> <small>72×144 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>FUEL_P8.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/itens/pu_shield.png" target="_blank"><img src="png/itens/pu_shield.png" alt="Power-up: Escudo" loading="lazy"></a>
+  <figcaption><b>Power-up: Escudo</b>
+    <code>pu_shield.png</code> <small>204×204 px</small>
+    <span class="modes">Modern, Ocean</span>
+    <p>Quadrado com ícone e halo pulsando. drawPowerup().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/itens/pu_pixel_shield.png" target="_blank"><img src="png/itens/pu_pixel_shield.png" alt="Power-up pixel: Escudo" loading="lazy"></a>
+  <figcaption><b>Power-up pixel: Escudo</b>
+    <code>pu_pixel_shield.png</code> <small>112×112 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>puSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/itens/pu_triple.png" target="_blank"><img src="png/itens/pu_triple.png" alt="Power-up: Tiro triplo" loading="lazy"></a>
+  <figcaption><b>Power-up: Tiro triplo</b>
+    <code>pu_triple.png</code> <small>204×204 px</small>
+    <span class="modes">Modern, Ocean</span>
+    <p>Quadrado com ícone e halo pulsando. drawPowerup().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/itens/pu_pixel_triple.png" target="_blank"><img src="png/itens/pu_pixel_triple.png" alt="Power-up pixel: Tiro triplo" loading="lazy"></a>
+  <figcaption><b>Power-up pixel: Tiro triplo</b>
+    <code>pu_pixel_triple.png</code> <small>112×112 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>puSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/itens/pu_rapid.png" target="_blank"><img src="png/itens/pu_rapid.png" alt="Power-up: Tiro rápido" loading="lazy"></a>
+  <figcaption><b>Power-up: Tiro rápido</b>
+    <code>pu_rapid.png</code> <small>204×204 px</small>
+    <span class="modes">Modern, Ocean</span>
+    <p>Quadrado com ícone e halo pulsando. drawPowerup().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/itens/pu_pixel_rapid.png" target="_blank"><img src="png/itens/pu_pixel_rapid.png" alt="Power-up pixel: Tiro rápido" loading="lazy"></a>
+  <figcaption><b>Power-up pixel: Tiro rápido</b>
+    <code>pu_pixel_rapid.png</code> <small>112×112 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>puSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/itens/pu_bomb.png" target="_blank"><img src="png/itens/pu_bomb.png" alt="Power-up: Bomba" loading="lazy"></a>
+  <figcaption><b>Power-up: Bomba</b>
+    <code>pu_bomb.png</code> <small>204×204 px</small>
+    <span class="modes">Modern, Ocean</span>
+    <p>Quadrado com ícone e halo pulsando. drawPowerup().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/itens/pu_pixel_bomb.png" target="_blank"><img src="png/itens/pu_pixel_bomb.png" alt="Power-up pixel: Bomba" loading="lazy"></a>
+  <figcaption><b>Power-up pixel: Bomba</b>
+    <code>pu_pixel_bomb.png</code> <small>112×112 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>puSprite().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/itens/pu_life.png" target="_blank"><img src="png/itens/pu_life.png" alt="Power-up: Vida extra / reparo" loading="lazy"></a>
+  <figcaption><b>Power-up: Vida extra / reparo</b>
+    <code>pu_life.png</code> <small>204×204 px</small>
+    <span class="modes">Modern, Ocean</span>
+    <p>Quadrado com ícone e halo pulsando. drawPowerup().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/itens/pu_pixel_life.png" target="_blank"><img src="png/itens/pu_pixel_life.png" alt="Power-up pixel: Vida extra / reparo" loading="lazy"></a>
+  <figcaption><b>Power-up pixel: Vida extra / reparo</b>
+    <code>pu_pixel_life.png</code> <small>112×112 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>puSprite().</p></figcaption>
+</figure></div></section><section id="projeteis"><h2>Projéteis</h2><p class="lead">Tiros do jogador e dos inimigos.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/projeteis/missil.png" target="_blank"><img src="png/projeteis/missil.png" alt="Míssil do jogador" loading="lazy"></a>
+  <figcaption><b>Míssil do jogador</b>
+    <code>missil.png</code> <small>80×140 px</small>
+    <span class="modes">todos</span>
+    <p>Cápsula amarela com ponta branca (sai em rajadas de 10).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/projeteis/tiro_inimigo.png" target="_blank"><img src="png/projeteis/tiro_inimigo.png" alt="Tiro inimigo" loading="lazy"></a>
+  <figcaption><b>Tiro inimigo</b>
+    <code>tiro_inimigo.png</code> <small>240×128 px</small>
+    <span class="modes">todos</span>
+    <p>Rastro amarelo→vermelho, halo vermelho, corpo laranja e núcleo branco. drawShell().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/projeteis/foguete.png" target="_blank"><img src="png/projeteis/foguete.png" alt="Foguete teleguiado" loading="lazy"></a>
+  <figcaption><b>Foguete teleguiado</b>
+    <code>foguete.png</code> <small>240×128 px</small>
+    <span class="modes">Ocean</span>
+    <p>Persegue o jato (canhoneira). drawShell(kind = rocket).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/projeteis/mina.png" target="_blank"><img src="png/projeteis/mina.png" alt="Mina flutuante" loading="lazy"></a>
+  <figcaption><b>Mina flutuante</b>
+    <code>mina.png</code> <small>160×160 px</small>
+    <span class="modes">Ocean</span>
+    <p>Esfera com espetos e luz piscando (dirigível). drawShell(kind = mine).</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/projeteis/tiro_pixel.png" target="_blank"><img src="png/projeteis/tiro_pixel.png" alt="Tiro inimigo — pixel" loading="lazy"></a>
+  <figcaption><b>Tiro inimigo — pixel</b>
+    <code>tiro_pixel.png</code> <small>70×70 px</small>
+    <span class="modes">Retro Ocean</span>
+    <p>bulletSprite().</p></figcaption>
+</figure></div></section><section id="cenario"><h2>Construções e cenário</h2><p class="lead">Casas, árvores, campos e animais das margens e ilhas.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/cenario/casa_telhado_escuro.png" target="_blank"><img src="png/cenario/casa_telhado_escuro.png" alt="Casa — telhado escuro" loading="lazy"></a>
+  <figcaption><b>Casa — telhado escuro</b>
+    <code>casa_telhado_escuro.png</code> <small>228×150 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Parede creme, porta e janela. drawHouse(house1).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/casa_telhado_vermelho.png" target="_blank"><img src="png/cenario/casa_telhado_vermelho.png" alt="Casa — telhado vermelho" loading="lazy"></a>
+  <figcaption><b>Casa — telhado vermelho</b>
+    <code>casa_telhado_vermelho.png</code> <small>228×150 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Variação espelhada. drawHouse(house2).</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/arvore_redonda_escura.png" target="_blank"><img src="png/cenario/arvore_redonda_escura.png" alt="Árvore de copa redonda — margem escura" loading="lazy"></a>
+  <figcaption><b>Árvore de copa redonda — margem escura</b>
+    <code>arvore_redonda_escura.png</code> <small>128×192 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Vista de lado. drawTree().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/arvore_redonda_clara.png" target="_blank"><img src="png/cenario/arvore_redonda_clara.png" alt="Árvore de copa redonda — margem clara" loading="lazy"></a>
+  <figcaption><b>Árvore de copa redonda — margem clara</b>
+    <code>arvore_redonda_clara.png</code> <small>128×192 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Vista de lado. drawTree().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/arvore_pinheiro_escura.png" target="_blank"><img src="png/cenario/arvore_pinheiro_escura.png" alt="Árvore de pinheiro — margem escura" loading="lazy"></a>
+  <figcaption><b>Árvore de pinheiro — margem escura</b>
+    <code>arvore_pinheiro_escura.png</code> <small>128×192 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Vista de lado. drawTree().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/arvore_pinheiro_clara.png" target="_blank"><img src="png/cenario/arvore_pinheiro_clara.png" alt="Árvore de pinheiro — margem clara" loading="lazy"></a>
+  <figcaption><b>Árvore de pinheiro — margem clara</b>
+    <code>arvore_pinheiro_clara.png</code> <small>128×192 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Vista de lado. drawTree().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/arvore_cima.png" target="_blank"><img src="png/cenario/arvore_cima.png" alt="Árvore vista de cima" loading="lazy"></a>
+  <figcaption><b>Árvore vista de cima</b>
+    <code>arvore_cima.png</code> <small>144×144 px</small>
+    <span class="modes">Ocean</span>
+    <p>Copa redonda das ilhas do oceano. drawTreeTop().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/pasto_com_vacas.png" target="_blank"><img src="png/cenario/pasto_com_vacas.png" alt="Pasto cercado com vacas" loading="lazy"></a>
+  <figcaption><b>Pasto cercado com vacas</b>
+    <code>pasto_com_vacas.png</code> <small>310×180 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Campo com cerca fina. drawField() + drawCow().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/vaca.png" target="_blank"><img src="png/cenario/vaca.png" alt="Vaca" loading="lazy"></a>
+  <figcaption><b>Vaca</b>
+    <code>vaca.png</code> <small>140×110 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Malhada, vista de lado. drawCow().</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/cenario/vaca_pastando.png" target="_blank"><img src="png/cenario/vaca_pastando.png" alt="Vaca pastando" loading="lazy"></a>
+  <figcaption><b>Vaca pastando</b>
+    <code>vaca_pastando.png</code> <small>140×110 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Cabeça baixa. drawCow().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/cenario/arvore_pico_redonda_escura.png" target="_blank"><img src="png/cenario/arvore_pico_redonda_escura.png" alt="Árvore PICO-8 — redonda (margem escura)" loading="lazy"></a>
+  <figcaption><b>Árvore PICO-8 — redonda (margem escura)</b>
+    <code>arvore_pico_redonda_escura.png</code> <small>42×56 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>treeP8().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/cenario/arvore_pico_redonda_clara.png" target="_blank"><img src="png/cenario/arvore_pico_redonda_clara.png" alt="Árvore PICO-8 — redonda (margem clara)" loading="lazy"></a>
+  <figcaption><b>Árvore PICO-8 — redonda (margem clara)</b>
+    <code>arvore_pico_redonda_clara.png</code> <small>42×56 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>treeP8().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/cenario/arvore_pico_pinheiro_escura.png" target="_blank"><img src="png/cenario/arvore_pico_pinheiro_escura.png" alt="Árvore PICO-8 — pinheiro (margem escura)" loading="lazy"></a>
+  <figcaption><b>Árvore PICO-8 — pinheiro (margem escura)</b>
+    <code>arvore_pico_pinheiro_escura.png</code> <small>42×70 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>treeP8().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/cenario/arvore_pico_pinheiro_clara.png" target="_blank"><img src="png/cenario/arvore_pico_pinheiro_clara.png" alt="Árvore PICO-8 — pinheiro (margem clara)" loading="lazy"></a>
+  <figcaption><b>Árvore PICO-8 — pinheiro (margem clara)</b>
+    <code>arvore_pico_pinheiro_clara.png</code> <small>42×70 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>treeP8().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/cenario/vaca_pico.png" target="_blank"><img src="png/cenario/vaca_pico.png" alt="Vaca PICO-8" loading="lazy"></a>
+  <figcaption><b>Vaca PICO-8</b>
+    <code>vaca_pico.png</code> <small>56×42 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>COW_P8.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/cenario/casa_pico_1.png" target="_blank"><img src="png/cenario/casa_pico_1.png" alt="Casa PICO-8 — telhado escuro" loading="lazy"></a>
+  <figcaption><b>Casa PICO-8 — telhado escuro</b>
+    <code>casa_pico_1.png</code> <small>216×108 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>HOUSE_P8.house1.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/cenario/casa_pico_2.png" target="_blank"><img src="png/cenario/casa_pico_2.png" alt="Casa PICO-8 — telhado vermelho" loading="lazy"></a>
+  <figcaption><b>Casa PICO-8 — telhado vermelho</b>
+    <code>casa_pico_2.png</code> <small>216×108 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    <p>HOUSE_P8.house2.</p></figcaption>
+</figure></div></section><section id="nuvens"><h2>Nuvens</h2><p class="lead">Os quatro tipos de nuvem do oceano (recortes desenhados sobre o mar).</p><div class="grid"><figure class="card">
+  <a class="img pix" href="png/nuvens/nuvem_puff.png" target="_blank"><img src="png/nuvens/nuvem_puff.png" alt="Nuvem: Flocos" loading="lazy"></a>
+  <figcaption><b>Nuvem: Flocos</b>
+    <code>nuvem_puff.png</code> <small>287×295 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Base sombreada e flocos brancos, com a sombra projetada no mar. getClouds().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/nuvens/nuvem_bank.png" target="_blank"><img src="png/nuvens/nuvem_bank.png" alt="Nuvem: Faixa comprida" loading="lazy"></a>
+  <figcaption><b>Nuvem: Faixa comprida</b>
+    <code>nuvem_bank.png</code> <small>391×1054 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Base sombreada e flocos brancos, com a sombra projetada no mar. getClouds().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/nuvens/nuvem_wisp.png" target="_blank"><img src="png/nuvens/nuvem_wisp.png" alt="Nuvem: Fiapos" loading="lazy"></a>
+  <figcaption><b>Nuvem: Fiapos</b>
+    <code>nuvem_wisp.png</code> <small>281×647 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Base sombreada e flocos brancos, com a sombra projetada no mar. getClouds().</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/nuvens/nuvem_tower.png" target="_blank"><img src="png/nuvens/nuvem_tower.png" alt="Nuvem: Torre (cúmulo)" loading="lazy"></a>
+  <figcaption><b>Nuvem: Torre (cúmulo)</b>
+    <code>nuvem_tower.png</code> <small>288×476 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Base sombreada e flocos brancos, com a sombra projetada no mar. getClouds().</p></figcaption>
+</figure></div></section><section id="ilhas"><h2>Ilhas</h2><p class="lead">Ilhas do rio e os quatro tipos de ilha do oceano (recortes do jogo).</p><div class="grid"><figure class="card">
+  <a class="img " href="png/ilhas/ilha_oceano_long.png" target="_blank"><img src="png/ilhas/ilha_oceano_long.png" alt="Ilha longa" loading="lazy"></a>
+  <figcaption><b>Ilha longa</b>
+    <code>ilha_oceano_long.png</code> <small>259×552 px</small>
+    <span class="modes">Ocean</span>
+    <p>Gerada pelo mapa do oceano: praia de areia, mato e árvores vistas de cima.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/ilhas/ilha_oceano_chain.png" target="_blank"><img src="png/ilhas/ilha_oceano_chain.png" alt="Arquipélago" loading="lazy"></a>
+  <figcaption><b>Arquipélago</b>
+    <code>ilha_oceano_chain.png</code> <small>129×148 px</small>
+    <span class="modes">Ocean</span>
+    <p>Gerada pelo mapa do oceano: praia de areia, mato e árvores vistas de cima.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/ilhas/ilha_oceano_atoll.png" target="_blank"><img src="png/ilhas/ilha_oceano_atoll.png" alt="Atol (com lagoa)" loading="lazy"></a>
+  <figcaption><b>Atol (com lagoa)</b>
+    <code>ilha_oceano_atoll.png</code> <small>259×264 px</small>
+    <span class="modes">Ocean</span>
+    <p>Gerada pelo mapa do oceano: praia de areia, mato e árvores vistas de cima.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/ilhas/ilha_oceano_round.png" target="_blank"><img src="png/ilhas/ilha_oceano_round.png" alt="Ilha redonda" loading="lazy"></a>
+  <figcaption><b>Ilha redonda</b>
+    <code>ilha_oceano_round.png</code> <small>152×192 px</small>
+    <span class="modes">Ocean</span>
+    <p>Gerada pelo mapa do oceano: praia de areia, mato e árvores vistas de cima.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/ilhas/ilha_rio.png" target="_blank"><img src="png/ilhas/ilha_rio.png" alt="Ilha do rio" loading="lazy"></a>
+  <figcaption><b>Ilha do rio</b>
+    <code>ilha_rio.png</code> <small>128×172 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Ilha oval no meio do rio, com pontas arredondadas e árvores de lado.</p></figcaption>
+</figure></div></section><section id="terreno"><h2>Terreno: rio, margens, paredões e pontes</h2><p class="lead">Recortes do mapa gerado.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/terreno/rio_margens.png" target="_blank"><img src="png/terreno/rio_margens.png" alt="Rio com margens, bosques e pastos" loading="lazy"></a>
+  <figcaption><b>Rio com margens, bosques e pastos</b>
+    <code>rio_margens.png</code> <small>608×400 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Rio simétrico com água rasa, sombra na beira e decoração das margens.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/terreno/ponte.png" target="_blank"><img src="png/terreno/ponte.png" alt="Ponte com estrada" loading="lazy"></a>
+  <figcaption><b>Ponte com estrada</b>
+    <code>ponte.png</code> <small>608×200 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Estrada com faixa amarela tracejada e deck de madeira sobre o rio.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/terreno/ponte_destruida.png" target="_blank"><img src="png/terreno/ponte_destruida.png" alt="Ponte destruída" loading="lazy"></a>
+  <figcaption><b>Ponte destruída</b>
+    <code>ponte_destruida.png</code> <small>608×200 px</small>
+    <span class="modes">Classic, Modern</span>
+    <p>Só as pontas quebradas; a água aparece no vão.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/terreno/paredoes.png" target="_blank"><img src="png/terreno/paredoes.png" alt="Paredões de rocha (cânion)" loading="lazy"></a>
+  <figcaption><b>Paredões de rocha (cânion)</b>
+    <code>paredoes.png</code> <small>608×440 px</small>
+    <span class="modes">Modern</span>
+    <p>Rocha clara com face para o rio, pedras salientes e sombra.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/terreno/mar_ondas.png" target="_blank"><img src="png/terreno/mar_ondas.png" alt="Mar aberto com ondas" loading="lazy"></a>
+  <figcaption><b>Mar aberto com ondas</b>
+    <code>mar_ondas.png</code> <small>480×320 px</small>
+    <span class="modes">Ocean</span>
+    <p>Água azul-oceano com marolas animadas.</p></figcaption>
+</figure></div></section><section id="efeitos"><h2>Explosões e efeitos</h2><p class="lead">Cada explosão em 4 quadros (da esquerda para a direita), como no jogo.</p><div class="grid"><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_ship.png" target="_blank"><img src="png/efeitos/explosao_ship.png" alt="Explosão de navio" loading="lazy"></a>
+  <figcaption><b>Explosão de navio</b>
+    <code>explosao_ship.png</code> <small>720×180 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.ship — quadros 2, 9, 21, 35.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_heli.png" target="_blank"><img src="png/efeitos/explosao_heli.png" alt="Explosão de helicóptero" loading="lazy"></a>
+  <figcaption><b>Explosão de helicóptero</b>
+    <code>explosao_heli.png</code> <small>720×180 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.heli — quadros 2, 10, 23, 38.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_plane.png" target="_blank"><img src="png/efeitos/explosao_plane.png" alt="Explosão de avião" loading="lazy"></a>
+  <figcaption><b>Explosão de avião</b>
+    <code>explosao_plane.png</code> <small>720×180 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.plane — quadros 2, 7, 15, 26.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_fuel.png" target="_blank"><img src="png/efeitos/explosao_fuel.png" alt="Explosão de combustível" loading="lazy"></a>
+  <figcaption><b>Explosão de combustível</b>
+    <code>explosao_fuel.png</code> <small>720×180 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.fuel — quadros 2, 13, 29, 48.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_tank.png" target="_blank"><img src="png/efeitos/explosao_tank.png" alt="Explosão de tanque" loading="lazy"></a>
+  <figcaption><b>Explosão de tanque</b>
+    <code>explosao_tank.png</code> <small>720×180 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.tank — quadros 2, 11, 25, 42.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_balloon.png" target="_blank"><img src="png/efeitos/explosao_balloon.png" alt="Explosão de balão (estouro)" loading="lazy"></a>
+  <figcaption><b>Explosão de balão (estouro)</b>
+    <code>explosao_balloon.png</code> <small>720×180 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.balloon — quadros 2, 14, 32, 53.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_bridge.png" target="_blank"><img src="png/efeitos/explosao_bridge.png" alt="Explosão de ponte" loading="lazy"></a>
+  <figcaption><b>Explosão de ponte</b>
+    <code>explosao_bridge.png</code> <small>1120×280 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.bridge — quadros 2, 14, 32, 53.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_carrier.png" target="_blank"><img src="png/efeitos/explosao_carrier.png" alt="Explosão de porta-aviões" loading="lazy"></a>
+  <figcaption><b>Explosão de porta-aviões</b>
+    <code>explosao_carrier.png</code> <small>1120×280 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.carrier — quadros 2, 16, 36, 60.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/explosao_player.png" target="_blank"><img src="png/efeitos/explosao_player.png" alt="Explosão de jato do jogador" loading="lazy"></a>
+  <figcaption><b>Explosão de jato do jogador</b>
+    <code>explosao_player.png</code> <small>720×180 px</small>
+    <span class="modes">Classic, Modern, Ocean (o Retro pixeliza)</span>
+    <p>Receita FX.player — quadros 2, 13, 29, 48.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/efeitos/coleta_powerup.png" target="_blank"><img src="png/efeitos/coleta_powerup.png" alt="Coleta de power-up" loading="lazy"></a>
+  <figcaption><b>Coleta de power-up</b>
+    <code>coleta_powerup.png</code> <small>720×180 px</small>
+    <span class="modes">Modern, Ocean</span>
+    <p>Anéis na cor do item, estrelinhas e o nome subindo.</p></figcaption>
+</figure><figure class="card">
+  <a class="img pix" href="png/efeitos/bomba.png" target="_blank"><img src="png/efeitos/bomba.png" alt="Bomba (oceano)" loading="lazy"></a>
+  <figcaption><b>Bomba (oceano)</b>
+    <code>bomba.png</code> <small>880×220 px</small>
+    <span class="modes">Ocean, Retro Ocean</span>
+    <p>Clarão, três ondas de choque, raios de luz, fumaça e faíscas.</p></figcaption>
+</figure></div></section><section id="telas"><h2>Telas completas</h2><p class="lead">Uma captura de cada modo, com HUD.</p><div class="grid"><figure class="card">
+  <a class="img " href="png/telas/tela_titulo.png" target="_blank"><img src="png/telas/tela_titulo.png" alt="Tela de título" loading="lazy"></a>
+  <figcaption><b>Tela de título</b>
+    <code>tela_titulo.png</code> <small>608×736 px</small>
+    <span class="modes">—</span>
+    <p>Escolha dos 5 modos.</p></figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/telas/tela_classic.png" target="_blank"><img src="png/telas/tela_classic.png" alt="CLASSIC — rio com combustível e painel embaixo" loading="lazy"></a>
+  <figcaption><b>CLASSIC — rio com combustível e painel embaixo</b>
+    <code>tela_classic.png</code> <small>608×736 px</small>
+    <span class="modes">CLASSIC</span>
+    </figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/telas/tela_modern.png" target="_blank"><img src="png/telas/tela_modern.png" alt="MODERN — voo livre e HUD no topo" loading="lazy"></a>
+  <figcaption><b>MODERN — voo livre e HUD no topo</b>
+    <code>tela_modern.png</code> <small>608×736 px</small>
+    <span class="modes">MODERN</span>
+    </figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/telas/tela_ocean_rasante.png" target="_blank"><img src="png/telas/tela_ocean_rasante.png" alt="OCEAN — voo rasante, HUD embaixo" loading="lazy"></a>
+  <figcaption><b>OCEAN — voo rasante, HUD embaixo</b>
+    <code>tela_ocean_rasante.png</code> <small>480×640 px</small>
+    <span class="modes">OCEAN</span>
+    </figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/telas/tela_ocean_alto.png" target="_blank"><img src="png/telas/tela_ocean_alto.png" alt="OCEAN — acima das nuvens" loading="lazy"></a>
+  <figcaption><b>OCEAN — acima das nuvens</b>
+    <code>tela_ocean_alto.png</code> <small>480×640 px</small>
+    <span class="modes">OCEAN</span>
+    </figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/telas/tela_retro.png" target="_blank"><img src="png/telas/tela_retro.png" alt="RETRO OCEAN — pixel art 240×320" loading="lazy"></a>
+  <figcaption><b>RETRO OCEAN — pixel art 240×320</b>
+    <code>tela_retro.png</code> <small>480×640 px</small>
+    <span class="modes">RETRO OCEAN</span>
+    </figcaption>
+</figure><figure class="card">
+  <a class="img " href="png/telas/tela_pico.png" target="_blank"><img src="png/telas/tela_pico.png" alt="CLASSIC - PICO-8 — 128×128, 16 cores" loading="lazy"></a>
+  <figcaption><b>CLASSIC - PICO-8 — 128×128, 16 cores</b>
+    <code>tela_pico.png</code> <small>512×512 px</small>
+    <span class="modes">CLASSIC - PICO-8</span>
+    </figcaption>
+</figure></div></section></main>
+</body></html>

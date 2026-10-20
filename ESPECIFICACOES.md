@@ -5,6 +5,28 @@ Arquivos: `index.html` (página), `js/` (o jogo, em módulos — veja **Arquitet
 O material de referência de terceiros usado no início (mapa original, sprites recortados dele e a transcrição de comentários do código original) **não faz parte do repositório**: fica só na pasta local `referencias/`, ignorada pelo git. O jogo não usa nenhum desses arquivos; todos os desenhos são originais.
 Para jogar: abrir `index.html` no navegador e apertar **Enter**.
 
+## Catálogo de gráficos (manter sempre atualizado)
+
+O relatório **`docs/graficos/index.html`** mostra todos os gráficos do jogo, agrupados por tipo:
+- jato do jogador;
+- navios e porta-aviões, helicópteros, aviões e caças, tanques, balões e chefes;
+- itens e power-ups, projéteis;
+- construções e cenário, nuvens, ilhas e terreno;
+- explosões e efeitos, telas completas.
+
+Cada elemento tem um nome específico, o identificador do arquivo, o tamanho, os modos onde aparece e a função do código que o desenha. O PNG equivalente fica em **`docs/graficos/png/<grupo>/<elemento>.png`**.
+
+**Regra:** sempre que um gráfico for criado, alterado ou removido (sprites, cenário, efeitos, HUD, telas), o catálogo deve ser refeito **na mesma mudança**:
+
+```bash
+python3 scripts/gerar-catalogo.py
+```
+
+- **Como funciona:** o script abre `scripts/catalogo/render.html` no Chrome sem janela. A página carrega o jogo, desenha cada elemento com as **próprias funções do jogo** e devolve os PNGs. O script grava os arquivos e monta o relatório. Por isso o catálogo nunca fica diferente do que aparece no jogo.
+- **Gráfico novo:** acrescente um `item()` no grupo certo de `scripts/catalogo/render.js`, ou um `group()` novo, com nome específico, descrição e modos.
+- **Requisitos:** Google Chrome ou Chromium, e Python 3 (só a biblioteca padrão).
+- **No site:** pelo GitHub Pages, o catálogo também fica em `https://frpsouza.github.io/river/docs/graficos/`.
+
 ## Arquitetura (pasta `js/`)
 
 O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o que faz e de quem depende. São scripts comuns, carregados em ordem pelo `index.html`, e não módulos ES (`import`/`export`). Assim o jogo continua abrindo com dois cliques, direto do disco, sem servidor. Tudo o que um arquivo declara fica visível para os carregados depois dele.
@@ -869,6 +891,32 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Durante a queda,** o chefe não atira, não colide e não recebe mais tiros.
 - **Medido:** queda de 150 quadros; escala 1,00 → 0,86 → 0,72 → 0,58 → 0,44; ~90 nuvens de fumaça na tela; ao fim, +4010 pontos, checkpoint avançado, vida 50 → 90 e respingo criado.
 - Para ajustar: `bossDie()`, `BOSS_FALL` e `bossFallScale()` (`js/ocean.js`).
+
+## Mudanças da versão 36 — catálogo de gráficos
+
+### 60. Relatório HTML de todos os gráficos, com os PNGs
+- **Novo:** `docs/graficos/index.html` + `docs/graficos/png/`, gerados por `scripts/gerar-catalogo.py` (ver **Catálogo de gráficos** no topo).
+- **136 gráficos em 15 grupos**, cada um com nome específico. Exemplos: "Canhoneira — com escudo frontal", "Jato pixel — quadro de inclinação −2", "Atol (com lagoa)", "Explosão de porta-aviões".
+
+| Grupo | Exemplos de elementos |
+|---|---|
+| Jato do jogador | flat nas 5 inclinações; pixel, os 9 quadros de inclinação; PICO-8, os 5 quadros |
+| Navios e porta-aviões | navio de lado (2 sentidos), de cima, disparando; pixel em 3 rumos; PICO-8; porta-aviões inteiro e avariado |
+| Helicópteros | de lado (2 quadros de hélice), de cima (alto e baixo), pixel (4 quadros de rotor), PICO-8 (2 quadros) |
+| Aviões e caças | avião de travessia, caça vermelho, rotações e parafuso em pixel, avião PICO-8 |
+| Tanques · Balões | tanque nos 2 sentidos e PICO-8; balões vermelho e amarelo, de lado, de cima, pixel e PICO-8 |
+| Chefes | bombardeiro, canhoneira (com e sem escudo), dirigível (blindado e sem torres), interceptador (normal e mirando) |
+| Itens e power-ups | combustível de lado, de cima, pixel e PICO-8; os 5 power-ups em vetor e pixel |
+| Projéteis | míssil, tiro inimigo, foguete teleguiado, mina, tiro pixel |
+| Construções e cenário | 2 casas; árvores (redonda e pinheiro, margem clara e escura, vista de cima); pasto com vacas; vaca; versões PICO-8 |
+| Nuvens · Ilhas · Terreno | 4 tipos de nuvem; 4 ilhas do oceano e a ilha do rio; rio com margens, ponte inteira e destruída, paredões, mar com ondas |
+| Explosões e efeitos | 9 explosões (uma por tipo), coleta de power-up e bomba, cada uma em 4 quadros |
+| Telas completas | título, Classic, Modern, Ocean (rasante e alto), Retro Ocean, PICO-8 |
+
+- **Pixel art:** aparece ampliada por vizinho mais próximo (pixels nítidos).
+- **Fundo:** os sprites têm fundo transparente, mostrado em xadrez no relatório.
+- **Ilhas e terreno:** são recortes de mapas gerados de verdade.
+- **Mudança mínima no jogo:** cada bloco do oceano guarda o tipo da ilha que começa nele (`blk.isleKind`), para o catálogo encontrá-la.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
