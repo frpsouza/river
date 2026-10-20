@@ -41,11 +41,11 @@ function collectPowerup(o) {
   const def = PU[o.kind];
   o.alive = false;
   if (def.dur) pw[o.kind] = def.dur;
-  if (o.kind === 'life') { lives++; hp = 100; }               // no oceano também recupera a vida
+  if (o.kind === 'life') { if (mode !== 'ocean') lives++; hp = 100; }   // no oceano (vida única) é só REPARO total
   if (o.kind === 'bomb') smartBomb();
   addScore(50);
   def.notes.forEach((f, k) => setTimeout(() => beep(f, 0.12, 'triangle', 0.05), k * 60));   // arpejo
-  pickupFx(o.x + o.w / 2, o.Y + o.h / 2, def);
+  pickupFx(o.x + o.w / 2, o.Y + o.h / 2, o.kind === 'life' && mode === 'ocean' ? Object.assign({}, def, { name: 'REPARO TOTAL' }) : def);
 }
 
 function smartBomb() {

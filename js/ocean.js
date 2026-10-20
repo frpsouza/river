@@ -1,8 +1,10 @@
 // ocean.js — MODO OCEANO (baseado no modo moderno)
 // O jato sobrevoa o mar aberto: não há margens nem pontes, só ilhas (cenário que se
 // sobrevoa), navios, porta-aviões que lançam aviões e esquadrilhas que entram em formação
-// fazendo acrobacias (looping, leque em V, varredura, espiral, oito). No fim de cada
-// seção chega um CHEFE: um bombardeiro gigante com barra de vida; derrotá-lo é o checkpoint.
+// fazendo acrobacias. No fim de cada seção chega um CHEFE (quatro tipos, cada um com ataque
+// e defesa próprios); derrotá-lo é o checkpoint. Aqui não há vidas extras: só a barra de vida.
+// O voo alterna entre RASANTE (perto do mar: navios atiram, postos curam) e ALTO (acima das
+// nuvens: só o combate aéreo importa); as lutas com chefes são lá em cima.
 //
 // Os aviões das esquadrilhas, os lançados e o chefe vivem em COORDENADAS DE TELA (voam
 // em relação à câmera); para colidir com coisas do mundo, worldY() converte.
@@ -18,12 +20,18 @@
 const OCEAN_WATER = '#1d5fae';
 const FLIER_W = 20 * SC.plane, FLIER_H = 10 * SC.plane;
 const BOSS_AT = 11;                                   // bloco da seção em que o chefe aparece
+const bossSection = s => s % 2 === 1;                 // chefe a cada duas seções (2ª, 4ª, …): ~25 s de viagem entre eles
 let fliers = [], squadT = 0, squadId = 0, squads = {}, boss = null, bossDone = {};
+let camSp = 0;                                        // velocidade da câmera no passo atual (update.js)
+// altitude: altT vai de 0 (rasante) a 1 (acima das nuvens), suavemente
+const ALT_LOW = 14 * 60, ALT_HIGH = 10 * 60;          // duração de cada fase (quadros)
+let altT = 0, altTarget = 0, altTimer = ALT_LOW, altMsg = 0, altText = '';
+const oceanHigh = () => mode === 'ocean' && altT > 0.25;   // alto: a superfície fica fora de alcance
 
 const worldY = sy => scroll + VIEW_H - sy;            // tela → mundo
 const screenY = Y => VIEW_H - (Y - scroll);           // mundo → tela
 
-function resetOcean() { fliers = []; boss = null; squadT = 240; squads = {}; }
+function resetOcean() { fliers = []; boss = null; squadT = 240; squads = {}; altT = 0; altTarget = 0; altTimer = ALT_LOW; altMsg = 0; }
 function newOceanGame() { resetOcean(); bossDone = {}; }
 
 // ---------- terreno: mar aberto com ilhas ----------
@@ -51,8 +59,8 @@ function isleHalf(st, u, t) {                          // meia-largura e centro 
 }
 
 function genOceanBlock(blk) {
-  for (let i = 0; i < LINES; i++) { blk.L[i] = -40; blk.R[i] = W + 40; }   // margens fora da tela
-  blk.endC = W / 2; blk.endW = W + 80;
+  for (let i = 0; i < LINES; i++) { blk.L[i] = -400; blk.R[i] = W + 400; } // margens bem fora da tela (mesmo com o zoom do voo alto)
+  blk.endC = W / 2; blk.endW = W + 800;
   blk.LG = new Float32Array(LINES);                                         // meia-largura da lagoa (atol)
   const prev = blk.g > 0 ? blocks[blk.g - 1] : null;
   let st = prev && prev.isle ? Object.assign({}, prev.isle) : null;         // ilha que vem do bloco anterior
@@ -98,15 +106,30 @@ const PATTERNS = {
   },
   eight: (k, s) => t => [s.x + 80 * Math.sin(t * 0.03), -20 + t * 0.9 + 36 * Math.sin(t * 0.06)],   // figura de oito
   takeoff: (k, s) => t => [s.x + s.side * (t * 1.4 + t * t * 0.006), s.y + Math.max(0, t - 35) * 1.1 + Math.sin(t * 0.05) * 8],
+  pincer: (k, s) => {                          // pinça: metade entra pela esquerda, metade pela direita, e se cruzam
+    const side = k % 2 ? 1 : -1, y0 = 30 + Math.floor(k / 2) * 26;
+    return t => [side > 0 ? -20 + t * 2.6 : W + 20 - t * 2.6, y0 + t * 0.9 + Math.sin(t * 0.06) * 18];
+  },
+  dive: (k, s) => t => {                       // mergulho no ponto onde o jato estava e arremetida para o lado
+    const x0 = s.x + (k - 1.5) * 22;
+    if (t < 70) return [x0 + (s.tx - x0) * (t / 70) ** 2 * 0.8, -20 + t * 3];
+    const a = t - 70;
+    return [x0 + (s.tx - x0) * 0.8 + s.side * a * 2.4, 190 - a * 1.4 + a * a * 0.012];
+  },
+  zigzag: (k, s) => t => {                     // zigue-zague em fila
+    const tri = 2 * Math.abs((t / 40) % 2 - 1) - 1;
+    return [s.x + tri * 70 + (k - 2) * 14, -20 + t * 1.6 - k * 10];
+  },
 };
-const SQUAD = { loop: [5, 14], vee: [5, 0], sweep: [6, 16], spiral: [4, 0], eight: [5, 16] };   // [membros, atraso]
+const SQUAD = { loop: [5, 14], vee: [5, 0], sweep: [6, 16], spiral: [4, 0], eight: [5, 16],
+                pincer: [6, 10], dive: [4, 6], zigzag: [5, 0] };   // [membros, atraso]
 
 function spawnSquad(kind, s, n, delay) {
   const id = ++squadId;
   squads[id] = { n, killed: 0 };
   for (let k = 0; k < n; k++)
     fliers.push({ path: PATTERNS[kind](k, s), t: -k * delay, squad: id, x: -99, y: -99, ang: Math.PI / 2, alive: true, seen: false,
-      cool: 60 + Math.random() * 120 });
+      cool: 60 + Math.random() * 120, rollPh: Math.random() * 200 });   // rollPh: quando dá o parafuso
 }
 
 function aimShot(sx, sy, speed, spread = 0) {
@@ -129,69 +152,214 @@ function destroyFlier(f, byPlayer) {
   }
 }
 
-// ---------- chefe: bombardeiro gigante ----------
+// ---------- chefes: quatro tipos, cada um com ataque e defesa próprios ----------
+//   bombardeiro ... ataque: leque, rajadas mirando, lança caças · defesa: nenhuma (aguenta muito)
+//   canhoneira .... ataque: espiral, muralha com brecha, foguetes teleguiados · defesa: escudo frontal intermitente
+//   dirigível ..... ataque: 4 torres que miram, minas flutuantes, escoltas · defesa: núcleo blindado enquanto houver torre
+//   interceptador . ataque: rajadas, investida em mergulho + onda de choque · defesa: esquiva mísseis e é intocável na investida
+const BOSS_KINDS = ['bomber', 'gunship', 'airship', 'interceptor'];
+const BOSS_INFO = {
+  bomber:      { name: 'BOMBARDEIRO',   hp: 60, rx: 64, ry: 14 },
+  gunship:     { name: 'CANHONEIRA',    hp: 80, rx: 56, ry: 22 },
+  airship:     { name: 'DIRIGÍVEL',     hp: 50, rx: 66, ry: 26 },
+  interceptor: { name: 'INTERCEPTADOR', hp: 70, rx: 30, ry: 26 },
+};
+const BOSS_Y = 92;                                    // altura de patrulha dos chefes (abaixo do HUD e da barra de vida)
+const AIRSHIP_TURRETS = [[-46, 8], [-20, 18], [20, 18], [46, 8]];   // na borda da frente (virada para o jato)
+
 function bossCheck(pBot) {
   const g = Math.floor(pBot / BH), s = Math.floor(g / BLOCKS_PER_SECTION), b = g % BLOCKS_PER_SECTION;
-  if (boss || b < BOSS_AT || bossDone[s]) return;
-  const hp = 60 + 20 * Math.min(s, 6);
-  boss = { sec: s, x: W / 2, y: -90, hp, maxHp: hp, t: 0, flash: 0, dying: 0, atk: 0 };
+  if (boss || b < BOSS_AT || bossDone[s] || !bossSection(s)) return;
+  const kind = BOSS_KINDS[((s - 1) / 2) % BOSS_KINDS.length], hp = BOSS_INFO[kind].hp + 15 * Math.min(s, 8);
+  boss = { kind, sec: s, x: W / 2, y: -90, hp, maxHp: hp, t: 0, flash: 0, dying: 0, atk: 0, mode: 'hover', modeT: 0, shield: 0, trail: [] };
+  if (kind === 'airship') boss.turrets = AIRSHIP_TURRETS.map(([dx, dy], k) => ({ dx, dy, hp: 8 + 2 * Math.min(s, 6), cool: 40 + k * 20, flash: 0 }));
   [196, 165, 196, 165].forEach((fq, k) => setTimeout(() => beep(fq, 0.25, 'sawtooth', 0.05), k * 260));   // alarme
 }
 
-function bossHitbox(x, y) {                                   // ponto de tela dentro do avião?
-  const dx = Math.abs(x - boss.x), dy = y - boss.y;
-  return (dx < 62 && Math.abs(dy + 2) < 12) || (dx < 10 && Math.abs(dy) < 42) || (dx < 26 && Math.abs(dy + 36) < 6);
+function bossHitbox(x, y) {                                   // ponto de tela dentro do chefe?
+  const B = boss, dx = x - B.x, dy = y - B.y;
+  if (B.kind === 'bomber') { const ax = Math.abs(dx); return (ax < 62 && Math.abs(dy + 2) < 12) || (ax < 10 && Math.abs(dy) < 42) || (ax < 26 && Math.abs(dy + 36) < 6); }
+  const i = BOSS_INFO[B.kind];
+  return (dx / i.rx) ** 2 + (dy / i.ry) ** 2 < 1;
+}
+
+function ping(x, sy) {                                        // tiro rebatido pela defesa do chefe
+  fx.push({ x, y: worldY(sy), t: 10, life: 10, kind: 'spark', parts: burst(5, 1.6, { col: '#ffffff', r: 0.8, life: 10 }) });
+  beep(1500, 0.04, 'square', 0.02);
+}
+
+function bossShot(mx, sy) {                                    // míssil chegando no chefe: true se foi consumido
+  const B = boss;
+  if (!B || B.dying || B.t < 60) return false;
+  if (B.kind === 'airship') for (const tu of B.turrets) {
+    // a torre fica no casco: um míssil alinhado com ela acerta a torre ao chegar no casco (ou nela)
+    const near = Math.hypot(mx - (B.x + tu.dx), sy - (B.y + tu.dy)) < 9 || (Math.abs(mx - (B.x + tu.dx)) < 8 && bossHitbox(mx, sy));
+    if (tu.hp <= 0 || !near) continue;
+    tu.hp--; tu.flash = 4; addScore(10);
+    if (tu.hp <= 0) { boom(B.x + tu.dx, worldY(B.y + tu.dy), 'tank'); addScore(300); }
+    return true;
+  }
+  if (!bossHitbox(mx, sy)) return false;
+  if (B.kind === 'interceptor' && B.mode === 'dash') { ping(mx, sy); return true; }          // intocável na investida
+  if (B.kind === 'gunship' && B.shield > 0 && sy > B.y - 4) { ping(mx, sy); return true; }   // escudo frontal
+  if (B.kind === 'airship' && B.turrets.some(t => t.hp > 0)) { ping(mx, sy); return true; }  // núcleo blindado
+  B.hp--; B.flash = 4; addScore(10);
+  fx.push({ x: mx, y: worldY(sy), t: 10, life: 10, kind: 'spark', parts: burst(5, 1.8, { col: '#ffe58a', r: 0.9, life: 10 }) });
+  if (B.hp <= 0) { B.dying = 90; shells = []; }
+  return true;
+}
+
+function bossDie(B) {
+  if (B.dying % 6 === 0) boom(B.x + rnd(-55, 55), worldY(B.y + rnd(-25, 25)), B.dying % 18 ? 'fuel' : 'bridge');
+  if (--B.dying) return;
+  boom(B.x, worldY(B.y), 'player');
+  addScore(3000 + 1000 * Math.min(B.sec, 5));
+  bossDone[B.sec] = true;
+  checkpoint = Math.max(checkpoint, (B.sec + 1) * BLOCKS_PER_SECTION);   // derrotar o chefe é o checkpoint
+  hp = Math.min(100, hp + 40);                                           // e recupera 40 de vida
+  pickupFx(B.x, worldY(B.y), { name: 'CHEFE DERROTADO! +40', col: '#ffc93c' });
+  [523, 659, 784, 1047, 1319].forEach((fq, k) => setTimeout(() => beep(fq, 0.14, 'triangle', 0.06), k * 90));
+  boss = null;
+  setAltitude(0);                                                        // volta ao voo rasante
 }
 
 function updateBoss(d) {
   const B = boss;
   B.t++; if (B.flash > 0) B.flash--;
-  if (B.dying) {
-    if (B.dying % 6 === 0) boom(B.x + rnd(-55, 55), worldY(B.y + rnd(-25, 25)), B.dying % 18 ? 'fuel' : 'bridge');
-    if (--B.dying === 0) {
-      boom(B.x, worldY(B.y), 'player');
-      addScore(3000 + 1000 * Math.min(B.sec, 5));
-      bossDone[B.sec] = true;
-      checkpoint = Math.max(checkpoint, (B.sec + 1) * BLOCKS_PER_SECTION);   // derrotar o chefe é o checkpoint
-      pickupFx(B.x, worldY(B.y), { name: 'CHEFE DERROTADO!', col: '#ffc93c' });
-      [523, 659, 784, 1047, 1319].forEach((fq, k) => setTimeout(() => beep(fq, 0.14, 'triangle', 0.06), k * 90));
-      boss = null;
-    }
-    return;
-  }
-  if (B.t < 140) { B.y = -90 + (160 * Math.min(1, B.t / 140)); return; }   // entrada
-  B.x = W / 2 + Math.sin(B.t * 0.012) * (W / 2 - 75);
-  B.y = 70 + Math.sin(B.t * 0.021) * 14;
-  if (B.t % 22 === 0 && B.hp < B.maxHp / 2)                                 // motores fumegando
-    fx.push({ x: B.x + (Math.random() < 0.5 ? -44 : 44), y: worldY(B.y), t: 40, life: 40, kind: 'smoke',
+  if (B.dying) { bossDie(B); return; }
+  if (B.t < 140) { B.y = -90 + (BOSS_Y + 90) * Math.min(1, B.t / 140); return; }   // entrada
+  if (B.t % 22 === 0 && B.hp < B.maxHp / 2)                                 // fumaça quando está mal
+    fx.push({ x: B.x + (Math.random() < 0.5 ? -30 : 30), y: worldY(B.y), t: 40, life: 40, kind: 'smoke',
       parts: [P({ vy: -0.5, r: 3, grow: 1.03, col: '#3a3f58', life: 40 })] });
-  const every = Math.max(50, 80 - 5 * Math.min(B.sec, 6));
-  if (B.t % every) return;
-  const spd = 1.5 + 0.3 * d, atk = B.atk++ % 3;
-  if (atk === 0) for (let a = -3; a <= 3; a++) {                            // leque de 7 tiros para baixo
-    const ang = Math.PI / 2 + a * 0.22;
-    shells.push({ x: B.x, Y: worldY(B.y + 40), vx: Math.cos(ang) * spd, vy: -Math.sin(ang) * spd });
+  const spd = 1.5 + 0.3 * d, pcx = px + PW / 2, pcy = VIEW_H - py - PH / 2, T = B.t - 140;
+
+  if (B.kind === 'bomber') {
+    B.x = W / 2 + Math.sin(B.t * 0.012) * (W / 2 - 75);
+    B.y = BOSS_Y + Math.sin(B.t * 0.021) * 14;
+    const every = Math.max(50, 80 - 5 * Math.min(B.sec, 6));
+    if (B.t % every) return;
+    const atk = B.atk++ % 3;
+    if (atk === 0) for (let a = -3; a <= 3; a++) {                          // leque de 7 tiros
+      const ang = Math.PI / 2 + a * 0.22;
+      shells.push({ x: B.x, Y: worldY(B.y + 40), vx: Math.cos(ang) * spd, vy: -Math.sin(ang) * spd });
+    }
+    else if (atk === 1) for (const sp of [-0.14, 0, 0.14]) { aimShot(B.x - 30, B.y + 6, spd + 0.3, sp); aimShot(B.x + 30, B.y + 6, spd + 0.3, sp); }
+    else for (const side of [-1, 1]) spawnSquad('takeoff', { x: B.x + side * 50, y: B.y + 4, side }, 1, 0);
   }
-  else if (atk === 1) for (const sp of [-0.14, 0, 0.14]) { aimShot(B.x - 30, B.y + 6, spd + 0.3, sp); aimShot(B.x + 30, B.y + 6, spd + 0.3, sp); }
-  else for (const side of [-1, 1])                                         // lança dois caças das asas
-    spawnSquad('takeoff', { x: B.x + side * 50, y: B.y + 4, side }, 1, 0);
+
+  else if (B.kind === 'gunship') {
+    B.x = W / 2 + Math.sin(B.t * 0.01) * (W / 2 - 70);
+    B.y = BOSS_Y + 10 + Math.sin(B.t * 0.02) * 20;
+    if (T % 420 === 0) { B.shield = 180; beep(880, 0.2, 'sine', 0.03); }   // liga o escudo de tempos em tempos
+    if (B.shield > 0) B.shield--;
+    const phase = Math.floor(T / 150) % 3, loc = T % 150;
+    if (phase === 0 && loc < 90 && loc % 4 === 0)                          // espiral de dois braços
+      for (const arm of [0, Math.PI]) { const a = B.t * 0.18 + arm; shells.push({ x: B.x, Y: worldY(B.y + 10), vx: Math.cos(a) * spd, vy: -Math.sin(a) * spd }); }
+    if (phase === 1 && (loc === 20 || loc === 80)) {                       // muralha com uma brecha
+      const gap = 1 + Math.floor(Math.random() * 8);
+      for (let k = 0; k < 11; k++) if (k !== gap && k !== gap + 1) shells.push({ x: 12 + k * 28, Y: worldY(B.y + 20), vx: 0, vy: -spd * 0.9 });
+    }
+    if (phase === 2 && (loc === 10 || loc === 70))                         // foguetes teleguiados
+      for (const side of [-1, 1]) shells.push({ x: B.x + side * 40, Y: worldY(B.y + 8), vx: side * 0.6, vy: -1.0, kind: 'rocket', t: 0 });
+  }
+
+  else if (B.kind === 'airship') {
+    B.x = W / 2 + Math.sin(B.t * 0.006) * (W / 2 - 80);
+    B.y = BOSS_Y + 10;
+    for (const tu of B.turrets) {                                          // cada torre mira e atira
+      if (tu.flash > 0) tu.flash--;
+      if (tu.hp > 0 && --tu.cool <= 0) { tu.cool = 85 - 20 * d + Math.random() * 30; aimShot(B.x + tu.dx, B.y + tu.dy, spd); }
+    }
+    if (T % 140 === 70) shells.push({ x: B.x + rnd(-20, 20), Y: worldY(B.y + 30), vx: rnd(-0.3, 0.3), vy: -0.35, kind: 'mine', t: 0 });
+    if (T % 420 === 300) spawnSquad('pincer', { x: W / 2, y: 0, side: 1 }, 4, 10);   // escolta
+  }
+
+  else if (B.kind === 'interceptor') {
+    B.trail.push([B.x, B.y]); if (B.trail.length > 8) B.trail.shift();
+    B.modeT++;
+    if (B.mode === 'hover') {
+      B.x += (pcx + Math.sin(B.t * 0.03) * 60 - B.x) * 0.02;
+      B.y = BOSS_Y + Math.sin(B.t * 0.05) * 8;
+      for (const m of missiles) {                                          // esquiva: desvia de míssil vindo de baixo
+        const msy = screenY(m.Y + 8);
+        if (Math.abs(m.x - B.x) < 34 && msy > B.y && msy - B.y < 90) B.x += m.x < B.x ? 2.6 : -2.6;
+      }
+      B.x = clamp(B.x, 40, W - 40);
+      if (B.modeT % 50 === 0) for (const sp of [-0.1, 0, 0.1]) aimShot(B.x, B.y + 20, spd + 0.4, sp);
+      if (B.modeT > 220) { B.mode = 'aim'; B.modeT = 0; B.tx = pcx; B.ty = clamp(pcy, 140, VIEW_H - 60); }
+    } else if (B.mode === 'aim') {                                        // telegrafa a investida (treme)
+      B.x += Math.sin(B.modeT * 1.7) * 1.2;
+      if (B.modeT === 1) beep(330, 0.4, 'sawtooth', 0.04);
+      if (B.modeT > 32) { B.mode = 'dash'; B.modeT = 0; B.vx = (B.tx - B.x) / 34; B.vy = (B.ty - B.y) / 34; }
+    } else if (B.mode === 'dash') {
+      B.x += B.vx; B.y += B.vy;
+      if (B.modeT >= 34) {                                                 // fim da investida: onda de choque
+        for (let k = 0; k < 14; k++) { const a = k * Math.PI * 2 / 14; shells.push({ x: B.x, Y: worldY(B.y), vx: Math.cos(a) * spd, vy: -Math.sin(a) * spd }); }
+        boom(B.x, worldY(B.y), 'plane', { dir: 1 });
+        B.mode = 'back'; B.modeT = 0;
+      }
+    } else if (B.mode === 'back') {
+      B.y += (BOSS_Y - B.y) * 0.06;
+      if (B.modeT > 60) { B.mode = 'hover'; B.modeT = 0; }
+    }
+  }
+}
+
+// ---------- altitude (rasante ↔ acima das nuvens) ----------
+function setAltitude(v) {
+  if (altTarget === v) return;
+  altTarget = v; altTimer = v ? ALT_HIGH : ALT_LOW; altMsg = 150;
+  altText = v ? '▲  ACIMA DAS NUVENS' : '▼  VOO RASANTE';
+  (v ? [330, 440, 554, 660] : [660, 554, 440, 330]).forEach((fq, k) => setTimeout(() => beep(fq, 0.12, 'sine', 0.035), k * 70));
+}
+function updateAltitude() {
+  if (boss) setAltitude(1);                                   // chefes: luta lá em cima
+  else if (--altTimer <= 0) setAltitude(altTarget ? 0 : 1);
+  altT += clamp(altTarget - altT, -1 / 150, 1 / 150);         // transição de 2,5 s
+  if (altMsg > 0) altMsg--;
+}
+
+// ---------- tiros especiais: foguete teleguiado e mina ----------
+function stepSpecialShell(sh) {                               // devolve tiros novos (mina explodindo) ou null
+  if (sh.kind === 'rocket') {
+    if (sh.t++ < 100) {                                       // persegue o jato por ~1,7 s
+      const want = Math.atan2(scroll + py + PH / 2 - sh.Y, px + PW / 2 - sh.x), cur = Math.atan2(sh.vy, sh.vx);
+      let da = want - cur; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+      const a = cur + clamp(da, -0.045, 0.045), v = Math.min(2, Math.hypot(sh.vx, sh.vy) + 0.03);
+      sh.vx = Math.cos(a) * v; sh.vy = Math.sin(a) * v;
+    }
+  } else if (sh.kind === 'mine') {
+    sh.t++;
+    if (Math.hypot(px + PW / 2 - sh.x, scroll + py + PH / 2 - sh.Y) < 30 || sh.t > 420) {   // detona perto do jato
+      sh.dead = true;
+      boom(sh.x, sh.Y, 'heli');
+      const out = [];
+      for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; out.push({ x: sh.x, Y: sh.Y, vx: Math.cos(a) * 1.6, vy: Math.sin(a) * 1.6 }); }
+      return out;
+    }
+  }
+  return null;
 }
 
 // ---------- passo do oceano (chamado pelo update) ----------
 function updateOcean(pBot, g0, g1) {
   const d = Math.min(sectionOf(pBot), 8) / 8;
-  const b = Math.floor(pBot / BH) % BLOCKS_PER_SECTION;
-  // novas esquadrilhas (não durante o chefe nem na zona de respiro)
-  if (!boss && b >= CALM_BLOCKS && --squadT <= 0) {
+  const b = Math.floor(pBot / BH) % BLOCKS_PER_SECTION, high = oceanHigh();
+  updateAltitude();
+  // novas esquadrilhas (não durante o chefe nem na zona de respiro); lá em cima vêm em dobro
+  squadT -= high ? 2 : 1;
+  if (!boss && b >= CALM_BLOCKS && squadT <= 0) {
     const kinds = Object.keys(SQUAD), kind = kinds[Math.floor(Math.random() * kinds.length)];
     const [n, delay] = SQUAD[kind];
-    spawnSquad(kind, { x: 70 + Math.random() * (W - 140), y: 40 + Math.random() * 100, side: Math.random() < 0.5 ? 1 : -1 }, n, delay);
+    spawnSquad(kind, { x: 70 + Math.random() * (W - 140), y: 40 + Math.random() * 100, side: Math.random() < 0.5 ? 1 : -1, tx: px + PW / 2 }, n, delay);
     squadT = 300 - 120 * d + Math.random() * 120;
   }
-  // navios atiram mirando no jogador; porta-aviões lançam caças
+  // inimigos de superfície: navios navegam e atiram, helicópteros perseguem, balões vão com o vento
   for (let g = Math.max(0, g0); g <= g1; g++) for (const o of blocks[g].objs) {
     if (!o.alive) continue;
-    if (o.type === 'ship') { shipFire(o, d); continue; }
+    if (o.type === 'ship') { shipMove(o); if (!high) shipFire(o, d); continue; }
+    if (o.type === 'heli') { heliChase(o, d, high); continue; }
+    if (o.type === 'balloon') { o.x += Math.sin(frame * 0.01 + o.phase) * 0.4; o.Y += 0.15; continue; }
     if (o.type !== 'carrier') continue;
     const sy = screenY(o.Y + o.h);
     if (o.flash > 0) o.flash--;
@@ -212,21 +380,48 @@ function updateOcean(pBot, g0, g1) {
     if (f.seen) f.ang = Math.atan2(ny - f.y, nx - f.x);
     f.x = nx; f.y = ny;
     if (ny > -10 && ny < VIEW_H && nx > -10 && nx < W + 10) f.seen = true;
-    if (f.t > 40 && (ny > VIEW_H + 30 || nx < -60 || nx > W + 60 || ny < -140)) { f.alive = false; continue; }
+    if (f.t > 40 && (ny > VIEW_H + 30 || nx < -60 || nx > W + 60 || ny < -160)) { f.alive = false; continue; }
     if (ny > 10 && ny < VIEW_H - 110 && --f.cool <= 0) { f.cool = 150 - 60 * d + Math.random() * 120; aimShot(nx, ny, 1.6 + 0.4 * d); }
-    if (Math.abs(nx - pcx) < 13 && Math.abs(ny - pcy) < 12 && safeT <= 0) {
+    if (Math.abs(nx - pcx) < 13 && Math.abs(ny - pcy) < 12 && safeT <= 0 && hurtT <= 0) {
       destroyFlier(f, pw.shield > 0);
-      if (pw.shield <= 0) { kill(); return; }
+      if (pw.shield <= 0 && hurt(30)) return;
     }
   }
   fliers = fliers.filter(f => f.alive);
-  if (boss && !boss.dying && safeT <= 0 && bossHitbox(pcx, pcy)) { kill(); return; }
+  if (boss && !boss.dying && boss.t > 140 && bossHitbox(pcx, pcy) && hurt(50)) return;
 }
 
-// canhão do navio (vista de cima): fica na proa, gira para o jato e dispara de tempos em tempos
-function shipGun(o) {
+// navio: navega com rumo que oscila até ±29° em torno da horizontal e dá meia-volta ao
+// encontrar ilha ou a borda da tela (hdg = ângulo no mundo, 0 = para a direita)
+function shipMove(o) {
+  if (o.base === undefined) { o.base = o.dir > 0 ? 0 : Math.PI; o.sp = 0.45 + Math.random() * 0.5; o.ph = Math.random() * 6.28; o.moving = false; }
   const sy = screenY(o.Y + o.h);
-  return { x: o.dir > 0 ? o.x + o.w - 15 : o.x + 15, y: sy + o.h / 2 };
+  if (sy < -60 || sy > VIEW_H + 60) return;
+  const off = 0.5 * Math.sin(frame * 0.012 + o.ph);
+  o.hdg = o.base + (o.base === 0 ? off : -off);
+  const nx = o.x + Math.cos(o.hdg) * o.sp, nY = o.Y + Math.sin(o.hdg) * o.sp * 0.7;
+  if (nx > -10 && nx < W - o.w + 10 && waterFree(nx, nx + o.w, nY, nY + o.h)) { o.x = nx; o.Y = nY; }
+  else o.base = o.base === 0 ? Math.PI : 0;                              // meia-volta
+  o.dir = Math.cos(o.hdg) >= 0 ? 1 : -1;
+}
+
+// helicóptero: acompanha a câmera por um tempo (fica na metade de cima da tela), persegue
+// o jato pelos lados, ziguezagueando, e atira quando o voo está baixo
+function heliChase(o, d, high) {
+  if (o.ph === undefined) { o.ph = Math.random() * 6.28; o.moving = false; o.fireCool = 60 + Math.random() * 90; }
+  const sy = screenY(o.Y + o.h);
+  if (sy < -40 || sy > VIEW_H) return;
+  const tx = px + PW / 2 + Math.sin(frame * 0.02 + o.ph) * 60 - o.w / 2;
+  o.x += clamp(tx - o.x, -1.1, 1.1);
+  o.dir = tx > o.x ? 1 : -1;
+  if (sy < VIEW_H * 0.5) o.Y += camSp * 0.75;                            // "pega carona" na câmera
+  if (!high && sy > 10 && --o.fireCool <= 0) { o.fireCool = 150 - 50 * d + Math.random() * 60; aimShot(o.x + o.w / 2, sy + o.h / 2, 1.5 + 0.3 * d); beep(300, 0.05, 'square', 0.02); }
+}
+
+// canhão do navio (vista de cima): fica perto da proa, gira para o jato e dispara de tempos em tempos
+function shipGun(o) {
+  const sy = screenY(o.Y + o.h), a = -(o.hdg || (o.dir > 0 ? 0 : Math.PI)), r = o.w / 2 - 15;
+  return { x: o.x + o.w / 2 + Math.cos(a) * r, y: sy + o.h / 2 + Math.sin(a) * r };
 }
 function shipFire(o, d) {
   if (o.gunFlash > 0) o.gunFlash--;
@@ -246,18 +441,21 @@ function oceanMissileHit(m, my0, my1) {
     if (!f.alive || f.t < 0) continue;
     if (Math.abs(mx - f.x) < 11 && f.y > top - 8 && f.y < bot + 8) { destroyFlier(f, true); return true; }
   }
-  if (boss && !boss.dying && boss.t > 60 && bossHitbox(mx, top)) {
-    boss.hp--; boss.flash = 4; addScore(10);
-    fx.push({ x: mx, y: my1, t: 10, life: 10, kind: 'spark', parts: burst(5, 1.8, { col: '#ffe58a', r: 0.9, life: 10 }) });
-    if (boss.hp <= 0) { boss.dying = 90; shells = []; }
-    return true;
+  for (const sh of shells) {                                   // dá para derrubar foguetes e minas
+    if (!sh.kind || sh.dead) continue;
+    const ssy = screenY(sh.Y);
+    if (Math.abs(mx - sh.x) < 6 && ssy > top - 6 && ssy < bot + 6) { sh.dead = true; boom(sh.x, sh.Y, 'plane', { dir: 1 }); addScore(20); return true; }
   }
-  return false;
+  return bossShot(mx, top);
 }
 
 function oceanBomb() {                                        // BOMBA: derruba os aviões e fere o chefe
   for (const f of fliers) if (f.alive && f.t >= 0 && f.y > -10) destroyFlier(f, true);
-  if (boss && !boss.dying) { boss.hp = Math.max(1, boss.hp - 15); boss.flash = 8; }
+  for (const sh of shells) if (sh.kind) sh.dead = true;
+  if (boss && !boss.dying) {
+    if (boss.kind === 'airship') for (const tu of boss.turrets) tu.hp = Math.max(0, tu.hp - 5);
+    boss.hp = Math.max(1, boss.hp - 15); boss.flash = 8;
+  }
 }
 
 // ---------- desenho ----------
@@ -266,8 +464,10 @@ const FLIER_PAL = { top: '#ff9d9a', bottom: '#c23a3f', body: '#e5484d', belly: '
 function drawOceanAir() {
   for (const f of fliers) {
     if (!f.alive || f.t < 0) continue;
-    ell(f.x + 10, f.y + 16, 7, 2, 'rgba(0,0,30,.22)');           // sombra no mar
+    ell(f.x + 10 + 18 * altT, f.y + 16 + 26 * altT, 7, 2, 'rgba(0,0,30,' + (0.22 - 0.14 * altT).toFixed(2) + ')');   // sombra no mar
     ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.ang);
+    const rp = (f.t + f.rollPh) % 200;                           // parafuso: de tempos em tempos gira no eixo
+    if (rp < 26) ctx.scale(1, Math.cos(rp / 26 * Math.PI * 2));
     drawPlane(-FLIER_W / 2, -FLIER_H / 2, 1, FLIER_PAL);
     ctx.restore();
   }
@@ -275,9 +475,93 @@ function drawOceanAir() {
 }
 
 function drawBoss(B) {
+  if (B.kind === 'gunship') return drawGunship(B);
+  if (B.kind === 'airship') return drawAirship(B);
+  if (B.kind === 'interceptor') return drawInterceptor(B);
+  drawBomber(B);
+}
+
+const bossShadow = (B, rx, ry) => ell(B.x + 22 + 20 * altT, B.y + 36 + 30 * altT, rx, ry, 'rgba(0,0,30,' + (0.22 - 0.12 * altT).toFixed(2) + ')');
+function bossFlash(B, draw) { if (B.flash > 0) { ctx.globalAlpha = 0.55; draw(); ctx.globalAlpha = 1; } }
+
+function drawGunship(B) {
+  // canhoneira: asa voadora em delta, dois motores de brilho ciano, pods de foguete; escudo em arco na frente
+  bossShadow(B, 60, 16);
+  ctx.save(); ctx.translate(B.x, B.y);
+  const wing = [0, 30, 58, -18, 40, -24, 0, -14, -40, -24, -58, -18];
+  poly(wing, '#3a3f58'); poly([0, 30, 58, -18, 40, -24, 0, -14], '#2c3044');
+  poly([-58, -18, -46, -20, -44, -14, -56, -12], '#4fd1e0'); poly([58, -18, 46, -20, 44, -14, 56, -12], '#4fd1e0');
+  for (const ex of [-20, 20]) {
+    rrect(ex - 6, -28, 12, 14, 4); ctx.fillStyle = '#26334f'; ctx.fill();
+    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(B.t * 0.4 + ex); ell(ex, -30, 4.5, 3, '#4fd1e0'); ctx.globalAlpha = 1;
+  }
+  for (const pxd of [-44, 36]) { rrect(pxd, -14, 8, 18, 3); ctx.fillStyle = '#5c6378'; ctx.fill(); ell(pxd + 4, 5, 2.4, 2.4, '#e5484d'); }
+  ell(0, 10, 5, 9, '#9fe0ff'); ell(-1.5, 6.5, 1.8, 3, '#ffffff');
+  bossFlash(B, () => poly(wing, '#ffffff'));
+  if (B.shield > 0) {                                          // escudo frontal (pisca ao acabar)
+    if (B.shield > 40 || frame % 8 < 4) {
+      ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.ellipse(0, 8, 66, 36, 0, 0.12 * Math.PI, 0.88 * Math.PI); ctx.lineTo(0, 8); ctx.closePath(); ctx.fillStyle = '#4fd1e0'; ctx.fill();
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = '#9ff3ff'; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.ellipse(0, 8, 66, 36, 0, 0.12 * Math.PI, 0.88 * Math.PI); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+}
+
+function drawAirship(B) {
+  // dirigível visto de cima: envelope comprido, faixas vermelhas, gôndola com hélices e quatro torres
+  bossShadow(B, 68, 22);
+  ctx.save(); ctx.translate(B.x, B.y);
+  poly([62, 0, 76, -16, 80, -16, 72, 0, 80, 16, 76, 16], '#8a90a0');                     // lemes na cauda
+  ell(0, 0, 66, 26, '#c9cfdb');
+  ctx.save(); ctx.beginPath(); ctx.ellipse(0, 0, 66, 26, 0, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = '#aab1c0'; ctx.fillRect(-70, 2, 140, 30);
+  ctx.fillStyle = '#e5484d'; ctx.fillRect(-30, -30, 8, 60); ctx.fillRect(22, -30, 8, 60);
+  ctx.restore();
+  ell(-20, -10, 30, 6, 'rgba(255,255,255,.35)');
+  rrect(-16, -6, 32, 12, 5); ctx.fillStyle = '#5c6378'; ctx.fill();                       // gôndola
+  for (const gx of [-20, 20]) { const a = B.t * 0.8; ctx.strokeStyle = '#26334f'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(gx, -Math.cos(a) * 6); ctx.lineTo(gx, Math.cos(a) * 6); ctx.stroke(); }
+  const armored = B.turrets.some(t => t.hp > 0);
+  if (armored) { ctx.strokeStyle = 'rgba(255,201,60,' + (0.35 + 0.2 * Math.sin(B.t * 0.15)).toFixed(2) + ')'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(0, 0, 70, 30, 0, 0, Math.PI * 2); ctx.stroke(); }
+  bossFlash(B, () => ell(0, 0, 66, 26, '#ffffff'));
+  for (const tu of B.turrets) {
+    if (tu.hp <= 0) { ell(tu.dx, tu.dy, 5, 5, '#1c1c22'); ell(tu.dx - 1, tu.dy - 1, 2, 2, '#3a3f58'); continue; }
+    const a = Math.atan2(VIEW_H - py - PH / 2 - (B.y + tu.dy), px + PW / 2 - (B.x + tu.dx));
+    ctx.save(); ctx.translate(tu.dx, tu.dy); ctx.rotate(a); ctx.fillStyle = '#26334f'; ctx.fillRect(0, -1, 9, 2); ctx.restore();
+    ell(tu.dx, tu.dy, 5.5, 5.5, tu.flash > 0 ? '#ffffff' : '#3a3f58'); ell(tu.dx - 1.2, tu.dy - 1.2, 2, 2, '#5c6378');
+  }
+  ctx.restore();
+}
+
+function drawInterceptor(B) {
+  // interceptador: caça grande de asas enflechadas, vermelho e preto, pós-combustão; rastro na investida
+  const shape = (x, y, a) => {
+    ctx.save(); ctx.translate(x, y); ctx.globalAlpha = a;
+    poly([0, 30, 30, -10, 34, -22, 10, -14, 0, -26, -10, -14, -34, -22, -30, -10], '#26334f');
+    poly([0, 30, 30, -10, 34, -22, 10, -14, 0, -26], '#1b2438');
+    poly([30, -10, 34, -22, 28, -20, 25, -9], '#e5484d'); poly([-30, -10, -34, -22, -28, -20, -25, -9], '#e5484d');
+    ctx.restore(); ctx.globalAlpha = 1;
+  };
+  if (B.mode === 'dash' || B.mode === 'back') B.trail.forEach(([x, y], k) => shape(x, y, 0.08 + 0.05 * k));
+  bossShadow(B, 34, 14);
+  if (B.mode === 'aim') {                                       // aviso: linha tracejada até o alvo
+    ctx.strokeStyle = 'rgba(229,72,77,' + (0.4 + 0.4 * Math.sin(B.modeT * 0.6)).toFixed(2) + ')'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(B.x, B.y); ctx.lineTo(B.tx, B.ty); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(B.tx, B.ty, 10, 0, Math.PI * 2); ctx.stroke();
+  }
+  shape(B.x, B.y, 1);
+  ctx.save(); ctx.translate(B.x, B.y);
+  const burn = B.mode === 'dash' ? 9 : 4 + Math.sin(B.t * 0.6);
+  for (const ex of [-6, 6]) { ell(ex, -27 - burn / 2, 3, burn / 2 + 1, '#ff8a3d'); ell(ex, -27 - burn / 3, 1.6, burn / 3, '#fff3b0'); }
+  ell(0, 8, 4, 7, '#ff9d9a'); ell(-1, 5.5, 1.4, 2.4, '#ffffff');
+  bossFlash(B, () => poly([0, 30, 30, -10, 34, -22, 10, -14, 0, -26, -10, -14, -34, -22, -30, -10], '#ffffff'));
+  ctx.restore();
+}
+
+function drawBomber(B) {
   // bombardeiro de quatro motores visto de cima, nariz para baixo (voa em direção ao jogador)
   const x = B.x, y = B.y;
-  ell(x + 22, y + 36, 70, 16, 'rgba(0,0,30,.22)');               // sombra no mar
+  bossShadow(B, 70, 16);                                           // sombra no mar
   ctx.save(); ctx.translate(x, y);
   poly([-26, -38, 26, -38, 22, -32, -22, -32], '#5c6378');        // estabilizador horizontal
   poly([0, -38, 26, -38, 22, -32, 0, -32], '#474d60');
@@ -308,7 +592,8 @@ function drawBossBar(B) {
   rrect(30, by, w, 7, 3.5); ctx.fillStyle = 'rgba(12,15,28,.75)'; ctx.fill();
   rrect(30, by, Math.max(7, w * f), 7, 3.5); ctx.fillStyle = f > 0.3 ? '#e5484d' : '#ff8a3d'; ctx.fill();
   ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText('CHEFE — SEÇÃO ' + (B.sec + 1), 32, by + 17);
+  const st = B.kind === 'gunship' && B.shield > 0 ? ' · ESCUDO' : B.kind === 'airship' && B.turrets.some(t => t.hp > 0) ? ' · BLINDADO (' + B.turrets.filter(t => t.hp > 0).length + ' torres)' : B.kind === 'interceptor' && B.mode === 'dash' ? ' · INTOCÁVEL' : '';
+  ctx.fillText(BOSS_INFO[B.kind].name + ' — SEÇÃO ' + (B.sec + 1) + st, 32, by + 17);
 }
 
 function drawCarrier(x, y, dir, o) {
@@ -387,14 +672,40 @@ function drawCloudShadows() {
   forClouds((c, y) => { for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx + 24, y + dy + 34, r, r * 0.8 * st, 'rgba(0,0,40,' + (c.kind === 'wisp' ? '.05' : '.10') + ')'); });
 }
 
-function drawClouds() {
+// mult: opacidade da camada (as nuvens aparecem acima do jato no rasante e abaixo dele no voo alto)
+// below: true quando desenhadas abaixo do jato (não precisam ficar translúcidas sobre ele)
+function drawClouds(mult = 1, below = false) {
+  if (mult <= 0.01) return;
   const jx = px + PW / 2, jy = VIEW_H - py - PH / 2;
   forClouds((c, y) => {
     if (y - 300 > VIEW_H || y + 40 < -300) return;
-    const over = state === 'play' && c.puffs.some(([dx, dy, r, st]) => Math.abs(jx - c.x - dx) < r + 4 && Math.abs(jy - y - dy) < r * st + 4);
-    ctx.globalAlpha = over ? Math.min(0.45, c.alpha) : c.alpha;
+    const over = !below && state === 'play' && c.puffs.some(([dx, dy, r, st]) => Math.abs(jx - c.x - dx) < r + 4 && Math.abs(jy - y - dy) < r * st + 4);
+    ctx.globalAlpha = (over ? Math.min(0.45, c.alpha) : c.alpha) * mult;
     for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx, y + dy + r * 0.25, r, r * 0.85 * st, '#d6e2f0');   // base sombreada
     for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx - r * 0.12, y + dy - r * 0.08, r * 0.9, r * 0.78 * st, '#ffffff');
     ctx.globalAlpha = 1;
   });
+}
+
+// convés de nuvens visto de cima (voo alto): grandes massas brancas que encobrem parte do mar
+function getDeck(blk) {
+  if (blk.deck) return blk.deck;
+  const r = mulberry32(blk.seed ^ 0xdec4), list = [];
+  for (let k = 0; k < 2; k++) {
+    const x = r() * W, Y = blk.g * BH + r() * BH, puffs = [];
+    for (let p = 0; p < 8; p++) puffs.push([(r() - 0.5) * 120, -(r()) * 70, 18 + r() * 22, 0.8]);
+    list.push({ x, Y, puffs });
+  }
+  return (blk.deck = list);
+}
+function drawCloudDeck(mult) {
+  if (mult <= 0.01) return;
+  const g0 = Math.max(0, Math.floor((scroll - 120) / BH)), g1 = Math.floor((scroll + VIEW_H + 40) / BH);
+  for (let g = g0; g <= g1; g++) for (const c of getDeck(getBlock(g))) {
+    const y = VIEW_H - (c.Y - scroll);
+    ctx.globalAlpha = 0.82 * mult;
+    for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx, y + dy + r * 0.25, r, r * 0.85 * st, '#d6e2f0');
+    for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx - r * 0.12, y + dy - r * 0.08, r * 0.9, r * 0.78 * st, '#ffffff');
+  }
+  ctx.globalAlpha = 1;
 }

@@ -11,7 +11,10 @@ function draw() {
   if (!blocks) { drawTitle(); return; }
 
   ctx.fillStyle = mode === 'ocean' ? OCEAN_WATER : PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
-  const g0 = Math.max(0, Math.floor(scroll / BH) - 1), g1 = Math.floor((scroll + VIEW_H) / BH) + 1;
+  // oceano: quanto mais alto o voo, menor e mais enevoado fica o mar (a superfície encolhe para o centro)
+  const zs = mode === 'ocean' ? 1 - 0.28 * smooth(altT) : 1, ext = VIEW_H * (1 / zs - 1) / 2;
+  if (zs < 1) { ctx.save(); ctx.translate(W / 2, VIEW_H / 2); ctx.scale(zs, zs); ctx.translate(-W / 2, -VIEW_H / 2); }
+  const g0 = Math.max(0, Math.floor((scroll - ext) / BH) - 1), g1 = Math.floor((scroll + VIEW_H + ext) / BH) + 1;
   for (let ph = 0; ph < 6; ph++) for (let g = g0; g <= g1; g++) drawTerrain(getBlock(g), ph);
   for (let g = g0; g <= g1; g++) { const blk = getBlock(g); if (blk.bridge) drawBridge(blk); }
   for (let g = g0; g <= g1; g++) drawCliffs(getBlock(g));          // paredões (modo moderno)
@@ -20,12 +23,15 @@ function draw() {
   for (let g = g0; g <= g1; g++) for (const o of getBlock(g).objs) {
     if (!o.alive) continue;
     const sy = VIEW_H - (o.Y + o.h - scroll);
-    if (sy > VIEW_H || sy < -40) continue;
+    if (sy > VIEW_H + ext || sy < -40 - ext) continue;
     if (mode === 'ocean') {                                         // oceano: tudo visto de cima
       if (o.type === 'fuel') drawFuelTop(o.x, sy);
-      else if (o.type === 'ship') {
-        const gp = shipGun(o);
-        drawShipTop(o.x, sy, o.dir, Math.atan2(VIEW_H - py - PH / 2 - gp.y, px + PW / 2 - gp.x), o.gunFlash || 0);   // canhão mira o jato
+      else if (o.type === 'ship') {                                 // gira conforme o rumo; o canhão mira o jato
+        const gp = shipGun(o), rot = -(o.hdg !== undefined ? o.hdg : (o.dir > 0 ? 0 : Math.PI));
+        const aim = Math.atan2(VIEW_H - py - PH / 2 - gp.y, px + PW / 2 - gp.x);
+        ctx.save(); ctx.translate(o.x + o.w / 2, sy + o.h / 2); ctx.rotate(rot);
+        drawShipTop(-o.w / 2, -o.h / 2, 1, aim - rot, o.gunFlash || 0);
+        ctx.restore();
       }
       else if (o.type === 'heli') drawHeliTop(o.x, sy, o.dir, o.alt || 1);
       else if (o.type === 'balloon') drawBalloonTop(o.x, sy, o.hue, o.phase);
@@ -44,6 +50,11 @@ function draw() {
     else if (o.type === 'carrier') drawCarrier(o.x, sy, o.dir, o);
     else if (o.type === 'plane' && o.active) drawPlane(o.x, sy, o.dir);
   }
+  if (zs < 1) ctx.restore();
+  if (mode === 'ocean' && altT > 0) {                               // névoa da altitude + nuvens abaixo do jato
+    ctx.fillStyle = 'rgba(205,225,245,' + (0.32 * altT).toFixed(3) + ')'; ctx.fillRect(0, 0, W, VIEW_H);
+    drawCloudDeck(altT); drawClouds(altT, true);
+  }
   if (mode === 'ocean') drawOceanAir();
   for (const sh of shells) drawShell(sh, VIEW_H - (sh.Y - scroll));
   // míssil
@@ -52,11 +63,13 @@ function draw() {
     rrect(m.x - 0.3, my, 2.6, 8, 1.2); ctx.fillStyle = pw.rapid > 0 ? '#ffe58a' : '#ffd23a'; ctx.fill();
     ell(m.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
-  if (state === 'play' && mode !== 'classic')                        // voo livre: sombra do jato lá embaixo
-    ell(px + PW / 2 + 7, VIEW_H - py - PH * 0.35 + 9, PW * 0.42, 3, 'rgba(0,0,30,.28)');
+  if (state === 'play' && mode !== 'classic') {                      // voo livre: sombra do jato lá embaixo
+    const a = mode === 'ocean' ? altT : 0;                             // mais alto = sombra mais longe e mais fraca
+    ell(px + PW / 2 + 7 + 22 * a, VIEW_H - py - PH * 0.35 + 9 + 34 * a, PW * 0.42 * (1 - 0.3 * a), 3, 'rgba(0,0,30,' + (0.28 - 0.18 * a).toFixed(2) + ')');
+  }
   if (state === 'play') {
     if ((safeT > 0 || hurtT > 0) && frame % 10 < 5) ctx.globalAlpha = 0.35;   // pisca enquanto está protegido
-    drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC, true);
+    drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC * (mode === 'ocean' ? 1 + 0.12 * altT : 1), true);   // no alto, mais perto da câmera
     ctx.globalAlpha = 1;
   }
   if (state === 'play') drawShield(px + PW / 2, VIEW_H - py - PH / 2);
@@ -66,7 +79,7 @@ function draw() {
     rrect(bx, by, Math.max(3, 24 * hp / 100), 3, 1.5); ctx.fillStyle = hp > 50 ? '#3fbf6a' : hp > 25 ? '#ffc93c' : '#e5484d'; ctx.fill();
   }
   fx.forEach(drawExplosion);
-  if (mode === 'ocean') drawClouds();                               // nuvens por cima de tudo (menos o painel)
+  if (mode === 'ocean') drawClouds(1 - altT);                       // no rasante, as nuvens passam por cima de tudo
   if (mode === 'classic') drawPanel(); else drawHudTop();          // clássico: painel embaixo · voo livre: HUD no topo
   if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
@@ -75,6 +88,21 @@ function draw() {
 // projétil dos tanques: bem visível, com contraste laranja/branco/vermelho
 // (rastro atrás, halo vermelho pulsando, corpo laranja com contorno escuro e núcleo branco)
 function drawShell(sh, sy) {
+  if (sh.kind === 'rocket') {                                        // foguete teleguiado: corpo, aletas e chama
+    const a = Math.atan2(-sh.vy, sh.vx);
+    ctx.save(); ctx.translate(sh.x, sy); ctx.rotate(a);
+    ell(-8, 0, 4 + (frame % 3), 2, '#ff8a3d'); ell(-7, 0, 2, 1.1, '#fff3b0');
+    rrect(-5, -1.6, 10, 3.2, 1.6); ctx.fillStyle = '#e8ecf5'; ctx.fill();
+    poly([5, -1.6, 8, 0, 5, 1.6], '#e5484d'); poly([-5, -1.6, -7, -3.4, -3, -1.6], '#e5484d'); poly([-5, 1.6, -7, 3.4, -3, 1.6], '#e5484d');
+    ctx.restore(); return;
+  }
+  if (sh.kind === 'mine') {                                          // mina flutuante: esfera com espetos e luz piscando
+    const r = 4.2;
+    ctx.strokeStyle = '#26334f'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + frame * 0.02; ctx.moveTo(sh.x, sy); ctx.lineTo(sh.x + Math.cos(a) * (r + 3), sy + Math.sin(a) * (r + 3)); } ctx.stroke();
+    ell(sh.x, sy, r, r, '#3a3f58'); ell(sh.x - 1.2, sy - 1.2, 1.5, 1.5, '#5c6378');
+    ell(sh.x, sy, 1.4, 1.4, frame % 20 < 10 ? '#ff4d4d' : '#7a1f1f'); return;
+  }
   const sv = Math.hypot(sh.vx, sh.vy || 0) || 1, bx = -sh.vx / sv, by = (sh.vy || 0) / sv;   // rastro oposto ao movimento (na tela)
   const pulse = 0.5 + 0.5 * Math.sin(frame * 0.4 + sh.x * 0.1);
   for (let k = 3; k >= 1; k--)                                       // rastro: vermelho → laranja
@@ -129,7 +157,12 @@ function drawHudTop() {
   ctx.textAlign = 'left'; ctx.font = 'bold 14px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
   ctx.fillText(String(score).padStart(6, '0'), 14, 20);
   ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = { modern: '#9fe0ff', ocean: '#4fd1e0' }[mode] || '#ffc93c';
-  ctx.fillText({ modern: 'MODERNO', ocean: 'OCEANO' }[mode] || '', 14, 33);
+  ctx.fillText(({ modern: 'MODERNO', ocean: 'OCEANO' }[mode] || '') + (mode === 'ocean' ? (altTarget ? ' · ▲ ALTO' : ' · ▼ RASANTE') : ''), 14, 33);
+  if (mode === 'ocean' && altMsg > 0) {                              // aviso de troca de altitude
+    ctx.globalAlpha = Math.min(1, altMsg / 30); ctx.textAlign = 'center'; ctx.font = 'bold 12px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(12,15,28,.6)'; rrect(W / 2 - 80, 62, 160, 20, 10); ctx.fill();
+    ctx.fillStyle = altTarget ? '#9ff3ff' : '#ffc93c'; ctx.fillText(altText, W / 2, 76); ctx.globalAlpha = 1; ctx.textAlign = 'left';
+  }
   // vida: barra larga no centro, pisca quando está baixa
   const f = hp / 100, hx = 104, hw = 118, low = f < 0.25 && frame % 20 < 10;
   pill(hx - 14, 7, hw + 20, 16);

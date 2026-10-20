@@ -22,7 +22,7 @@ function newGame() {
   seed = (Math.random() * 1e9) | 0;
   rng = mulberry32(seed);
   blocks = [];
-  score = 0; lives = 3; nextLife = 10000;
+  score = 0; lives = mode === 'ocean' ? 1 : 3;                 // oceano: uma vida só — vale a barra de vida nextLife = 10000;
   checkpoint = 0;
   respawn();
 }
@@ -44,7 +44,10 @@ function respawn() {
 
 function addScore(n) {
   score += n;
-  if (score >= nextLife) { nextLife += 10000; lives++; beep(880, 0.3); }
+  if (score >= nextLife) {                         // a cada 10.000 pontos: vida extra (no oceano, +30 de reparo)
+    nextLife += 10000; beep(880, 0.3);
+    if (mode === 'ocean') hp = Math.min(100, hp + 30); else lives++;
+  }
 }
 
 // dano com gravidade: nos modos de voo livre (moderno e oceano) tira vida da barra;

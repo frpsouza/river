@@ -13,6 +13,7 @@ function shoreStroke(pts, w, color) {
 }
 
 function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2: luz, decoração e água rasa das ilhas, 3: praia, 4: terra das ilhas, 5: detalhes das ilhas
+  const banks = mode !== 'ocean';                      // no oceano não há margens (só mar e ilhas)
   const yAt = i => VIEW_H - (blk.g * BH + i * LINE + LINE / 2 - scroll);
   const yBot = VIEW_H - (blk.g * BH - scroll) + 1, yTop = VIEW_H - ((blk.g + 1) * BH - scroll) - 1;
   const pal = blk.land === LAND_LIGHT ? PAL.light : PAL.dark;
@@ -30,7 +31,7 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
   };
   if (phase === 0) {
   // água rasa + sombra na beirada
-  for (const pts of [sL, sR]) {
+  if (banks) for (const pts of [sL, sR]) {
     shoreStroke(pts, 12, 'rgba(120,170,255,.20)');
     shoreStroke(pts, 6, 'rgba(8,12,70,.38)');
   }
@@ -55,10 +56,10 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
   return;
   }
   if (phase === 1) {
-    for (const [pts, wall] of [[eL, 0], [eR, W]]) { bankPoly(pts, wall); ctx.fillStyle = pal.land; ctx.fill(); }
+    if (banks) for (const [pts, wall] of [[eL, 0], [eR, W]]) { bankPoly(pts, wall); ctx.fillStyle = pal.land; ctx.fill(); }
     return;
   }
-  if (phase === 2) {                                  // fase 2: luz das margens e decoração
+  if (phase === 2 && banks) {                         // fase 2: luz das margens e decoração
     // margens
     for (const [pts, sp, wall] of [[eL, sL, 0], [eR, sR, W]]) {
       ctx.save(); bankPoly(pts, wall); ctx.clip();

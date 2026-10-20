@@ -545,6 +545,61 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
   - o botão A disparou.
 - Para ajustar: o mapa `GP_BUTTONS` em `js/gamepad.js`.
 
+## Mudanças da versão 22 — oceano: vida única, inimigos mais vivos, altitude e quatro chefes
+
+### 40. Vida única no oceano
+- **Antes:** 3 vidas, cada uma com a barra de vida cheia.
+- **Agora:** uma vida só, e o que vale é a barra. Zerou, é fim de jogo.
+- O power-up de vida vira **REPARO TOTAL**: cura a barra inteira e não dá vida extra.
+- O bônus de 10.000 pontos, que nos outros modos dá uma vida, aqui dá +30 de reparo.
+- Derrotar um chefe recupera +40 de vida.
+
+### 41. Inimigos mais vivos
+- **Navios:** navegam com rumo que oscila até ±29° em torno da horizontal, desenhados girados no sentido do rumo. Dão meia-volta ao encontrar ilha ou a borda da tela, e o canhão continua mirando o jato.
+- **Helicópteros:** "pegam carona" na câmera, ficando um tempo na metade de cima da tela. Perseguem o jato pelos lados ziguezagueando e atiram (a cada ~2–3 s) quando o voo está baixo.
+- **Balões:** derivam com o vento e sobem devagar.
+- **Caças:** de tempos em tempos dão um parafuso, girando no próprio eixo.
+- **Três esquadrilhas novas:**
+  - **pinça:** 6 caças, metade de cada lado, que se cruzam;
+  - **mergulho:** 4 caças que mergulham no ponto onde o jato estava e arremetem para o lado;
+  - **zigue-zague:** 5 caças em fila.
+
+### 42. Altitude: voo rasante × acima das nuvens
+- O voo alterna sozinho entre **rasante** (14 s) e **alto** (10 s). As lutas com chefes acontecem sempre no alto, e depois de cada chefe o voo volta ao rasante.
+- A transição dura 2,5 s e é anunciada no topo da tela ("▲ ACIMA DAS NUVENS" / "▼ VOO RASANTE"), com um arpejo que sobe ou desce. O HUD mostra a altitude atual.
+
+| | Rasante | Alto |
+|---|---|---|
+| mar | tamanho normal, passa mais rápido (+15%) | encolhe até 72% para o centro, enevoado, passa mais devagar |
+| nuvens | por cima de tudo (translúcidas sobre o jato) | abaixo do jato, com um convés de nuvens a mais cobrindo o mar |
+| jato | tamanho normal, sombra perto | 12% maior (mais perto da câmera), sombra longe e fraca |
+| superfície (navios, helicópteros, postos de combustível) | atira, colide, pode ser atingida e cura | fora de alcance: não atira, não colide, não é atingida |
+| esquadrilhas | ritmo normal | chegam no dobro do ritmo |
+
+- Para curar nos postos de combustível é preciso descer, o que cria um ritmo de jogo.
+
+### 43. Quatro chefes, cada um com ataque e defesa próprios
+- Os chefes agora aparecem **a cada duas seções** (~25 s de viagem entre eles), sempre na sequência abaixo e com mais vida a cada volta.
+- Eles patrulham mais abaixo do HUD (y = 92).
+- A barra do chefe mostra o nome e o estado da defesa (ESCUDO, BLINDADO (n torres), INTOCÁVEL).
+
+| Chefe | Ataques | Defesa |
+|---|---|---|
+| **Bombardeiro** (4 motores) | leque de 7 tiros, rajadas mirando o jato, lança caças das asas | nenhuma (resistência alta) |
+| **Canhoneira** (asa delta, motores ciano) | espiral de dois braços, muralha de tiros com uma brecha, foguetes teleguiados | escudo frontal em arco por 3 s a cada 7 s: tiros vindos de baixo são rebatidos |
+| **Dirigível** (envelope listrado, gôndola) | 4 torres que miram sozinhas, minas flutuantes que detonam perto do jato em 8 tiros, escolta em pinça | núcleo blindado enquanto houver torre viva: primeiro destrua as torres (+300 cada) |
+| **Interceptador** (caça enflechado, pós-combustão) | rajadas de 3 tiros; investida em mergulho até onde o jato está, com aviso de mira tracejado, terminando numa onda de choque de 14 tiros | esquiva-se de mísseis que vêm por baixo e é intocável durante a investida |
+
+- **Tiros especiais novos:**
+  - o foguete teleguiado persegue o jato por ~1,7 s;
+  - a mina detona perto do jato.
+  - Os dois podem ser derrubados com o míssil (+20). A bomba (power-up) também os elimina e tira 5 de cada torre do dirigível.
+- **Testado:** cada chefe foi derrotado com tiros certeiros simulados, e cada vitória virou checkpoint.
+  - O escudo da canhoneira rebateu 117 tiros.
+  - As torres do dirigível caíram com 77 tiros, e só então o núcleo pôde ser ferido.
+  - **Correção:** na vista de cima, um míssil acertava a blindagem do envelope antes de chegar a uma torre. As torres foram para a borda da frente, e um tiro alinhado com uma torre agora a acerta.
+- **Outra correção:** no voo alto, com o mar encolhido, apareciam faixas verdes nas laterais, porque as "margens" do rio eram desenhadas fora da tela. No oceano as margens não são mais desenhadas.
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.
