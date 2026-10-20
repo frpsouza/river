@@ -83,6 +83,7 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
     const ring = pts.concat([pts[0]]);
     shoreStroke(ring, 12, 'rgba(120,170,255,.20)');
     shoreStroke(ring, 6, 'rgba(8,12,70,.38)');
+    if (mode === 'ocean') { shoreStroke(ring, 9, '#e9d8a6'); shoreStroke(ring, 4, '#f5ecc8'); }   // praia de areia
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); pts.forEach(q => ctx.lineTo(q[0], q[1])); ctx.closePath();
     ctx.fillStyle = PAL.dark.land; ctx.fill();
     ctx.save(); ctx.clip();
@@ -92,7 +93,9 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
     const cx = (blk.IL[15] + blk.IR[15]) / 2, wI = blk.IR[15] - blk.IL[15], mid = (first + last) / 2;
     const trees = wI > 40 ? [[-0.22, 1.5, 0.9, true], [0.18, 0.5, 0.8, false], [0, -2.5, 1, false]]
       : wI > 24 ? [[-0.15, 0.5, 0.75, true], [0.15, -1.5, 0.8, false]] : [[0, -1.5, 0.7, false]];
-    for (const [dx, dy, sc, pine] of trees) drawTree(cx + dx * wI, yAt(mid + dy), sc, pine, PAL.dark);
+    for (const [dx, dy, sc, pine] of trees)
+      if (mode === 'ocean') drawTreeTop(cx + dx * wI, yAt(mid + dy), sc * 1.1, PAL.dark);   // oceano: vista de cima
+      else drawTree(cx + dx * wI, yAt(mid + dy), sc, pine, PAL.dark);
   }
 }
 

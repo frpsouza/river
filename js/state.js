@@ -8,7 +8,8 @@
 
 let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens
 let bank = 0;
-let safeT = 0;                                       // proteção ao renascer: enquanto > 0, inimigos e tiros não derrubam
+let safeT = 0;
+let hp = 100, hurtT = 0;                             // oceano: vida do jato (0–100) e invulnerabilidade após um dano                                       // proteção ao renascer: enquanto > 0, inimigos e tiros não derrubam
 let py = PLAYER_Y;                                   // altura do jato acima do fundo da tela (no moderno ele sobe e desce)
 
 let shells = [];
@@ -16,6 +17,7 @@ let shells = [];
 let state, scroll, px, fuel, lives, score, nextLife, checkpoint, missiles = [], fx, dyingT, keys, frame, audio;
 
 function newGame() {
+  newOceanGame();
   seed = (Math.random() * 1e9) | 0;
   rng = mulberry32(seed);
   blocks = [];
@@ -30,7 +32,8 @@ function respawn() {
     spawnObjs(blocks[g]);
   }
   scroll = checkpoint * BH + (checkpoint > 0 ? 40 : 0);   // renasce um pouco depois da saída da ponte, onde o rio já abriu
-  py = PLAYER_Y; safeT = SPAWN_SAFE;
+  py = PLAYER_Y; safeT = SPAWN_SAFE; hp = 100; hurtT = 0;
+  resetOcean();
   const { b, i } = lineAt(scroll + py);
   px = (b.L[i] + b.R[i]) / 2 - PW / 2;
   fuel = 100; missiles = []; fx = []; dyingT = 0; shells = []; resetPowerups();
@@ -41,6 +44,18 @@ function respawn() {
 function addScore(n) {
   score += n;
   if (score >= nextLife) { nextLife += 10000; lives++; beep(880, 0.3); }
+}
+
+// dano com gravidade: no oceano tira vida da barra; nos outros modos, qualquer dano derruba.
+// Devolve true se o jato caiu (o chamador deve parar o passo).
+function hurt(dmg) {
+  if (mode !== 'ocean') { kill(); return true; }
+  if (hurtT > 0 || safeT > 0) return false;
+  hp -= dmg; hurtT = 45;
+  beep(150, 0.12, 'square', 0.05);
+  fx.push({ x: px + PW / 2, y: scroll + py + PH / 2, t: 16, life: 16, kind: 'spark', parts: burst(8, 2, { col: '#ffc93c', r: 1, life: 16 }) });
+  if (hp <= 0) { hp = 0; kill(); return true; }
+  return false;
 }
 
 function kill() {

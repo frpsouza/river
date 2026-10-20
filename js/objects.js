@@ -21,7 +21,8 @@ function spawnObjs(blk) {
     return;
   }
   const k = r();
-  const type = k < 0.26 ? 'fuel' : k < 0.46 ? 'ship' : k < 0.66 ? 'heli' : k < 0.78 ? 'house' : k < 0.9 ? 'tank' : 'balloon';
+  let type = k < 0.26 ? 'fuel' : k < 0.46 ? 'ship' : k < 0.66 ? 'heli' : k < 0.78 ? 'house' : k < 0.9 ? 'tank' : 'balloon';
+  if (mode === 'ocean' && (type === 'house' || type === 'tank')) type = 'ship';   // no mar não há terra firme
   const calm = blk.b < CALM_BLOCKS && type !== 'fuel' && type !== 'house';   // zona de respiro: sem inimigos
   const dims = { fuel: [18, 28], ship: [43, 14], heli: [27, 19], house: [36, 23], tank: [19, 10], balloon: [24, 36] }[type];
   const [w, h] = dims;
@@ -65,7 +66,16 @@ function spawnObjs(blk) {
   if (blk.g > 3 && blk.b >= CALM_BLOCKS && r() < 0.18)
     blk.objs.push({ type: 'plane', x: -100, Y: base + 22 * LINE, w: 25, h: 13, alive: true,
       dir: r() < 0.5 ? -1 : 1, active: false, vx: 2.2 + Math.min(blk.s, 10) * 0.1 });
-  spawnPowerup(blk, r);                              // modo moderno (powerups.js)
+  spawnPowerup(blk, r);                              // modos moderno e oceano (powerups.js)
+  // oceano: porta-aviões (lançam caças; aguentam vários tiros)
+  if (mode === 'ocean' && blk.b >= CALM_BLOCKS && blk.b < BOSS_AT && r() < 0.16)
+    for (let tries = 0; tries < 10; tries++) {
+      const w = 96, h = 28, x = 4 + r() * (W - w - 8), Y = base + (2 + r() * 14) * LINE;
+      if (!waterFree(x, x + w, Y, Y + h)) continue;
+      blk.objs.push({ type: 'carrier', x, Y, w, h, alive: true, dir: r() < 0.5 ? -1 : 1, vx: 0.22, moving: true,
+        hp: 10, maxHp: 10, cool: 90 + r() * 60, flash: 0 });
+      break;
+    }
 }
 
 // altitude do helicóptero: 0,55 (baixo, pequeno) a 1,15 (alto, um pouco maior que o normal).

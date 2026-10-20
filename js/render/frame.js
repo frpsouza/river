@@ -10,16 +10,27 @@ function draw() {
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, VIEW_H + PANEL_H);
   if (!blocks) { drawTitle(); return; }
 
-  ctx.fillStyle = PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
+  ctx.fillStyle = mode === 'ocean' ? OCEAN_WATER : PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
   const g0 = Math.max(0, Math.floor(scroll / BH) - 1), g1 = Math.floor((scroll + VIEW_H) / BH) + 1;
   for (let ph = 0; ph < 3; ph++) for (let g = g0; g <= g1; g++) drawTerrain(getBlock(g), ph);
   for (let g = g0; g <= g1; g++) { const blk = getBlock(g); if (blk.bridge) drawBridge(blk); }
   for (let g = g0; g <= g1; g++) drawCliffs(getBlock(g));          // paredões (modo moderno)
+  if (mode === 'ocean') drawCloudShadows();
   // objetos
   for (let g = g0; g <= g1; g++) for (const o of getBlock(g).objs) {
     if (!o.alive) continue;
     const sy = VIEW_H - (o.Y + o.h - scroll);
     if (sy > VIEW_H || sy < -40) continue;
+    if (mode === 'ocean') {                                         // oceano: tudo visto de cima
+      if (o.type === 'fuel') drawFuelTop(o.x, sy);
+      else if (o.type === 'ship') drawShipTop(o.x, sy, o.dir);
+      else if (o.type === 'heli') drawHeliTop(o.x, sy, o.dir, o.alt || 1);
+      else if (o.type === 'balloon') drawBalloonTop(o.x, sy, o.hue, o.phase);
+      else if (o.type === 'pu') drawPowerup(o, sy);
+      else if (o.type === 'carrier') drawCarrier(o.x, sy, o.dir, o);
+      else if (o.type === 'plane' && o.active) { ctx.save(); ctx.translate(o.x + o.w / 2, sy + o.h / 2); ctx.rotate(o.dir > 0 ? 0 : Math.PI); drawPlane(-o.w / 2, -o.h / 2, 1, FLIER_PAL); ctx.restore(); }
+      continue;
+    }
     if (o.type === 'fuel') drawFuel(o.x, sy);
     else if (o.type === 'house') drawHouse(o.x, sy, o.spr);
     else if (o.type === 'ship') drawShip(o.x, sy, o.dir);
@@ -27,8 +38,10 @@ function draw() {
     else if (o.type === 'tank') drawTank(o.x, sy, o.aim, o.dir);
     else if (o.type === 'balloon') drawBalloon(o.x, sy, o.hue, o.phase);
     else if (o.type === 'pu') drawPowerup(o, sy);
+    else if (o.type === 'carrier') drawCarrier(o.x, sy, o.dir, o);
     else if (o.type === 'plane' && o.active) drawPlane(o.x, sy, o.dir);
   }
+  if (mode === 'ocean') drawOceanAir();
   for (const sh of shells) drawShell(sh, VIEW_H - (sh.Y - scroll));
   // míssil
   for (const m of missiles) {
@@ -36,15 +49,21 @@ function draw() {
     rrect(m.x - 0.3, my, 2.6, 8, 1.2); ctx.fillStyle = pw.rapid > 0 ? '#ffe58a' : '#ffd23a'; ctx.fill();
     ell(m.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
-  if (state === 'play' && mode === 'modern')                         // moderno: sombra do jato lá embaixo
+  if (state === 'play' && mode !== 'classic')                        // voo livre: sombra do jato lá embaixo
     ell(px + PW / 2 + 7, VIEW_H - py - PH * 0.35 + 9, PW * 0.42, 3, 'rgba(0,0,30,.28)');
   if (state === 'play') {
-    if (safeT > 0 && frame % 10 < 5) ctx.globalAlpha = 0.35;          // pisca enquanto está protegido
+    if ((safeT > 0 || hurtT > 0) && frame % 10 < 5) ctx.globalAlpha = 0.35;   // pisca enquanto está protegido
     drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC, true);
     ctx.globalAlpha = 1;
   }
   if (state === 'play') drawShield(px + PW / 2, VIEW_H - py - PH / 2);
+  if (state === 'play' && mode === 'ocean' && (hurtT > 0 || hp < 40)) {   // barrinha de vida sobre o jato
+    const bx = px + PW / 2 - 12, by = VIEW_H - py - PH - 7;
+    rrect(bx, by, 24, 3, 1.5); ctx.fillStyle = 'rgba(12,15,28,.7)'; ctx.fill();
+    rrect(bx, by, Math.max(3, 24 * hp / 100), 3, 1.5); ctx.fillStyle = hp > 50 ? '#3fbf6a' : hp > 25 ? '#ffc93c' : '#e5484d'; ctx.fill();
+  }
   fx.forEach(drawExplosion);
+  if (mode === 'ocean') drawClouds();                               // nuvens por cima de tudo (menos o painel)
   drawPanel();
   if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
@@ -53,9 +72,10 @@ function draw() {
 // projétil dos tanques: bem visível, com contraste laranja/branco/vermelho
 // (rastro atrás, halo vermelho pulsando, corpo laranja com contorno escuro e núcleo branco)
 function drawShell(sh, sy) {
-  const back = -Math.sign(sh.vx) || -1, pulse = 0.5 + 0.5 * Math.sin(frame * 0.4 + sh.x * 0.1);
+  const sv = Math.hypot(sh.vx, sh.vy || 0) || 1, bx = -sh.vx / sv, by = (sh.vy || 0) / sv;   // rastro oposto ao movimento (na tela)
+  const pulse = 0.5 + 0.5 * Math.sin(frame * 0.4 + sh.x * 0.1);
   for (let k = 3; k >= 1; k--)                                       // rastro: vermelho → laranja
-    ell(sh.x + back * k * 3.2, sy, 3.2 - k * 0.6, 2.2 - k * 0.4, ['#ffc93c', '#ff8a3d', '#e5484d'][k - 1]);
+    ell(sh.x + bx * k * 3.2, sy + by * k * 3.2, 3.2 - k * 0.6, 2.4 - k * 0.4, ['#ffc93c', '#ff8a3d', '#e5484d'][k - 1]);
   ctx.globalAlpha = 0.35 + 0.25 * pulse;
   ell(sh.x, sy, 5.5 + pulse * 1.5, 5.5 + pulse * 1.5, '#e5484d');   // halo vermelho pulsando
   ctx.globalAlpha = 1;
@@ -75,23 +95,27 @@ function banner(a, b, c) {
   lines.forEach((t, k) => ctx.fillText(t, W / 2, 196 + k * 13));
 }
 
+const TITLE_OPT_Y = 102;                              // topo da 1ª opção de modo (as outras a cada 40 px)
+
 function drawTitle() {
   ctx.fillStyle = PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
   ctx.fillStyle = PAL.dark.land; ctx.fillRect(0, 0, 70, VIEW_H); ctx.fillRect(W - 70, 0, 70, VIEW_H);
-  drawJet(W / 2, 250, 0, 1.6, true);
-  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 70, W - 32, 168, 8); ctx.fill();
+  drawJet(W / 2, 270, 0, 1.6, true);
+  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 56, W - 32, 200, 8); ctx.fill();
   ctx.textAlign = 'center'; ctx.fillStyle = '#ffe45a'; ctx.font = 'bold 24px Arial, sans-serif';
-  ctx.fillText('RIVER RAID', W / 2, 104);
+  ctx.fillText('RIVER RAID', W / 2, 88);
   const opts = [['classic', '1  CLÁSSICO', 'margens e ilhas matam, como no Atari'],
-                ['modern', '2  MODERNO', 'voo livre pela tela · paredões de rocha · power-ups']];
+                ['modern', '2  MODERNO', 'voo livre pela tela · paredões de rocha · power-ups'],
+                ['ocean', '3  OCEANO', 'mar aberto · porta-aviões · esquadrilhas · chefes · nuvens']];
   opts.forEach(([m, name, desc], k) => {
-    const y = 128 + k * 42, on = mode === m;
+    const y = TITLE_OPT_Y + k * 40, on = mode === m;
     rrect(32, y, W - 64, 34, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
     ctx.fillStyle = on ? '#26334f' : '#e8ecf5'; ctx.font = 'bold 13px Arial, sans-serif'; ctx.fillText(name, W / 2, y + 15);
     ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '9px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 27);
   });
   ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
-  ctx.fillText('setas ou clique escolhem · ENTER, ESPAÇO ou 2º clique joga', W / 2, 226);
+  ctx.font = '10px Arial, sans-serif';
+  ctx.fillText('setas ou clique escolhem · ENTER ou 2º clique joga', W / 2, 244);
 }
 
 function drawPanel() {
@@ -102,8 +126,14 @@ function drawPanel() {
   ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(0, y0, W, 1);
   ctx.textAlign = 'left'; ctx.font = 'bold 20px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
   ctx.fillText(String(score).padStart(6, '0'), 10, y0 + 24);
-  ctx.font = 'bold 8px Arial, sans-serif'; ctx.fillStyle = mode === 'modern' ? '#9fe0ff' : '#ffc93c';
-  ctx.fillText(mode === 'modern' ? 'MODERNO' : 'CLÁSSICO', 12, y0 + 40);
+  ctx.font = 'bold 8px Arial, sans-serif'; ctx.fillStyle = { classic: '#ffc93c', modern: '#9fe0ff', ocean: '#4fd1e0' }[mode];
+  ctx.fillText({ classic: 'CLÁSSICO', modern: 'MODERNO', ocean: 'OCEANO' }[mode], 12, y0 + 40);
+  if (mode === 'ocean') {                                            // barra de vida do jato
+    const f = hp / 100, hx = 74, hy = y0 + 42;
+    rrect(hx, hy, 160, 4, 2); ctx.fillStyle = '#2b3042'; ctx.fill();
+    if (f > 0) { rrect(hx, hy, Math.max(4, 160 * f), 4, 2); ctx.fillStyle = f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill(); }
+    ctx.fillStyle = '#e5484d'; ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('♥', hx - 8, hy + 4.5);
+  }
   drawPowerHud(108, y0 + 4);                                          // power-ups ativos
   // medidor de combustível
   const gx = 74, gy = y0 + 28, gw = 160, f = fuel / 100;

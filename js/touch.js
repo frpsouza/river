@@ -91,7 +91,8 @@ if (TOUCH) {
 const titlePick = e => {
   const r = cv.getBoundingClientRect();
   const y = (e.clientY - r.top) / r.height * (VIEW_H + PANEL_H);
-  return y >= 128 && y < 162 ? 'classic' : y >= 170 && y < 204 ? 'modern' : null;
+  const k = Math.floor((y - TITLE_OPT_Y) / 40), off = (y - TITLE_OPT_Y) % 40;
+  return y >= TITLE_OPT_Y && off < 34 && k < 3 ? ['classic', 'modern', 'ocean'][k] : null;
 };
 cv.addEventListener('pointerdown', e => {
   if (state !== 'title') return;

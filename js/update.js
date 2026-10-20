@@ -11,9 +11,12 @@ function update() {
   const tp = taps; taps = [];
   if (state === 'title') {
     for (const t of tp) {
-      if (t.key.startsWith('Arrow')) mode = mode === 'classic' ? 'modern' : 'classic';   // qualquer seta alterna
+      const M = ['classic', 'modern', 'ocean'], k = M.indexOf(mode);
+      if (t.key === 'ArrowDown' || t.key === 'ArrowRight') mode = M[(k + 1) % 3];
+      if (t.key === 'ArrowUp' || t.key === 'ArrowLeft') mode = M[(k + 2) % 3];
       if (t.key === '1') mode = 'classic';
       if (t.key === '2') mode = 'modern';
+      if (t.key === '3') mode = 'ocean';
     }
     if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame();
     return;
@@ -24,7 +27,7 @@ function update() {
   if (state === 'over') { updateOver(tp); return; }
   if (state === 'dying') {
     if (--dyingT <= 0) {
-      if (--lives <= 0) { state = 'over'; overT = 0; overDir = 1; overSpeed = 1.1; overTarget = null; missiles = []; shells = []; resetPowerups(); }
+      if (--lives <= 0) { state = 'over'; overT = 0; overDir = 1; overSpeed = 1.1; overTarget = null; missiles = []; shells = []; resetPowerups(); resetOcean(); }
       else respawn();
     }
     return;
@@ -35,9 +38,9 @@ function update() {
   // entrada vertical e horizontal de -1 a 1: teclas valem ±1, o joystick da tela dá valores intermediários
   const vert = clamp((keys.ArrowUp || keys.w ? 1 : 0) - (keys.ArrowDown || keys.s ? 1 : 0) - stick.y, -1, 1);
   let sp;
-  if (mode === 'modern') {
-    // moderno: a câmera anda em velocidade constante e o jato voa livre pela tela (↑↓ movem na vertical)
-    sp = 1.25 * lvl;
+  if (mode !== 'classic') {
+    // moderno e oceano: a câmera anda em velocidade constante (no oceano, quase para durante o chefe) e o jato voa livre pela tela (↑↓ movem na vertical)
+    sp = (mode === 'ocean' && boss ? 0.3 : 1.25) * lvl;
     py = clamp(py + vert * 2, PLAYER_Y, VIEW_H - PH - 24);
   } else {
     // clássico: o jato fica embaixo; ↑ acelera e ↓ freia a rolagem
@@ -51,6 +54,7 @@ function update() {
   // com TIRO TRIPLO, três em leque
   tickPowerups();
   if (safeT > 0) safeT--;
+  if (hurtT > 0) hurtT--;
   if (fireCool > 0) fireCool--;
   const canFire = pw.rapid > 0 ? fireCool === 0 : missiles.length === 0;
   if ((keys[' '] || keys.z) && canFire) {
@@ -82,9 +86,10 @@ function update() {
     if (cliffHit(px + 2, px + PW - 2, pBot + 2, pTop - 2)) { kill(); return; }
   }
   // checkpoint ao passar pela ponte
+  // (no oceano não há ponte: o checkpoint é derrotar o chefe — ocean.js)
   const sec = Math.floor(pBot / BH / BLOCKS_PER_SECTION);
   const bridgeTop = (sec * BLOCKS_PER_SECTION + 15) * BH + 22 * LINE;
-  if (pBot > bridgeTop && checkpoint < (sec + 1) * BLOCKS_PER_SECTION) checkpoint = (sec + 1) * BLOCKS_PER_SECTION;
+  if (mode !== 'ocean' && pBot > bridgeTop && checkpoint < (sec + 1) * BLOCKS_PER_SECTION) checkpoint = (sec + 1) * BLOCKS_PER_SECTION;
 
   // objetos visíveis
   const g0 = Math.floor(scroll / BH) - 1, g1 = Math.floor((scroll + VIEW_H) / BH) + 2;
@@ -134,22 +139,24 @@ function update() {
         if (o.type === 'fuel') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
         else if (o.type === 'pu') collectPowerup(o);                         // coleta imediata
         else if (safeT > 0 && o.type !== 'house') { /* recém-renascido: atravessa sem bater */ }
-        else if (pw.shield > 0 && o.type !== 'house' && !(mode === 'modern' && o.type === 'tank')) {
+        else if (mode !== 'classic' && (o.type === 'house' || o.type === 'tank' || o.type === 'carrier')) { /* no chão/no mar: o jato passa por cima */ }
+        else if (pw.shield > 0 && o.type !== 'house') {
           o.alive = false; addScore(10); boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);   // o escudo absorve
         }
-        else if (mode === 'modern' && (o.type === 'house' || o.type === 'tank')) { /* no chão: o jato passa por cima */ }
-        else if (o.type !== 'house') { o.alive = false; boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o); kill(); return; }
+        else if (o.type !== 'house') { o.alive = false; boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o); if (hurt(35)) return; }
         else { kill(); return; }
       }
     }
   }
 
   // projéteis dos tanques
+  if (mode === 'ocean') { updateOcean(pBot, g0, g1); if (state !== 'play') return; }
+
   for (const sh of shells) {
-    sh.x += sh.vx;
-    if (sh.x > px + 1 && sh.x < px + PW - 1 && sh.Y > pBot && sh.Y < pTop) { sh.dead = true; if (pw.shield <= 0 && safeT <= 0) kill(); }
+    sh.x += sh.vx; sh.Y += sh.vy || 0;
+    if (sh.x > px + 1 && sh.x < px + PW - 1 && sh.Y > pBot && sh.Y < pTop) { sh.dead = true; if (pw.shield <= 0 && safeT <= 0) hurt(12); }
   }
-  shells = shells.filter(sh => !sh.dead && sh.x > -6 && sh.x < W + 6 && sh.Y > scroll - 10);
+  shells = shells.filter(sh => !sh.dead && sh.x > -6 && sh.x < W + 6 && sh.Y > scroll - 10 && sh.Y < scroll + VIEW_H + 30);
   if (state !== 'play') return;
 
   // mísseis
@@ -161,12 +168,15 @@ function update() {
     if (mode === 'classic') {
       if (m.x < b.L[i] || m.x > b.R[i] || (b.IL[i] >= 0 && m.x > b.IL[i] && m.x < b.IR[i])) hit = true;
     } else if (cliffHit(m.x, m.x + 2, my1, my1)) hit = true;            // moderno: só o paredão para o míssil
+    if (!hit && mode === 'ocean' && oceanMissileHit(m, my0, my1)) hit = true;
     if (!hit) {
       for (let g = Math.max(0, g0); g <= g1 && !hit; g++) for (const o of blocks[g].objs) {
         if (!o.alive || o.type === 'house' || o.type === 'pu') continue;
         if (m.x + 2 > o.x && m.x < o.x + o.w && my1 > o.Y && my0 < o.Y + o.h) {
-          o.alive = false; hit = true;
-          addScore({ fuel: 80, ship: 30, heli: 60, plane: 100, tank: 250, balloon: 60 }[o.type]);
+          hit = true;
+          if (o.hp > 1) { o.hp--; o.flash = 4; addScore(10); break; }       // porta-aviões: aguenta vários tiros
+          o.alive = false;
+          addScore({ fuel: 80, ship: 30, heli: 60, plane: 100, tank: 250, balloon: 60, carrier: 800 }[o.type]);
           boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);
           break;
         }

@@ -26,7 +26,7 @@ const PU_SIZE = 14;
 let pw = { shield: 0, triple: 0, rapid: 0 };
 
 function spawnPowerup(blk, r) {
-  if (mode !== 'modern' || blk.bridge || r() > 0.16) return;
+  if (mode === 'classic' || blk.bridge || r() > 0.16) return;
   let k = r(), kind = 'life';
   for (const [name, def] of Object.entries(PU)) { if (k < def.w) { kind = name; break; } k -= def.w; }
   for (let tries = 0; tries < 12; tries++) {
@@ -41,7 +41,7 @@ function collectPowerup(o) {
   const def = PU[o.kind];
   o.alive = false;
   if (def.dur) pw[o.kind] = def.dur;
-  if (o.kind === 'life') lives++;
+  if (o.kind === 'life') { lives++; hp = 100; }               // no oceano também recupera a vida
   if (o.kind === 'bomb') smartBomb();
   addScore(50);
   def.notes.forEach((f, k) => setTimeout(() => beep(f, 0.12, 'triangle', 0.05), k * 60));   // arpejo
@@ -50,7 +50,9 @@ function collectPowerup(o) {
 
 function smartBomb() {
   const g0 = Math.max(0, Math.floor(scroll / BH) - 1), g1 = Math.floor((scroll + VIEW_H) / BH) + 1;
+  if (mode === 'ocean') oceanBomb();
   for (let g = g0; g <= g1; g++) for (const o of getBlock(g).objs) {
+    if (o.alive && o.type === 'carrier') { o.hp = Math.max(1, o.hp - 5); o.flash = 8; continue; }
     if (!o.alive || !['ship', 'heli', 'plane', 'tank', 'balloon'].includes(o.type)) continue;
     const sy = VIEW_H - (o.Y + o.h - scroll);
     if (sy < -o.h || sy > VIEW_H || (o.type === 'plane' && !o.active)) continue;

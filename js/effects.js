@@ -41,6 +41,10 @@ const FX = {
       parts: [...parts(12, k => P({ x: rnd(-6, 6), y: rnd(-8, 2), vx: rnd(-0.8, 0.8), vy: rnd(-0.9, -0.2), g: 0.025, r: rnd(1.2, 2.2), shape: 'shred', vr: rnd(-0.2, 0.2), col: k % 3 ? c1 : '#f5f2ea', life: 66, sway: rnd(0, 6) })),
               P({ y: 10, vy: 0.2, g: 0.07, shape: 'r', r: 2.2, col: '#7a5a3c', life: 60 })] };
   },
+  carrier: o => ({ life: 80, fire: [[18, 30, 0, -26], [22, 34, 8], [16, 28, 16, 28]], flash: 8, rings: [['rgba(191,227,255,.85)', 44, 30, 0.4]],
+    parts: [...parts(20, () => P({ x: rnd(-40, 40), vx: rnd(-1.4, 1.4), vy: rnd(-3, -1), g: 0.12, r: rnd(0.8, 1.8), col: Math.random() < 0.5 ? '#ffffff' : '#bfe3ff', life: 44 })),
+            ...parts(12, () => P({ x: rnd(-40, 40), vx: rnd(-2, 2), vy: rnd(-2.6, -0.8), g: 0.1, shape: 'r', r: rnd(1.6, 2.6), vr: rnd(-0.3, 0.3), col: Math.random() < 0.5 ? '#5d6474' : '#9aa1b2', life: 50 })),
+            ...parts(8, k => P({ x: rnd(-30, 30), vx: rnd(-0.3, 0.3), vy: rnd(-0.5, -0.2), r: rnd(3, 4.5), grow: 1.025, col: '#2a2a30', life: 60, delay: 10 + k * 3 }))] }),
   bridge: o => ({ life: 70, fire: [[14, 24, 0], [11, 22, 8, -18], [11, 22, 14, 18]], rings: [['rgba(255,255,255,.7)', 36, 22, 1]],
     parts: [...parts(14, () => P({ x: rnd(-20, 20), vx: rnd(-2, 2), vy: rnd(-3, -1), g: 0.12, shape: 'r', r: rnd(1.6, 2.6), vr: rnd(-0.3, 0.3), col: Math.random() < 0.5 ? '#8f6c3b' : '#6a4d27', life: 50 })),
             ...parts(8, k => P({ x: rnd(-24, 24), vx: rnd(-0.3, 0.3), vy: rnd(-0.4, -0.1), r: rnd(3, 4.5), grow: 1.02, col: '#9aa1ad', life: 56, delay: 10 + k * 2 }))] }),
@@ -50,7 +54,7 @@ const FX = {
             ...parts(8, k => P({ x: rnd(-6, 6), vx: rnd(-0.3, 0.3), vy: rnd(-0.6, -0.2), r: rnd(3, 4.5), grow: 1.025, col: '#3a3f58', life: 56, delay: 12 + k * 2 }))] }),
 };
 
-const FX_SOUND = { ship: [140, 0.35], heli: [190, 0.3], plane: [240, 0.25], fuel: [70, 0.7], tank: [110, 0.45], balloon: [700, 0.08], bridge: [60, 0.8], player: [80, 0.7] };
+const FX_SOUND = { carrier: [55, 0.9], ship: [140, 0.35], heli: [190, 0.3], plane: [240, 0.25], fuel: [70, 0.7], tank: [110, 0.45], balloon: [700, 0.08], bridge: [60, 0.8], player: [80, 0.7] };
 
 function boom(x, y, kind = 'heli', o = {}) {
   const e = (FX[kind] || FX.heli)(o);

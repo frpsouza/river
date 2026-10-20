@@ -15,6 +15,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 4 | `terrain.js` | geração procedural do rio: blocos, seções, ponte, ilhas, dificuldade |
 | 5 | `objects.js` | objetos de cada bloco (inimigos, combustível, casas, tanques, balões) e altitude dos helicópteros |
 | 5b | `cliffs.js` | paredões de rocha do modo moderno, ao longo da beira do rio: geração e colisão |
+| 5d | `ocean.js` | modo oceano: mar com ilhas, esquadrilhas acrobáticas, porta-aviões, chefes, nuvens e desenhos vistos de cima |
 | 5c | `powerups.js` | power-ups do modo moderno: sorteio, coleta, efeitos, som, desenho e ícones no painel |
 | 6 | `state.js` | estado da partida e modo de jogo (`mode`): começar, renascer no checkpoint, pontuar, morrer |
 | 7 | `effects.js` | explosões: receitas por tipo, física das partículas e desenho |
@@ -48,7 +49,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | ↓ (S) | clássico: frear · moderno: descer na tela |
 | Espaço (Z) | atirar (um míssil por vez) |
 | Enter ou Espaço | iniciar (na tela de título) |
-| setas, 1/2 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
+| setas, 1/2/3 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
 **No fim de jogo** o mapa continua rolando sob o quadro "FIM DE JOGO":
 
@@ -402,6 +403,51 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
   - No ponto de renascimento, o mínimo foi de 159 px.
   - No resto da seção a dificuldade não mudou, com trechos de até ~72 px.
 - Para ajustar: `CALM_BLOCKS` e `SPAWN_SAFE` em `js/config.js`.
+
+## Mudanças da versão 18 — modo Oceano
+
+### 32. Modo Oceano (3ª opção do título)
+Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrevoa o mar aberto, sem margens nem pontes.
+- **Mar e ilhas:** a água é azul-oceano, com ilhas de contorno orgânico em ~40% dos blocos. As ilhas têm praia de areia e árvores, e o jato voa por cima delas. A zona de respiro continua valendo no começo de cada seção.
+- **Nuvens:** passam numa camada alta, 1,6× mais rápido que o mar (paralaxe), e projetam sombra na água. Ficam translúcidas quando o jato está embaixo, para não esconder o jogador. Aparecem em ~38% dos blocos.
+- **Porta-aviões:** navegam devagar e aguentam 10 tiros, com barra de vida e clarão a cada acerto. A cada ~3 s lançam um caça que decola do convés. Valem 800 pontos e têm uma explosão própria, maior. O jato passa por cima deles.
+- **Esquadrilhas acrobáticas:** chegam a cada ~4–7 s, mais rápido com a dificuldade, e atiram mirando no jogador. Os caças são vermelhos, apontam o nariz para onde voam e valem 120. Derrubar a esquadrilha inteira dá +500 com aviso na tela.
+  - **Looping:** 5 aviões descem em fila, fazem um looping completo e mergulham.
+  - **Leque em V:** formação em V que serpenteia e se abre em leque.
+  - **Varredura:** 6 aviões cruzam a tela de lado, em onda.
+  - **Espiral:** 4 aviões girando juntos enquanto descem.
+  - **Oito:** 5 aviões desenhando uma figura de oito.
+- **Chefes de fase:** no bloco 12 de cada seção chega um bombardeiro gigante de quatro motores (desenho original). Ele tem barra de vida no topo, com 60 + 20 por seção (até 180), e hélices girando.
+  - Durante a luta, a câmera quase para.
+  - Ele alterna três ataques: um leque de 7 tiros, rajadas mirando o jogador e o lançamento de caças das asas.
+  - Abaixo de 50% de vida, os motores soltam fumaça.
+  - Derrotado, cai numa cadeia de explosões e vale 3000 + 1000 por seção. **Derrotar o chefe é o checkpoint**, no lugar da ponte.
+  - Se o jogador morre durante a luta, renasce no início da seção e o chefe volta inteiro.
+- **Barra de vida do jato:** só existe neste modo e aparece no painel e sobre o jato quando ele está ferido. Cada dano tira conforme a gravidade:
+
+| Dano | Vida |
+|---|---|
+| tiro inimigo | −12 |
+| trombada num caça | −30 |
+| trombada num navio, helicóptero ou balão | −35 |
+| trombada no chefe | −50 |
+
+  - Depois de cada dano há 0,75 s de invulnerabilidade, com o jato piscando.
+  - A vida zerada custa uma vida, e o power-up de vida extra também recupera a barra.
+  - Ficar sem combustível continua derrubando na hora.
+- **Tiros inimigos:** agora podem voar em qualquer direção, e o rastro acompanha o movimento.
+- **A bomba (power-up), no oceano:** derruba todos os caças, tira 15 de vida do chefe e 5 de cada porta-aviões.
+
+### 33. Sprites do oceano vistos de cima
+- No oceano, tudo o que está sobre o mar é desenhado em planta, no mesmo tamanho das versões de lado (as áreas de colisão não mudam):
+  - balsa de combustível com dois tanques;
+  - navio com proa afilada, ponte de comando, canhão e esteira;
+  - helicóptero com disco do rotor girando e sombra que se afasta conforme a altitude;
+  - balão em gomos visto do alto;
+  - árvores das ilhas como copas redondas;
+  - aviões que cruzam a tela.
+- O jato, os caças, o porta-aviões e o chefe já são desenhados vistos de cima.
+- Nos modos clássico e moderno continua a vista de lado.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
