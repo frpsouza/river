@@ -4,7 +4,8 @@
 // Usa praticamente todos os módulos de lógica (state, terrain, objects, effects, gameover).
 'use strict';
 
-let fireCool = 0;
+let fireCool = 0, burstT = 0, burstLock = false;
+const BURST_FRAMES = 60, BURST_GAP = 7, BURST_GAP_RAPID = 4;   // rajada: até 1 s, uma bala a cada 7 quadros (4 com tiro rápido)
 
 function update() {
   frame++;
@@ -54,20 +55,24 @@ function update() {
   px += steer * 2;
   bank += (steer - bank) * 0.18;                 // inclinação suave das asas
   scroll += sp;
-  // disparo: normalmente um míssil por vez; com TIRO RÁPIDO, um a cada 9 quadros;
-  // com TIRO TRIPLO, três em leque
+  // disparo em RAJADA: segurando o gatilho, sai uma bala a cada BURST_GAP quadros por até
+  // BURST_FRAMES (1 s); depois a rajada acaba e é preciso soltar e apertar de novo.
+  // TIRO RÁPIDO encurta o intervalo; TIRO TRIPLO faz cada bala sair em leque de três.
   tickPowerups();
   if (safeT > 0) safeT--;
   if (isOcean() && tp.some(t => 'xXbB'.includes(t.key) && t.key.length === 1)) useBomb();   // 2º botão: bomba
   if (hurtT > 0) hurtT--;
   if (fireCool > 0) fireCool--;
-  const canFire = pw.rapid > 0 ? fireCool === 0 : missiles.length === 0;
-  if ((keys[' '] || keys.z) && canFire) {
-    const x = px + PW / 2 - 1, Y = scroll + py + PH;
-    missiles.push({ x, Y, vx: 0 });
-    if (pw.triple > 0) missiles.push({ x: x - 3, Y: Y - 2, vx: -1.1 }, { x: x + 3, Y: Y - 2, vx: 1.1 });
-    fireCool = 9;
-    beep(pw.rapid > 0 ? 900 : 700, 0.08, 'square', 0.03);
+  if (!(keys[' '] || keys.z)) { burstT = 0; burstLock = false; }            // soltou: rajada nova liberada
+  else if (!burstLock) {
+    if (++burstT > BURST_FRAMES) burstLock = true;                          // acabou a rajada
+    else if (fireCool <= 0) {
+      const x = px + PW / 2 - 1, Y = scroll + py + PH;
+      missiles.push({ x, Y, vx: 0 });
+      if (pw.triple > 0) missiles.push({ x: x - 3, Y: Y - 2, vx: -1.1 }, { x: x + 3, Y: Y - 2, vx: 1.1 });
+      fireCool = pw.rapid > 0 ? BURST_GAP_RAPID : BURST_GAP;
+      beep((pw.rapid > 0 ? 900 : 720) + (burstT % 2) * 60, 0.05, 'square', 0.022);
+    }
   }
 
   // combustível

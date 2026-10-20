@@ -52,7 +52,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | ← → (A D) | mover o jato |
 | ↑ (W) | clássico: acelerar · moderno: subir na tela |
 | ↓ (S) | clássico: frear · moderno: descer na tela |
-| Espaço (Z) | atirar (um míssil por vez) |
+| Espaço (Z) | atirar em rajada: segure até 1 s; para outra rajada, solte e aperte de novo |
 | X ou B | soltar uma bomba do estoque (modo oceano) |
 | Enter ou Espaço | iniciar (na tela de título) |
 | setas, 1–5 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
@@ -769,6 +769,26 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
   - o porta-aviões afundado soltou bomba + reparo.
 - Os modos clássico e moderno não mudam.
 - Para ajustar: `BOMB_START`, `BOMB_MAX`, `OCEAN_PU_CHANCE` e `OCEAN_PU_W` (`js/powerups.js`); `BOSS_DROPS`, `dropPowerup()` e `carrierDrops()` (`js/ocean.js`).
+
+## Mudanças da versão 30 — tiro em rajada
+
+### 54. Rajada de até 1 s por aperto do gatilho (todos os modos)
+- **Antes:** um míssil por vez. Era preciso esperar o míssil anterior sumir, exceto com o tiro rápido.
+- **Agora:**
+  - Segurando o gatilho, o jato solta uma **rajada**: uma bala a cada 7 quadros, por até **1 s** (≈ 9 balas).
+  - Quando a rajada acaba, o tiro para mesmo com o gatilho apertado, e é preciso **soltar e apertar de novo** para outra rajada.
+  - Soltar antes de 1 s também encerra a rajada.
+- **Com power-ups:**
+  - o **tiro rápido** encurta o intervalo para 4 quadros (≈ 14–15 balas por rajada);
+  - o **tiro triplo** faz cada bala sair em leque de três.
+- **Som:** cada bala dá um estalo curto, alternando o tom.
+- **Ao começar ou renascer** a rajada é reiniciada. Se o gatilho já estiver apertado (por exemplo, o mesmo Espaço que iniciou a partida), é preciso soltar antes, para o jato não sair atirando sozinho.
+- **Vale para** teclado (Espaço/Z), o botão FIRE na tela e o controle (A ou gatilho direito), em todos os modos. No **Classic** isso substitui a regra original de um míssil por vez.
+- **Medido:**
+  - 9 balas no 1º segundo segurando (14 com tiro rápido) e 0 no 2º segundo ainda segurando;
+  - depois de soltar e apertar, a rajada recomeça;
+  - começar segurando Espaço não dispara nada.
+- Para ajustar: `BURST_FRAMES`, `BURST_GAP` e `BURST_GAP_RAPID` em `js/update.js`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

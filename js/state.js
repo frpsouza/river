@@ -38,6 +38,7 @@ function respawn() {
   }
   scroll = checkpoint * BH + (checkpoint > 0 ? 40 : 0);   // renasce um pouco depois da saída da ponte, onde o rio já abriu
   py = PLAYER_Y; safeT = SPAWN_SAFE; hp = 100; hurtT = 0;
+  burstT = 0; burstLock = !!(keys[' '] || keys.z);       // rajada nova; se o gatilho já está apertado, solte primeiro
   resetOcean();
   const { b, i } = lineAt(scroll + py);
   px = (b.L[i] + b.R[i]) / 2 - PW / 2;
