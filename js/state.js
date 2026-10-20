@@ -8,6 +8,7 @@
 
 let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens
 let bank = 0;
+let safeT = 0;                                       // proteção ao renascer: enquanto > 0, inimigos e tiros não derrubam
 let py = PLAYER_Y;                                   // altura do jato acima do fundo da tela (no moderno ele sobe e desce)
 
 let shells = [];
@@ -28,8 +29,8 @@ function respawn() {
     blocks[g].broken = false;
     spawnObjs(blocks[g]);
   }
-  scroll = checkpoint * BH;
-  py = PLAYER_Y;
+  scroll = checkpoint * BH + (checkpoint > 0 ? 40 : 0);   // renasce um pouco depois da saída da ponte, onde o rio já abriu
+  py = PLAYER_Y; safeT = SPAWN_SAFE;
   const { b, i } = lineAt(scroll + py);
   px = (b.L[i] + b.R[i]) / 2 - PW / 2;
   fuel = 100; missiles = []; fx = []; dyingT = 0; shells = []; resetPowerups();

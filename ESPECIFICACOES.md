@@ -85,6 +85,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 - Ganha-se uma vida extra a cada 10.000 pontos. Começa-se com 3 vidas.
 - Morre-se ao bater em margem, ilha, ponte ou inimigo, ou ao ficar sem combustível.
 - Depois de passar por uma ponte, o jogador recomeça dali ao morrer. Antes disso, recomeça no início da seção.
+- Logo depois de cada ponte há uma **zona de respiro**: rio largo, sem ilhas, paredões nem inimigos, e o jato renasce protegido por 2,5 s (veja a mudança 31).
 
 ### Sprites
 Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, helicóptero (hélice animada), navio, avião, casa com árvore, tanque visto de lado (esteiras e rodas animadas), balão, árvores, cercas, vacas e o jato do jogador. Os PNGs extraídos de `river.png` continuam em `sprites/` como referência, mas o jogo não os usa mais.
@@ -385,6 +386,22 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - O teclado continua igual: cada tecla vale ±1.
 - **Medido no teste:** toque leve à direita = 0,23, borda = 1,00, diagonal a 45° = 0,71 em cada eixo (a velocidade total não passa de 1).
 - Para ajustar: `buildStick()` em `js/touch.js` (`DEAD`, `REACH`) e o CSS `#pad .stick` / `.knob` em `index.html`.
+
+## Mudanças da versão 17 — zona de respiro depois dos checkpoints
+
+### 31. Sem armadilhas logo depois da ponte
+- **Antes:** o jogador renascia na saída da ponte, num vão de 64 px. O primeiro bloco podia estreitar ainda mais, ter ilha, paredão ou um inimigo bem na frente, o que muitas vezes era morte certa.
+- **Agora**, nos três primeiros blocos de cada seção (`CALM_BLOCKS = 3`, ~190 px de rio depois da ponte):
+  - **Rio largo e quase reto:** pelo menos 180 px de largura sorteada, com o centro andando no máximo ±12 px por bloco.
+  - **Saída rápida:** ao sair da ponte, as margens abrem até 60 px por lado (em vez de 40) e numa transição mais curta.
+  - **Sem obstáculos:** nada de ilhas, paredões de rocha nem inimigos (navio, helicóptero, avião, tanque, balão). Combustível, casas e power-ups continuam aparecendo.
+- **Renascimento:** o jogador renasce 40 px depois da saída da ponte, onde o rio já abriu.
+- **Proteção ao renascer:** por 2,5 s (`SPAWN_SAFE = 150` quadros), inimigos e tiros não derrubam o jato, que pisca. Margens e paredões continuam valendo.
+- **Medido em 30 seções:**
+  - Na zona de respiro, a largura mínima foi de 152 px no clássico e 169 px no moderno, com 0 ilhas, 0 paredões e 0 inimigos.
+  - No ponto de renascimento, o mínimo foi de 159 px.
+  - No resto da seção a dificuldade não mudou, com trechos de até ~72 px.
+- Para ajustar: `CALM_BLOCKS` e `SPAWN_SAFE` em `js/config.js`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

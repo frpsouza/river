@@ -28,7 +28,8 @@ function genCliffs(blk, prev) {
     const start = prev ? (left ? prev.cliffL : prev.cliffR)[LINES - 1] : 0;
     const land = i => left ? blk.L[i] : W - blk.R[i];   // terra disponível na linha i
     let target = 0;
-    const want = start > 0 ? r() < 0.75 : r() < 0.22 + 0.4 * d;   // continua um paredão ou começa outro
+    const want = blk.b < CALM_BLOCKS ? false                       // zona de respiro depois da ponte
+      : start > 0 ? r() < 0.75 : r() < 0.22 + 0.4 * d;              // continua um paredão ou começa outro
     const width = 14 + r() * (12 + 18 * d);
     if (!closing && want) target = Math.min(width, land(LINES - 1) - 8);
     if (target < 8) target = 0;

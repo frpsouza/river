@@ -50,6 +50,7 @@ function update() {
   // disparo: normalmente um míssil por vez; com TIRO RÁPIDO, um a cada 9 quadros;
   // com TIRO TRIPLO, três em leque
   tickPowerups();
+  if (safeT > 0) safeT--;
   if (fireCool > 0) fireCool--;
   const canFire = pw.rapid > 0 ? fireCool === 0 : missiles.length === 0;
   if ((keys[' '] || keys.z) && canFire) {
@@ -132,6 +133,7 @@ function update() {
       if (px1 > o.x + 1 && px0 < o.x + o.w - 1 && pTop > o.Y + 1 && pBot < o.Y + o.h - 1) {
         if (o.type === 'fuel') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
         else if (o.type === 'pu') collectPowerup(o);                         // coleta imediata
+        else if (safeT > 0 && o.type !== 'house') { /* recém-renascido: atravessa sem bater */ }
         else if (pw.shield > 0 && o.type !== 'house' && !(mode === 'modern' && o.type === 'tank')) {
           o.alive = false; addScore(10); boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);   // o escudo absorve
         }
@@ -145,7 +147,7 @@ function update() {
   // projéteis dos tanques
   for (const sh of shells) {
     sh.x += sh.vx;
-    if (sh.x > px + 1 && sh.x < px + PW - 1 && sh.Y > pBot && sh.Y < pTop) { sh.dead = true; if (pw.shield <= 0) kill(); }
+    if (sh.x > px + 1 && sh.x < px + PW - 1 && sh.Y > pBot && sh.Y < pTop) { sh.dead = true; if (pw.shield <= 0 && safeT <= 0) kill(); }
   }
   shells = shells.filter(sh => !sh.dead && sh.x > -6 && sh.x < W + 6 && sh.Y > scroll - 10);
   if (state !== 'play') return;

@@ -15,6 +15,10 @@ const LINE = 2, LINES = 32, BH = LINE * LINES;      // bloco: 32 linhas de 2px =
 const BLOCKS_PER_SECTION = 16;
 
 const MAXD = 40;
+// zona de respiro: os primeiros blocos de cada seção (logo depois da ponte, onde o jogador
+// renasce) têm rio largo e reto, sem ilhas, paredões nem inimigos
+const CALM_BLOCKS = 3;
+const SPAWN_SAFE = 150;                                // quadros de proteção ao renascer (2,5 s)
 
 const smooth = t => t * t * (3 - 2 * t);               // curva suave (sem degraus)
 

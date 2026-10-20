@@ -47,9 +47,14 @@ function genBlock(g) {
     tw = wMin + (264 - wMin) * Math.pow(rng(), 1 + d);
     if (b === BLOCKS_PER_SECTION - 2) tw = 94;            // afunila antes da ponte
     tc = 12 + tw / 2 + rng() * (W - 24 - tw);
+    if (b < CALM_BLOCKS) {                                // zona de respiro: largo e quase reto
+      tw = Math.max(tw, 180);
+      tc = prev.endC + (rng() - 0.5) * 24;
+    }
     // as margens só podem andar MAXD px por bloco, para o jato conseguir seguir o rio
     const pL = prev.endC - prev.endW / 2, pR = prev.endC + prev.endW / 2;
-    let tL = clamp(tc - tw / 2, pL - MAXD, pL + MAXD), tR = clamp(tc + tw / 2, pR - MAXD, pR + MAXD);
+    const open = b < CALM_BLOCKS ? 60 : MAXD;             // na zona de respiro as margens abrem mais depressa
+    let tL = clamp(tc - tw / 2, pL - open, pL + MAXD), tR = clamp(tc + tw / 2, pR - MAXD, pR + open);
     if (b === BLOCKS_PER_SECTION - 2 && tR - tL > 100) { const m = (tL + tR) / 2; tL = m - 47; tR = m + 47; }
     const minW = b === BLOCKS_PER_SECTION - 2 ? 64 : Math.max(64, wMin - 2 * MAXD * 0.5);
     if (tR - tL < minW) { const m = (tL + tR) / 2; tL = m - minW / 2; tR = m + minW / 2; }
@@ -57,7 +62,7 @@ function genBlock(g) {
     tc = (tL + tR) / 2; tw = tR - tL;
   }
   blk.endC = tc; blk.endW = tw;
-  const t0 = blk.bridge ? 0 : 1, span = blk.bridge ? 9 : 30;
+  const t0 = blk.bridge ? 0 : 1, span = blk.bridge ? 9 : b === 0 ? 16 : 30;   // saindo da ponte, abre rápido
   for (let i = 0; i < LINES; i++) {
     const t = smooth(clamp((i - t0) / span, 0, 1));
     const c = prev.endC + (tc - prev.endC) * t;
@@ -67,7 +72,7 @@ function genBlock(g) {
   // ilha
   // ilhas: raras no começo, mais frequentes com a dificuldade; pequenas
   const dI = Math.min(s, 8) / 8;
-  if (!blk.bridge && g > 1 && tw >= 150 && prev.endW >= 150 && rng() < 0.1 + 0.45 * dI) {
+  if (!blk.bridge && g > 1 && b >= CALM_BLOCKS && tw >= 150 && prev.endW >= 150 && rng() < 0.1 + 0.45 * dI) {
     const maxIW = Math.min(tw, prev.endW) - 96;
     if (maxIW >= 16) {
       const iw = 16 + rng() * (Math.min(maxIW, 34 + 26 * dI) - 16);   // 16–34 px no início, até 60 px depois

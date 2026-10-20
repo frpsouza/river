@@ -38,7 +38,11 @@ function draw() {
   }
   if (state === 'play' && mode === 'modern')                         // moderno: sombra do jato lá embaixo
     ell(px + PW / 2 + 7, VIEW_H - py - PH * 0.35 + 9, PW * 0.42, 3, 'rgba(0,0,30,.28)');
-  if (state === 'play') drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC, true);
+  if (state === 'play') {
+    if (safeT > 0 && frame % 10 < 5) ctx.globalAlpha = 0.35;          // pisca enquanto está protegido
+    drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC, true);
+    ctx.globalAlpha = 1;
+  }
   if (state === 'play') drawShield(px + PW / 2, VIEW_H - py - PH / 2);
   fx.forEach(drawExplosion);
   drawPanel();

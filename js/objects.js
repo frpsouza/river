@@ -22,9 +22,10 @@ function spawnObjs(blk) {
   }
   const k = r();
   const type = k < 0.26 ? 'fuel' : k < 0.46 ? 'ship' : k < 0.66 ? 'heli' : k < 0.78 ? 'house' : k < 0.9 ? 'tank' : 'balloon';
+  const calm = blk.b < CALM_BLOCKS && type !== 'fuel' && type !== 'house';   // zona de respiro: sem inimigos
   const dims = { fuel: [18, 28], ship: [43, 14], heli: [27, 19], house: [36, 23], tank: [19, 10], balloon: [24, 36] }[type];
   const [w, h] = dims;
-  for (let tries = 0; tries < 30; tries++) {
+  for (let tries = 0; tries < 30 && !calm; tries++) {
     const yi = 3 + Math.floor(r() * (LINES - 6 - h / LINE));
     const Y = base + yi * LINE;
     if (type === 'house' || type === 'tank') {
@@ -61,7 +62,7 @@ function spawnObjs(blk) {
     break;
   }
   // avião inimigo ocasional: cruza a tela quando o jogador se aproxima
-  if (blk.g > 3 && r() < 0.18)
+  if (blk.g > 3 && blk.b >= CALM_BLOCKS && r() < 0.18)
     blk.objs.push({ type: 'plane', x: -100, Y: base + 22 * LINE, w: 25, h: 13, alive: true,
       dir: r() < 0.5 ? -1 : 1, active: false, vx: 2.2 + Math.min(blk.s, 10) * 0.1 });
   spawnPowerup(blk, r);                              // modo moderno (powerups.js)
