@@ -27,17 +27,54 @@ function resetOcean() { fliers = []; boss = null; squadT = 240; squads = {}; }
 function newOceanGame() { resetOcean(); bossDone = {}; }
 
 // ---------- terreno: mar aberto com ilhas ----------
+// As ilhas podem ser bem mais compridas que um bloco: o estado da ilha em curso passa de um
+// bloco para o seguinte (blk.isle), então ela continua sem emenda. Tipos:
+//   longa ...... comprida no sentido do voo (2 a 5 blocos), espinha sinuosa e largura que respira
+//   arquipélago  cadeia de ilhotas em zigue-zague, separadas por canais de água
+//   atol ....... anel de areia e mato com uma lagoa turquesa no meio
+//   redonda .... ilha pequena e arredondada
+// Cada linha guarda um só trecho de ilha (IL/IR), o mesmo formato das ilhas do rio.
+const ISLE_TYPES = {
+  long:  { len: [70, 160], w: [40, 90] },
+  chain: { len: [90, 150], w: [26, 46] },
+  atoll: { len: [40, 64],  w: [80, 130] },
+  round: { len: [22, 40],  w: [40, 100] },
+};
+function isleHalf(st, u, t) {                          // meia-largura e centro da ilha no ponto u (0→1)
+  const env = Math.pow(Math.max(0, 1 - Math.abs(2 * u - 1) ** 2.2), 0.6);   // pontas ovais (começa estreita)
+  let half, c = st.cx;
+  if (st.kind === 'long') { half = st.w / 2 * env * (0.72 + 0.28 * Math.sin(u * 7 + st.ph)); c += Math.sin(u * 3.2 + st.ph) * 26; }
+  else if (st.kind === 'chain') { const s = Math.abs(Math.sin(u * Math.PI * st.k)); half = st.w / 2 * Math.max(0, (s - 0.28) / 0.72) * (0.6 + 0.4 * env); c += Math.sin(u * Math.PI * st.k * 0.5 + st.ph) * 34; }
+  else if (st.kind === 'atoll') { half = st.w / 2 * env; c += Math.sin(u * 2 + st.ph) * 6; }
+  else { half = st.w / 2 * env * (1 + 0.12 * Math.sin(t * 0.35 + st.ph)); }
+  return [half, c];
+}
+
 function genOceanBlock(blk) {
   for (let i = 0; i < LINES; i++) { blk.L[i] = -40; blk.R[i] = W + 40; }   // margens fora da tela
   blk.endC = W / 2; blk.endW = W + 80;
-  if (blk.g < 2 || blk.b < CALM_BLOCKS || rng() > 0.4) return;
-  const iw = 40 + rng() * 100, hl = 7 + rng() * 6, cx = 30 + rng() * (W - 60), ph = rng() * 6.28;
-  for (let i = Math.ceil(15.5 - hl); i <= Math.floor(15.5 + hl); i++) {
-    const u = (i - 15.5) / hl;
-    const half = iw / 2 * Math.sqrt(Math.max(0, 1 - u ** 4)) * (1 + 0.12 * Math.sin(i * 0.9 + ph));
-    const c = cx + Math.sin(i * 0.4 + ph) * 6;                            // contorno orgânico
-    blk.IL[i] = c - half; blk.IR[i] = c + half;
+  blk.LG = new Float32Array(LINES);                                         // meia-largura da lagoa (atol)
+  const prev = blk.g > 0 ? blocks[blk.g - 1] : null;
+  let st = prev && prev.isle ? Object.assign({}, prev.isle) : null;         // ilha que vem do bloco anterior
+  // começar uma ilha nova neste bloco? (fora da zona de respiro e se nenhuma estiver em curso)
+  let startAt = -1;
+  if (!st && blk.g >= 2 && blk.b >= CALM_BLOCKS && rng() < 0.42) startAt = Math.floor(rng() * LINES);
+  for (let i = 0; i < LINES; i++) {
+    if (!st && i === startAt) {
+      const kinds = ['long', 'long', 'chain', 'atoll', 'round', 'round'], kind = kinds[Math.floor(rng() * kinds.length)], T = ISLE_TYPES[kind];
+      const w = T.w[0] + rng() * (T.w[1] - T.w[0]);
+      st = { kind, t: 0, len: Math.round(T.len[0] + rng() * (T.len[1] - T.len[0])), w,
+        cx: w / 2 + 6 + rng() * (W - w - 12), ph: rng() * 6.28, k: 3 + Math.floor(rng() * 3) };
+    }
+    if (!st) continue;
+    const u = st.t / st.len, [half, c] = isleHalf(st, u, st.t);
+    if (half > 1.5) {
+      blk.IL[i] = c - half; blk.IR[i] = c + half;
+      if (st.kind === 'atoll') blk.LG[i] = Math.max(0, half * 0.62 - st.w * 0.1);   // lagoa afina junto com o anel
+    }
+    if (++st.t > st.len) st = null;
   }
+  blk.isle = st;                                                            // continua no próximo bloco
 }
 
 // ---------- esquadrilhas acrobáticas ----------
@@ -301,38 +338,62 @@ function drawCarrier(x, y, dir, o) {
 // Ficam numa camada alta: andam 1,6× mais rápido que o mar (paralaxe), projetam sombra na
 // água e ficam translúcidas quando o jato está embaixo, para não esconder o jogador.
 const CLOUD_PAR = 1.6;
+// tipos de nuvem (tamanhos em px de tela; dy negativo = para cima):
+//   flocos ... grupo pequeno e redondo          torre .... cúmulo alto, empilhado
+//   faixa .... banco comprido no sentido do voo (até ~260 px), serpenteando
+//   fiapos ... véus finos e esticados na vertical, mais transparentes
+// cada floco: [dx, dy, raio, esticamento vertical]
 function getClouds(blk) {
   if (blk.clouds) return blk.clouds;
   const r = mulberry32(blk.seed ^ 0xc10d), list = [];
-  if (r() < 0.38) {
-    const n = 1 + Math.floor(r() * 2);
-    for (let k = 0; k < n; k++) {
-      const cw = 40 + r() * 70, puffs = [];
-      for (let p = 0; p < 5 + Math.floor(r() * 4); p++)
-        puffs.push([(r() - 0.5) * cw, (r() - 0.5) * cw * 0.25, cw * (0.16 + r() * 0.14)]);
-      list.push({ x: r() * W, Y: blk.g * BH + r() * BH, puffs });
+  if (r() < 0.45) {
+    const k = r(), x = r() * W, Y = blk.g * BH + r() * BH, puffs = [];
+    let kind, alpha = 0.88;
+    if (k < 0.32) {                                     // flocos
+      kind = 'puff';
+      const cw = 40 + r() * 60;
+      for (let p = 0; p < 5 + Math.floor(r() * 4); p++) puffs.push([(r() - 0.5) * cw, (r() - 0.5) * cw * 0.4, cw * (0.16 + r() * 0.14), 1]);
+    } else if (k < 0.62) {                              // faixa comprida e sinuosa
+      kind = 'bank';
+      const len = 120 + r() * 140, ph = r() * 6.28, amp = 12 + r() * 22;
+      for (let d = 0; d < len; d += 12 + r() * 6) {
+        const sx = Math.sin(d * 0.025 + ph) * amp, rr = 13 + r() * 12 * (0.6 + 0.4 * Math.sin(Math.PI * d / len));
+        puffs.push([sx, -d, rr, 1.1]);
+        if (r() < 0.6) puffs.push([sx + (r() < 0.5 ? -1 : 1) * rr * 0.9, -d - r() * 8, rr * 0.7, 1]);
+      }
+    } else if (k < 0.82) {                              // fiapos esticados
+      kind = 'wisp'; alpha = 0.6;
+      const n = 3 + Math.floor(r() * 3);
+      for (let p = 0; p < n; p++) puffs.push([(r() - 0.5) * 50, -r() * 140, 5 + r() * 6, 3.5 + r() * 3]);
+    } else {                                            // torre (cúmulo)
+      kind = 'tower';
+      const h = 70 + r() * 70;
+      for (let d = 0; d < h; d += 10) { const rr = 24 * (1 - d / h * 0.55) * (0.85 + r() * 0.3); puffs.push([(r() - 0.5) * 14, -d, rr, 0.9]); }
     }
+    list.push({ x, Y, kind, alpha, puffs });
   }
   return (blk.clouds = list);
 }
 const cloudY = c => VIEW_H - (c.Y - scroll) * CLOUD_PAR;
 
 function forClouds(fn) {
-  const g0 = Math.max(0, Math.floor((scroll - 40) / BH)), g1 = Math.floor((scroll + (VIEW_H + 80) / CLOUD_PAR) / BH);
+  // nuvens altas começam abaixo da tela e se estendem para cima: olha blocos um pouco antes
+  const g0 = Math.max(0, Math.floor((scroll - 200) / BH)), g1 = Math.floor((scroll + (VIEW_H + 80) / CLOUD_PAR) / BH);
   for (let g = g0; g <= g1; g++) for (const c of getClouds(getBlock(g))) fn(c, cloudY(c));
 }
 
 function drawCloudShadows() {
-  forClouds((c, y) => { for (const [dx, dy, r] of c.puffs) ell(c.x + dx + 24, y + dy + 34, r, r * 0.8, 'rgba(0,0,40,.10)'); });
+  forClouds((c, y) => { for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx + 24, y + dy + 34, r, r * 0.8 * st, 'rgba(0,0,40,' + (c.kind === 'wisp' ? '.05' : '.10') + ')'); });
 }
 
 function drawClouds() {
   const jx = px + PW / 2, jy = VIEW_H - py - PH / 2;
   forClouds((c, y) => {
-    const over = state === 'play' && c.puffs.some(([dx, dy, r]) => Math.hypot(jx - c.x - dx, jy - y - dy) < r + 4);
-    ctx.globalAlpha = over ? 0.45 : 0.88;
-    for (const [dx, dy, r] of c.puffs) ell(c.x + dx, y + dy + r * 0.25, r, r * 0.85, '#d6e2f0');   // base sombreada
-    for (const [dx, dy, r] of c.puffs) ell(c.x + dx - r * 0.12, y + dy - r * 0.08, r * 0.9, r * 0.78, '#ffffff');
+    if (y - 300 > VIEW_H || y + 40 < -300) return;
+    const over = state === 'play' && c.puffs.some(([dx, dy, r, st]) => Math.abs(jx - c.x - dx) < r + 4 && Math.abs(jy - y - dy) < r * st + 4);
+    ctx.globalAlpha = over ? Math.min(0.45, c.alpha) : c.alpha;
+    for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx, y + dy + r * 0.25, r, r * 0.85 * st, '#d6e2f0');   // base sombreada
+    for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx - r * 0.12, y + dy - r * 0.08, r * 0.9, r * 0.78 * st, '#ffffff');
     ctx.globalAlpha = 1;
   });
 }

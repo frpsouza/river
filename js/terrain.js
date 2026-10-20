@@ -101,7 +101,7 @@ function waterFree(x0, x1, Ybot, Ytop) {
   for (let Y = Ybot; Y <= Ytop; Y += LINE) {
     const { b, i } = lineAt(Y);
     if (x0 < b.L[i] + 2 || x1 > b.R[i] - 2) return false;
-    if (b.IL[i] >= 0 && x1 > b.IL[i] - 2 && x0 < b.IR[i] + 2) return false;
+    if (b.IR[i] > b.IL[i] && x1 > b.IL[i] - 2 && x0 < b.IR[i] + 2) return false;
   }
   return true;
 }

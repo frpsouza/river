@@ -463,6 +463,42 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - Nos modos clássico e moderno, os navios não mudaram: não atiram e colidem.
 - Para ajustar: `shipFire()` em `js/ocean.js` e o canhão em `drawShipTop()`.
 
+## Mudanças da versão 20 — ilhas e nuvens variadas e alongadas
+
+### 35. Ilhas do oceano de quatro tipos, que atravessam vários blocos
+- **Antes:** uma ilha oval por bloco, com no máximo ~50 px de altura.
+- **Agora:** a ilha em curso passa de um bloco para o seguinte (`blk.isle`), então ela pode ser muito mais comprida no sentido do voo:
+
+| Tipo | Forma | Altura típica |
+|---|---|---|
+| longa | espinha sinuosa e largura que "respira" | 140–320 px (2 a 5 blocos) |
+| arquipélago | cadeia de 3 a 5 ilhotas em zigue-zague, separadas por canais | 180–300 px no total |
+| atol | anel de mato e areia com lagoa turquesa no meio, que afina nas pontas | 80–130 px |
+| redonda | pequena e arredondada | 45–80 px |
+
+- **Medido em 4 mapas:** as ilhas chegaram a 316 px de altura (10% passam de 240 px).
+- **Desenho:**
+  - Um bloco pode ter vários trechos de ilha.
+  - Quando um trecho continua no bloco vizinho, o contorno fica aberto ali, sem costura.
+  - Cada camada da ilha é desenhada em todos os blocos antes da seguinte: água rasa e sombra, depois a praia, a terra e por fim os detalhes. Assim não aparecem marcas nas emendas.
+  - As pontas ganharam um bico arredondado (as ilhas do rio também).
+  - As árvores são distribuídas ao longo de toda a ilha, nas duas margens da lagoa no caso do atol.
+- **Correção:** uma ilha que passa da borda esquerda da tela tem a beira em posição negativa, e antes ela era tratada como "sem ilha" nas colisões e no posicionamento de navios. Agora conta normalmente.
+
+### 36. Nuvens de quatro tipos, compridas na vertical
+- **Antes:** um grupo de flocos redondo, de 40–110 px.
+- **Agora:** as nuvens aparecem em 45% dos blocos, e a altura mediana é ~165 px (até ~300 px).
+
+| Tipo | Forma |
+|---|---|
+| flocos | grupo pequeno e redondo |
+| faixa | banco comprido (120–260 px) que serpenteia no sentido do voo, com flocos laterais |
+| fiapos | véus finos esticados na vertical, mais transparentes e com sombra mais fraca |
+| torre | cúmulo alto e empilhado, mais largo embaixo |
+
+- As nuvens altas começam abaixo da tela e se estendem para cima, por isso o desenho considera blocos um pouco antes da tela, para elas não "brotarem" de repente.
+- Continuam translúcidas sobre o jato, agora com o teste levando em conta o formato esticado.
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

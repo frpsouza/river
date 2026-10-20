@@ -77,7 +77,7 @@ function update() {
     for (let Y = pBot; Y <= pTop; Y += LINE) {
       const { b, i } = lineAt(Y);
       if (px < b.L[i] || px + PW > b.R[i]) { kill(); return; }
-      if (b.IL[i] >= 0 && px + PW > b.IL[i] && px < b.IR[i]) { kill(); return; }
+      if (b.IR[i] > b.IL[i] && px + PW > b.IL[i] && px < b.IR[i]) { kill(); return; }
       if (b.bridge && !b.broken && i >= 10 && i <= 21) { kill(); return; }
     }
   } else {
@@ -167,7 +167,7 @@ function update() {
     let hit = m.Y > scroll + VIEW_H || m.x < -4 || m.x > W + 4;
     const { b, i } = lineAt(my1);
     if (mode === 'classic') {
-      if (m.x < b.L[i] || m.x > b.R[i] || (b.IL[i] >= 0 && m.x > b.IL[i] && m.x < b.IR[i])) hit = true;
+      if (m.x < b.L[i] || m.x > b.R[i] || (b.IR[i] > b.IL[i] && m.x > b.IL[i] && m.x < b.IR[i])) hit = true;
     } else if (cliffHit(m.x, m.x + 2, my1, my1)) hit = true;            // moderno: só o paredão para o míssil
     if (!hit && mode === 'ocean' && oceanMissileHit(m, my0, my1)) hit = true;
     if (!hit) {

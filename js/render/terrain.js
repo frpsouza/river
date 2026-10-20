@@ -12,7 +12,7 @@ function shoreStroke(pts, w, color) {
   ctx.lineWidth = w; ctx.strokeStyle = color; ctx.lineJoin = 'round'; ctx.lineCap = 'butt'; ctx.stroke();
 }
 
-function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2: luz, arbustos e ilha
+function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2: luz, decoração e água rasa das ilhas, 3: praia, 4: terra das ilhas, 5: detalhes das ilhas
   const yAt = i => VIEW_H - (blk.g * BH + i * LINE + LINE / 2 - scroll);
   const yBot = VIEW_H - (blk.g * BH - scroll) + 1, yTop = VIEW_H - ((blk.g + 1) * BH - scroll) - 1;
   const pal = blk.land === LAND_LIGHT ? PAL.light : PAL.dark;
@@ -41,7 +41,7 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
     const i = 1 + Math.floor(r() * (LINES - 2)), len = 10 + r() * 10, x0 = r() * W, ph = r() * 6.28, sp = 0.6 + r() * 0.6;
     const t = frame * 0.03 * sp + ph, x = x0 + Math.sin(t * 0.7) * 5;
     if (x < blk.L[i] + 10 || x + len > blk.R[i] - 10) continue;
-    if (blk.IL[i] >= 0 && x + len > blk.IL[i] - 10 && x < blk.IR[i] + 10) continue;
+    if (blk.IR[i] > blk.IL[i] && x + len > blk.IL[i] - 10 && x < blk.IR[i] + 10) continue;
     const a = 0.07 + 0.12 * (0.5 + 0.5 * Math.sin(t));
     ctx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
     const y = yAt(i);
@@ -58,45 +58,104 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
     for (const [pts, wall] of [[eL, 0], [eR, W]]) { bankPoly(pts, wall); ctx.fillStyle = pal.land; ctx.fill(); }
     return;
   }
-  // margens
-  for (const [pts, sp, wall] of [[eL, sL, 0], [eR, sR, W]]) {
-    ctx.save(); bankPoly(pts, wall); ctx.clip();
-    shoreStroke(sp, 13, 'rgba(255,255,255,.10)');         // faixa de luz junto à água
-    shoreStroke(sp, 5, 'rgba(255,255,255,.14)');
+  if (phase === 2) {                                  // fase 2: luz das margens e decoração
+    // margens
+    for (const [pts, sp, wall] of [[eL, sL, 0], [eR, sR, W]]) {
+      ctx.save(); bankPoly(pts, wall); ctx.clip();
+      shoreStroke(sp, 13, 'rgba(255,255,255,.10)');         // faixa de luz junto à água
+      shoreStroke(sp, 5, 'rgba(255,255,255,.14)');
+      ctx.restore();
+    }
+    // bosques, campos com vacas e árvores soltas (vista de lado, como as casas)
+    const deco = getDeco(blk);
+    for (const f of deco.fields) drawField(f.x0, yAt(f.b), f.x1 - f.x0, yAt(f.a) - yAt(f.b), pal);
+    for (const d of deco.items) {
+      const y = yAt(d.i);
+      if (d.kind === 'cow') drawCow(d.x, y, d.dir, d.phase);
+      else drawTree(d.x, y, d.s, d.kind === 'pine', pal);
+    }
+  }
+  // ilhas: um ou mais trechos por bloco; um trecho que encosta na borda do bloco continua
+  // no bloco vizinho (ilhas compridas do oceano), então ali o contorno fica aberto, sem costura
+  for (const [a, b] of islandRuns(blk)) {
+    // o preenchimento passa 1 px da borda do bloco (sem fresta); os contornos param exatamente
+    // na borda (sem sobrepor o traço do bloco vizinho, que escureceria a emenda)
+    const edgeB = VIEW_H - (blk.g * BH - scroll), edgeT = VIEW_H - ((blk.g + 1) * BH - scroll);
+    const y = (i, f) => i === 0 && a === 0 ? (f ? yBot : edgeB) : i === LINES - 1 && b === LINES - 1 ? (f ? yTop : edgeT) : yAt(i);
+    const left = [], right = [], fl = [], fr = [];
+    for (let i = a; i <= b; i++) {
+      left.push([blk.IL[i], y(i, 0)]); right.push([blk.IR[i], y(i, 0)]);
+      fl.push([blk.IL[i], y(i, 1)]); fr.push([blk.IR[i], y(i, 1)]);
+    }
+    // pontas arredondadas: um "bico" além da primeira/última linha, quando a ilha termina neste bloco
+    const cap = (i, dir) => { const c = (blk.IL[i] + blk.IR[i]) / 2, h = Math.min(7, (blk.IR[i] - blk.IL[i]) * 0.32); return [c, yAt(i) + dir * h]; };
+    if (a > 0) { const p = cap(a, 1); for (const arr of [left, right, fl, fr]) arr.unshift(p); }
+    if (b < LINES - 1) { const p = cap(b, -1); for (const arr of [left, right, fl, fr]) arr.push(p); }
+    const fillPts = fl.concat(fr.slice().reverse());
+    const outlines = outlinesOf(left, right, a === 0, b === LINES - 1);
+    const fillPath = () => { ctx.beginPath(); fillPts.forEach((q, k) => k ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); };
+    // cada camada da ilha é desenhada em TODOS os blocos antes da seguinte, para que nada de um
+    // bloco caia por cima da camada já pronta do vizinho (sem marcas nas emendas)
+    if (phase === 2) { for (const o of outlines) { shoreStroke(o, 12, 'rgba(120,170,255,.20)'); shoreStroke(o, 6, 'rgba(8,12,70,.38)'); } continue; }
+    if (phase === 3) { if (mode === 'ocean') for (const o of outlines) { shoreStroke(o, 9, '#e9d8a6'); shoreStroke(o, 4, '#f5ecc8'); } continue; }   // praia
+    if (phase === 4) { fillPath(); ctx.fillStyle = PAL.dark.land; ctx.fill(); continue; }
+    // fase 5: realces, lagoa e árvores
+    fillPath(); ctx.save(); ctx.clip();
+    for (const o of outlines) { shoreStroke(o, 12, 'rgba(255,255,255,.10)'); shoreStroke(o, 4, 'rgba(255,255,255,.14)'); }
     ctx.restore();
+    // lagoa do atol (oceano)
+    if (blk.LG && blk.LG.slice(a, b + 1).some(v => v > 0)) {
+      let la = -1, lb = -1;
+      for (let i = a; i <= b; i++) if (blk.LG[i] > 0) { if (la < 0) la = i; lb = i; }
+      const lg = [], rg = [], flg = [], frg = [];
+      for (let i = la; i <= lb; i++) {
+        const c = (blk.IL[i] + blk.IR[i]) / 2;
+        lg.push([c - blk.LG[i], y(i, 0)]); rg.push([c + blk.LG[i], y(i, 0)]);
+        flg.push([c - blk.LG[i], y(i, 1)]); frg.push([c + blk.LG[i], y(i, 1)]);
+      }
+      const lp = flg.concat(frg.reverse());
+      ctx.beginPath(); lp.forEach((q, k) => k ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath();
+      ctx.fillStyle = '#3fb6c9'; ctx.fill();
+      for (const o of outlinesOf(lg, rg, la === 0, lb === LINES - 1)) shoreStroke(o, 3, '#e9d8a6');   // areia da lagoa, sem costura
+    }
+    // árvores: uma a cada ~5 linhas, sorteadas pela semente do bloco, longe da beira e da lagoa
+    const r = mulberry32(blk.seed ^ (a * 977 + 0x7ee));
+    for (let i = a + 2; i <= b - 1; i += 4 + Math.floor(r() * 3)) {
+      const wI = blk.IR[i] - blk.IL[i], lag = blk.LG ? blk.LG[i] : 0;
+      if (wI < 16) continue;
+      const c = (blk.IL[i] + blk.IR[i]) / 2;
+      const span = lag > 0 ? (wI / 2 - lag) : wI * 0.6;
+      const xs = lag > 0 ? [c - lag - span / 2, c + lag + span / 2] : [c + (r() - 0.5) * span];
+      for (const tx of xs) {
+        if (lag > 0 && span < 10) continue;
+        const sc = 0.65 + r() * 0.4, pine = r() < 0.4;
+        if (mode === 'ocean') drawTreeTop(tx, yAt(i), sc * 1.1, PAL.dark);           // oceano: vista de cima
+        else drawTree(tx, yAt(i), sc, pine, PAL.dark);
+      }
+    }
   }
-  // bosques, campos com vacas e árvores soltas (vista de lado, como as casas)
-  const deco = getDeco(blk);
-  for (const f of deco.fields) drawField(f.x0, yAt(f.b), f.x1 - f.x0, yAt(f.a) - yAt(f.b), pal);
-  for (const d of deco.items) {
-    const y = yAt(d.i);
-    if (d.kind === 'cow') drawCow(d.x, y, d.dir, d.phase);
-    else drawTree(d.x, y, d.s, d.kind === 'pine', pal);
+}
+
+// contornos de um trecho: anel fechado, ou só as laterais (e a ponta interna) quando o trecho
+// continua no bloco vizinho — assim não aparece linha atravessada na emenda entre blocos
+function outlinesOf(left, right, openBot, openTop) {
+  const ring = left.concat(right.slice().reverse());
+  if (!openBot && !openTop) return [ring.concat([ring[0]])];
+  if (openBot && openTop) return [left, right];
+  return openBot ? [ring] : [right.slice().reverse().concat(left)];
+}
+
+// trechos contínuos de ilha num bloco: [linha inicial, linha final]
+function islandRuns(blk) {
+  const runs = [];
+  let a = -1;
+  for (let i = 0; i < LINES; i++) {
+    const on = blk.IR[i] - blk.IL[i] > 0.5;                 // (a beira pode ser negativa: ilha passando da tela)
+    if (on && a < 0) a = i;
+    if (!on && a >= 0) { runs.push([a, i - 1]); a = -1; }
   }
-  // ilha
-  if (blk.IL[15] >= 0) {
-    let first = -1, last = -1;
-    for (let i = 0; i < LINES; i++) if (blk.IL[i] >= 0) { if (first < 0) first = i; last = i; }
-    const pts = [];
-    for (let i = first; i <= last; i++) pts.push([blk.IL[i], yAt(i)]);
-    for (let i = last; i >= first; i--) pts.push([blk.IR[i], yAt(i)]);
-    const ring = pts.concat([pts[0]]);
-    shoreStroke(ring, 12, 'rgba(120,170,255,.20)');
-    shoreStroke(ring, 6, 'rgba(8,12,70,.38)');
-    if (mode === 'ocean') { shoreStroke(ring, 9, '#e9d8a6'); shoreStroke(ring, 4, '#f5ecc8'); }   // praia de areia
-    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); pts.forEach(q => ctx.lineTo(q[0], q[1])); ctx.closePath();
-    ctx.fillStyle = PAL.dark.land; ctx.fill();
-    ctx.save(); ctx.clip();
-    shoreStroke(ring, 12, 'rgba(255,255,255,.10)');
-    shoreStroke(ring, 4, 'rgba(255,255,255,.14)');
-    ctx.restore();
-    const cx = (blk.IL[15] + blk.IR[15]) / 2, wI = blk.IR[15] - blk.IL[15], mid = (first + last) / 2;
-    const trees = wI > 40 ? [[-0.22, 1.5, 0.9, true], [0.18, 0.5, 0.8, false], [0, -2.5, 1, false]]
-      : wI > 24 ? [[-0.15, 0.5, 0.75, true], [0.15, -1.5, 0.8, false]] : [[0, -1.5, 0.7, false]];
-    for (const [dx, dy, sc, pine] of trees)
-      if (mode === 'ocean') drawTreeTop(cx + dx * wI, yAt(mid + dy), sc * 1.1, PAL.dark);   // oceano: vista de cima
-      else drawTree(cx + dx * wI, yAt(mid + dy), sc, pine, PAL.dark);
-  }
+  if (a >= 0) runs.push([a, LINES - 1]);
+  return runs.filter(([p, q]) => q > p);
 }
 
 function getDeco(blk) {

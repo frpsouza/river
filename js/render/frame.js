@@ -12,7 +12,7 @@ function draw() {
 
   ctx.fillStyle = mode === 'ocean' ? OCEAN_WATER : PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
   const g0 = Math.max(0, Math.floor(scroll / BH) - 1), g1 = Math.floor((scroll + VIEW_H) / BH) + 1;
-  for (let ph = 0; ph < 3; ph++) for (let g = g0; g <= g1; g++) drawTerrain(getBlock(g), ph);
+  for (let ph = 0; ph < 6; ph++) for (let g = g0; g <= g1; g++) drawTerrain(getBlock(g), ph);
   for (let g = g0; g <= g1; g++) { const blk = getBlock(g); if (blk.bridge) drawBridge(blk); }
   for (let g = g0; g <= g1; g++) drawCliffs(getBlock(g));          // paredões (modo moderno)
   if (mode === 'ocean') drawCloudShadows();
