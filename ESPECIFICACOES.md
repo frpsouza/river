@@ -193,6 +193,36 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - As áreas de colisão acompanham os novos tamanhos. O jato maior deixa as passagens estreitas um pouco mais difíceis.
 - Para ajustar: as constantes `SC` e `JET_SC` no topo do `game.js`.
 
+## Mudanças da versão 8 — altitude dos helicópteros, ilhas e explosões
+
+### 15. Helicópteros mudam de altitude
+- Cada helicóptero sobe e desce devagar, com ritmo próprio, entre 0,55× e 1,15× do tamanho normal. Quanto mais alto, maior ele parece. A sombra também fica mais longe, menor e mais clara.
+- A área de colisão acompanha o tamanho, e o centro do helicóptero não se desloca.
+- Para ajustar: `heliAltitude()`.
+
+### 16. Ilhas mais raras no início e menores
+- **Antes:** havia 50% de chance de ilha em qualquer trecho largo, desde o começo. As ilhas mediam até 90 px de largura e 52 px de altura.
+- **Agora:**
+  - A chance de ilha vai de 10% no começo até 55% na dificuldade máxima.
+  - As ilhas têm 16–34 px de largura no início, e o limite sobe até 60 px com a dificuldade. A altura vai de 24 a 44 px.
+  - A quantidade de árvores (1 a 3) acompanha o tamanho da ilha.
+
+### 17. Uma explosão para cada tipo de inimigo
+| Tipo | Efeito |
+|---|---|
+| Navio | bola de fogo pequena, anel achatado de respingo, gotas de água subindo e caindo, destroços vermelho e creme |
+| Helicóptero | as duas pás do rotor saem girando, faíscas e fumaça cinza que sobe depois |
+| Avião | clarão na tela, fogo curto e faíscas lançadas no sentido do voo, com pedaços azuis |
+| Combustível | clarão, duas bolas de fogo grandes, anel de choque, coluna de chamas subindo e destroços vermelhos |
+| Tanque | a torre voa girando, terra e pedaços de esteira caem, e sobe fumaça preta |
+| Balão | estouro sem fogo: um anel pequeno, retalhos listrados que caem balançando e o cesto caindo |
+| Ponte | três explosões em sequência ao longo do vão, tábuas voando e poeira |
+| Jato do jogador | clarão, bola de fogo dupla, anel de choque, faíscas, destroços amarelos e fumaça escura |
+
+- Cada tipo tem também um som próprio.
+- As partículas ficam presas ao mapa e rolam junto com ele.
+- Para ajustar: a tabela `FX` e o `drawExplosion()`.
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

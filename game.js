@@ -82,12 +82,15 @@ function genBlock(g) {
     blk.L[i] = c - w / 2; blk.R[i] = c + w / 2;
   }
   // ilha
-  if (!blk.bridge && g > 1 && tw >= 150 && prev.endW >= 150 && rng() < 0.5) {
+  // ilhas: raras no começo, mais frequentes com a dificuldade; pequenas
+  const dI = Math.min(s, 8) / 8;
+  if (!blk.bridge && g > 1 && tw >= 150 && prev.endW >= 150 && rng() < 0.1 + 0.45 * dI) {
     const maxIW = Math.min(tw, prev.endW) - 96;
-    if (maxIW >= 24) {
-      const iw = 24 + rng() * (Math.min(maxIW, 90) - 24);
-      for (let i = 3; i <= 28; i++) {
-        const u = (i - 15.5) / 12.5;                      // elipse: cantos arredondados
+    if (maxIW >= 16) {
+      const iw = 16 + rng() * (Math.min(maxIW, 34 + 26 * dI) - 16);   // 16–34 px no início, até 60 px depois
+      const hl = 6 + rng() * 5;                                        // meia-altura: 6–11 linhas (24–44 px)
+      for (let i = Math.ceil(15.5 - hl); i <= Math.floor(15.5 + hl); i++) {
+        const u = (i - 15.5) / hl;                        // elipse: cantos arredondados
         const half = iw / 2 * Math.sqrt(Math.max(0, 1 - u * u * u * u));
         const ic = (blk.L[i] + blk.R[i]) / 2;
         blk.IL[i] = ic - half; blk.IR[i] = ic + half;
@@ -158,7 +161,7 @@ function spawnObjs(blk) {
     }
     blk.objs.push({ type, x, Y, w, h, alive: true, dir: r() < 0.5 ? -1 : 1,
       vx: type === 'ship' ? 0.6 + Math.min(blk.s, 10) * 0.06 : 0.9 + Math.min(blk.s, 10) * 0.08,
-      moving: type !== 'fuel' && r() < 0.8 });
+      moving: type !== 'fuel' && r() < 0.8, alt: 1, altPh: r() * 6.28, altSp: 0.6 + r() * 0.8 });
     break;
   }
   // avião inimigo ocasional: cruza a tela quando o jogador se aproxima
@@ -213,15 +216,71 @@ function addScore(n) {
   if (score >= nextLife) { nextLife += 10000; lives++; beep(880, 0.3); }
 }
 
-function boom(x, y, big) {
-  fx.push({ x, y, t: big ? 50 : 14, big });
-  beep(big ? 90 : 160, big ? 0.6 : 0.2, 'sawtooth', 0.06);
+// ---------- explosões: uma receita por tipo ----------
+// Partículas em coordenadas de tela relativas a um ponto do mundo (o efeito rola junto com o mapa).
+const rnd = (a, b) => a + Math.random() * (b - a);
+function parts(n, f) { const out = []; for (let k = 0; k < n; k++) out.push(f(k)); return out; }
+const P = (o) => Object.assign({ x: 0, y: 0, vx: 0, vy: 0, g: 0, r: 1.5, grow: 1, rot: 0, vr: 0, shape: 'c', col: '#fff', life: 30, delay: 0 }, o);
+const burst = (n, sp, o) => parts(n, () => { const a = rnd(0, 6.283), v = rnd(sp * 0.4, sp); return P(Object.assign({ vx: Math.cos(a) * v, vy: Math.sin(a) * v }, o)); });
+
+const FX = {
+  ship: o => ({ life: 46, fire: [[9, 22, 0]], rings: [['rgba(191,227,255,.8)', 26, 30, 0.35]],
+    parts: [...parts(16, () => P({ vx: rnd(-1.6, 1.6), vy: rnd(-3.2, -1.2), g: 0.13, r: rnd(0.8, 1.8), col: Math.random() < 0.5 ? '#ffffff' : '#bfe3ff', life: 40 })),
+            ...parts(6, () => P({ vx: rnd(-1.8, 1.8), vy: rnd(-2.4, -0.8), g: 0.1, r: rnd(1.2, 2), shape: 'r', vr: rnd(-0.3, 0.3), col: Math.random() < 0.5 ? '#b8363b' : '#f5f2ea', life: 36 }))] }),
+  heli: o => ({ life: 50, fire: [[10, 20, 0]],
+    parts: [...parts(2, k => P({ vx: (k ? 1 : -1) * rnd(1.2, 2), vy: rnd(-2, -1), g: 0.06, r: 4.5, shape: 'blade', vr: (k ? 1 : -1) * 0.45, col: '#ffb547', life: 46 })),
+            ...burst(10, 2.6, { col: '#ffb547', r: 0.9, life: 18 }),
+            ...parts(6, k => P({ x: rnd(-4, 4), y: rnd(-4, 2), vx: rnd(-0.3, 0.3), vy: rnd(-0.6, -0.25), r: rnd(2, 3), grow: 1.03, col: '#5c6378', life: 44, delay: 8 + k * 2 }))] }),
+  plane: o => ({ life: 34, fire: [[9, 16, 0]], flash: 6,
+    parts: [...parts(14, () => P({ vx: o.dir * rnd(1.5, 4.5), vy: rnd(-1, 1), r: rnd(0.7, 1.4), col: Math.random() < 0.5 ? '#ffe58a' : '#9fe0ff', life: 24 })),
+            ...parts(4, () => P({ vx: o.dir * rnd(1, 2.5), vy: rnd(-0.8, 0.8), g: 0.05, shape: 'r', r: 1.6, vr: rnd(-0.4, 0.4), col: '#4aa8e0', life: 30 }))] }),
+  fuel: o => ({ life: 64, fire: [[22, 34, 0], [14, 26, 10]], flash: 8, rings: [['rgba(255,255,255,.9)', 34, 18, 1]],
+    parts: [...parts(12, k => P({ x: rnd(-5, 5), vx: rnd(-0.3, 0.3), vy: rnd(-2.2, -1), r: rnd(2.5, 4), grow: 0.97, col: ['#fff3b0', '#ffc93c', '#ff8a3d', '#e5484d'][k % 4], life: 40, delay: k * 2 })),
+            ...burst(8, 3, { g: 0.1, shape: 'r', r: 1.8, vr: 0.3, col: '#e5484d', life: 40 })] }),
+  tank: o => ({ life: 56, fire: [[9, 18, 0]],
+    parts: [P({ vx: rnd(-0.6, 0.6), vy: -3, g: 0.12, shape: 'turret', r: 3, vr: rnd(-0.25, 0.25), col: '#7a8a45', life: 50 }),
+            ...parts(12, () => P({ vx: rnd(-1.8, 1.8), vy: rnd(-2.6, -0.8), g: 0.14, r: rnd(0.8, 1.6), shape: 'r', vr: 0.3, col: Math.random() < 0.5 ? '#7a5a3c' : '#33372d', life: 36 })),
+            ...parts(6, k => P({ x: rnd(-3, 3), vx: rnd(-0.2, 0.2), vy: rnd(-0.5, -0.2), r: rnd(2, 3.2), grow: 1.03, col: '#2a2a30', life: 50, delay: 6 + k * 3 }))] }),
+  balloon: o => {
+    const c1 = o.hue ? '#ffb547' : '#e5484d';
+    return { life: 70, rings: [['rgba(255,255,255,.7)', 12, 10, 1]],
+      parts: [...parts(12, k => P({ x: rnd(-6, 6), y: rnd(-8, 2), vx: rnd(-0.8, 0.8), vy: rnd(-0.9, -0.2), g: 0.025, r: rnd(1.2, 2.2), shape: 'shred', vr: rnd(-0.2, 0.2), col: k % 3 ? c1 : '#f5f2ea', life: 66, sway: rnd(0, 6) })),
+              P({ y: 10, vy: 0.2, g: 0.07, shape: 'r', r: 2.2, col: '#7a5a3c', life: 60 })] };
+  },
+  bridge: o => ({ life: 70, fire: [[14, 24, 0], [11, 22, 8, -18], [11, 22, 14, 18]], rings: [['rgba(255,255,255,.7)', 36, 22, 1]],
+    parts: [...parts(14, () => P({ x: rnd(-20, 20), vx: rnd(-2, 2), vy: rnd(-3, -1), g: 0.12, shape: 'r', r: rnd(1.6, 2.6), vr: rnd(-0.3, 0.3), col: Math.random() < 0.5 ? '#8f6c3b' : '#6a4d27', life: 50 })),
+            ...parts(8, k => P({ x: rnd(-24, 24), vx: rnd(-0.3, 0.3), vy: rnd(-0.4, -0.1), r: rnd(3, 4.5), grow: 1.02, col: '#9aa1ad', life: 56, delay: 10 + k * 2 }))] }),
+  player: o => ({ life: 64, fire: [[24, 36, 0], [14, 24, 12]], flash: 10, rings: [['rgba(255,255,255,.85)', 30, 18, 1]],
+    parts: [...burst(18, 3.4, { col: '#ffc93c', r: 1, life: 26 }),
+            ...burst(8, 2.2, { g: 0.08, shape: 'r', r: 1.8, vr: 0.3, col: '#c9901c', life: 40 }),
+            ...parts(8, k => P({ x: rnd(-6, 6), vx: rnd(-0.3, 0.3), vy: rnd(-0.6, -0.2), r: rnd(3, 4.5), grow: 1.025, col: '#3a3f58', life: 56, delay: 12 + k * 2 }))] }),
+};
+const FX_SOUND = { ship: [140, 0.35], heli: [190, 0.3], plane: [240, 0.25], fuel: [70, 0.7], tank: [110, 0.45], balloon: [700, 0.08], bridge: [60, 0.8], player: [80, 0.7] };
+
+function boom(x, y, kind = 'heli', o = {}) {
+  const e = (FX[kind] || FX.heli)(o);
+  fx.push(Object.assign({ x, y, t: e.life, kind }, e));
+  const [f, d] = FX_SOUND[kind] || FX_SOUND.heli;
+  beep(f, d, kind === 'balloon' ? 'triangle' : 'sawtooth', 0.06);
+}
+
+function stepFx() {
+  for (const e of fx) {
+    e.t--;
+    const age = e.life - e.t;
+    for (const p of e.parts) {
+      if (age < p.delay) continue;
+      p.x += p.vx + (p.sway !== undefined ? Math.sin(age * 0.18 + p.sway) * 0.35 : 0);
+      p.y += p.vy; p.vy += p.g; p.rot += p.vr; p.r *= p.grow;
+    }
+  }
+  fx = fx.filter(e => e.t > 0);
 }
 
 function kill() {
   if (state !== 'play') return;
   state = 'dying'; dyingT = 70;
-  boom(px + PW / 2, scroll + PLAYER_Y + PH / 2, true);
+  boom(px + PW / 2, scroll + PLAYER_Y + PH / 2, 'player');
 }
 
 // ---------- atualização ----------
@@ -236,6 +295,16 @@ function jumpBridge(d) {
   while (bridgeView(s) <= cur + 60) s++;           // s = próxima ponte bem à frente
   if (d < 0) { s = 0; while (bridgeView(s + 1) < cur - 60) s++; if (bridgeView(s) >= cur - 60) s = -1; }
   overTarget = s < 0 ? 0 : Math.max(0, bridgeView(s));
+}
+
+// altitude do helicóptero: 0,55 (baixo, pequeno) a 1,15 (alto, um pouco maior que o normal).
+// O tamanho e a área de colisão mudam juntos, mantendo o centro no lugar.
+const HELI_W = 27, HELI_H = 19;
+function heliAltitude(o) {
+  o.alt = 0.85 + 0.3 * Math.sin(frame * 0.01 * o.altSp + o.altPh);
+  const cx = o.x + o.w / 2, cy = o.Y + o.h / 2;
+  o.w = HELI_W * o.alt; o.h = HELI_H * o.alt;
+  o.x = cx - o.w / 2; o.Y = cy - o.h / 2;
 }
 
 function animateObjects() {
@@ -256,6 +325,7 @@ function animateObjects() {
       const nx = o.x + o.dir * o.vx;
       if (waterFree(nx, nx + o.w, o.Y, o.Y + o.h)) o.x = nx; else o.dir = -o.dir;
     }
+    if (o.type === 'heli') heliAltitude(o);
   }
 }
 
@@ -282,8 +352,7 @@ function update() {
   const tp = taps; taps = [];
   if (state === 'title') { if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame(); return; }
 
-  fx.forEach(e => e.t--);
-  fx = fx.filter(e => e.t > 0);
+  stepFx();
 
   if (state === 'over') { updateOver(tp); return; }
   if (state === 'dying') {
@@ -345,7 +414,7 @@ function update() {
           if (o.onRoad) {
             o.aim = o.dir;
             const b = blocks[g], cx = o.x + o.w / 2;
-            if (b.broken && cx > b.L[16] && cx < b.R[16]) { o.alive = false; boom(cx, o.Y + o.h / 2); }
+            if (b.broken && cx > b.L[16] && cx < b.R[16]) { o.alive = false; boom(cx, o.Y + o.h / 2, 'tank', o); }
           } else if (sy > 40 && sy < VIEW_H - 30 && --o.cool <= 0) {
             // atira na direção do rio
             o.cool = 110 + Math.random() * 90;
@@ -356,6 +425,12 @@ function update() {
       } else if (o.type === 'balloon') {
         o.x += o.dir * o.vx;
         if (o.x < 4 || o.x > W - o.w - 4) o.dir = -o.dir;
+      } else if (o.type === 'heli' && sy > -40 && sy < VIEW_H) {
+        heliAltitude(o);
+        if (o.moving) {
+          const nx = o.x + o.dir * o.vx;
+          if (waterFree(nx, nx + o.w, o.Y, o.Y + o.h)) o.x = nx; else o.dir = -o.dir;
+        }
       } else if (o.moving && sy > -20 && sy < VIEW_H) {
         const nx = o.x + o.dir * o.vx;
         if (waterFree(nx, nx + o.w, o.Y, o.Y + o.h)) o.x = nx; else o.dir = -o.dir;
@@ -364,7 +439,7 @@ function update() {
       // colisão com jogador
       if (px1 > o.x + 1 && px0 < o.x + o.w - 1 && pTop > o.Y + 1 && pBot < o.Y + o.h - 1) {
         if (o.type === 'fuel') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
-        else if (o.type !== 'house') { o.alive = false; boom(o.x + o.w / 2, o.Y + o.h / 2); kill(); return; }
+        else if (o.type !== 'house') { o.alive = false; boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o); kill(); return; }
         else { kill(); return; }
       }
     }
@@ -391,7 +466,7 @@ function update() {
         if (missile.x + 2 > o.x && missile.x < o.x + o.w && my1 > o.Y && my0 < o.Y + o.h) {
           o.alive = false; hit = true;
           addScore({ fuel: 80, ship: 30, heli: 60, plane: 100, tank: 250, balloon: 60 }[o.type]);
-          boom(o.x + o.w / 2, o.Y + o.h / 2);
+          boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);
           break;
         }
       }
@@ -399,7 +474,7 @@ function update() {
     // a ponte é testada depois dos objetos, para o tanque sobre ela poder ser atingido
     if (!hit && b.bridge && !b.broken && i >= 10 && i <= 21) {
       b.broken = true; hit = true; addScore(500);
-      boom(b.endC, b.g * BH + 16 * LINE, true);
+      boom(b.endC, b.g * BH + 16 * LINE, 'bridge');
     }
     if (hit) missile = null;
   }
@@ -518,11 +593,10 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
     shoreStroke(ring, 12, 'rgba(255,255,255,.10)');
     shoreStroke(ring, 4, 'rgba(255,255,255,.14)');
     ctx.restore();
-    const cx = (blk.IL[15] + blk.IR[15]) / 2, wI = blk.IR[15] - blk.IL[15];
-    for (const [dx, dy, sc, pine] of [[-0.2, 19, 1, true], [0.14, 17, 0.9, false], [-0.02, 12, 1.15, false], [0.22, 11, 0.85, true]]) {
-      if (wI < 40 && Math.abs(dx) > 0.15) continue;
-      drawTree(cx + dx * wI, yAt(dy), sc, pine, PAL.dark);
-    }
+    const cx = (blk.IL[15] + blk.IR[15]) / 2, wI = blk.IR[15] - blk.IL[15], mid = (first + last) / 2;
+    const trees = wI > 40 ? [[-0.22, 1.5, 0.9, true], [0.18, 0.5, 0.8, false], [0, -2.5, 1, false]]
+      : wI > 24 ? [[-0.15, 0.5, 0.75, true], [0.15, -1.5, 0.8, false]] : [[0, -1.5, 0.7, false]];
+    for (const [dx, dy, sc, pine] of trees) drawTree(cx + dx * wI, yAt(mid + dy), sc, pine, PAL.dark);
   }
 }
 
@@ -643,9 +717,10 @@ function drawFuel(x, y) {
   ctx.restore();
 }
 
-function drawHeli(x, y, dir) {
-  ctx.save(); ctx.translate(x + (dir > 0 ? 20 * SC.heli : 0), y); ctx.scale(dir > 0 ? -SC.heli : SC.heli, SC.heli);
-  ell(10, 13.4, 7, 1.3, 'rgba(0,0,30,.18)');
+function drawHeli(x, y, dir, alt = 1) {
+  const k = SC.heli * alt, w = 20 * k, h = 14 * k;
+  ell(x + w / 2 + alt * 9, y + h + alt * 10, 7 * SC.heli * (1.25 - alt * 0.4), 1.4, 'rgba(0,0,30,' + (0.3 - alt * 0.12).toFixed(2) + ')');
+  ctx.save(); ctx.translate(x + (dir > 0 ? w : 0), y); ctx.scale(dir > 0 ? -k : k, k);
   const L = frame % 6 < 3 ? 9 : 4;
   ctx.fillStyle = '#ffb547'; ctx.fillRect(9 - L, 1.6, 2 * L, 1.2);
   ctx.fillStyle = '#ffb547'; ctx.fillRect(8.4, 1.6, 1.2, 3);
@@ -742,12 +817,44 @@ function drawJet(cx, top, bk, s, flame) {
   ctx.restore();
 }
 
-function drawExplosion(x, y, t, big) {
-  const sx = x, sy = VIEW_H - (y - scroll);
-  const life = big ? t / 50 : t / 14, r = (big ? 4 + (1 - life) * 22 : 3 + (1 - life) * 12);
-  ctx.globalAlpha = Math.min(1, life * 1.6);
-  ell(sx, sy, r, r, '#c02020'); ell(sx, sy, r * 0.72, r * 0.72, '#e86020');
-  ell(sx, sy, r * 0.45, r * 0.45, '#ffe040'); ell(sx, sy, r * 0.2, r * 0.2, '#ffffff');
+function drawExplosion(e) {
+  const sx = e.x, sy = VIEW_H - (e.y - scroll), age = e.life - e.t;
+  if (e.flash && age < e.flash) { ctx.fillStyle = 'rgba(255,255,255,' + (0.25 * (1 - age / e.flash)).toFixed(3) + ')'; ctx.fillRect(0, 0, W, VIEW_H); }
+  for (const [col, R, dur, flat] of e.rings || []) {
+    if (age > dur) continue;
+    const q = age / dur;
+    ctx.strokeStyle = col.replace(/[\d.]+\)$/, (1 - q).toFixed(2) + ')'); ctx.lineWidth = 2 * (1 - q) + 0.5;
+    ctx.beginPath(); ctx.ellipse(sx, sy, R * q + 2, (R * q + 2) * flat, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  for (const [R, dur, delay, dx = 0] of e.fire || []) {
+    const a2 = age - delay;
+    if (a2 < 0 || a2 > dur) continue;
+    const q = a2 / dur, r = R * (0.35 + 0.65 * Math.sqrt(q));
+    ctx.globalAlpha = 1 - q * q;
+    ell(sx + dx, sy, r, r, '#e5484d'); ell(sx + dx, sy, r * 0.74, r * 0.74, '#ff8a3d');
+    ell(sx + dx, sy, r * 0.48, r * 0.48, '#ffc93c');
+    if (q < 0.35) ell(sx + dx, sy, r * 0.24, r * 0.24, '#fff8e0');
+    ctx.globalAlpha = 1;
+  }
+  for (const p of e.parts) {
+    if (age < p.delay || age - p.delay > p.life) continue;
+    const left = 1 - (age - p.delay) / p.life;
+    ctx.globalAlpha = Math.min(1, left * 2.5);
+    const x = sx + p.x, y = sy + p.y;
+    if (p.shape === 'c') ell(x, y, p.r, p.r, p.col);
+    else {
+      ctx.save(); ctx.translate(x, y); ctx.rotate(p.rot); ctx.fillStyle = p.col;
+      if (p.shape === 'r') ctx.fillRect(-p.r * 1.2, -p.r * 0.5, p.r * 2.4, p.r);
+      else if (p.shape === 'blade') ctx.fillRect(-p.r, -0.6, p.r * 2, 1.2);                  // pá do rotor girando
+      else if (p.shape === 'turret') {                                                      // torre do tanque voando
+        ctx.beginPath(); ctx.moveTo(-p.r, 1); ctx.quadraticCurveTo(0, -p.r * 1.3, p.r, 1); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#4c5530'; ctx.fillRect(p.r * 0.4, -1, p.r * 1.6, 0.9);
+      } else if (p.shape === 'shred') {                                                     // retalho do balão
+        ctx.beginPath(); ctx.moveTo(-p.r, -p.r * 0.4); ctx.lineTo(p.r, -p.r * 0.8); ctx.lineTo(p.r * 0.6, p.r * 0.7); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
   ctx.globalAlpha = 1;
 }
 
@@ -768,7 +875,7 @@ function draw() {
     if (o.type === 'fuel') drawFuel(o.x, sy);
     else if (o.type === 'house') drawHouse(o.x, sy, o.spr);
     else if (o.type === 'ship') drawShip(o.x, sy, o.dir);
-    else if (o.type === 'heli') drawHeli(o.x, sy, o.dir);
+    else if (o.type === 'heli') drawHeli(o.x, sy, o.dir, o.alt || 1);
     else if (o.type === 'tank') drawTank(o.x, sy, o.aim, o.dir);
     else if (o.type === 'balloon') drawBalloon(o.x, sy, o.hue, o.phase);
     else if (o.type === 'plane' && o.active) drawPlane(o.x, sy, o.dir);
@@ -784,7 +891,7 @@ function draw() {
     ell(missile.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
   if (state === 'play') drawJet(px + PW / 2, VIEW_H - (PLAYER_Y + PH), bank, JET_SC, true);
-  fx.forEach(e => drawExplosion(e.x, e.y, e.t, e.big));
+  fx.forEach(drawExplosion);
   drawPanel();
   if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
