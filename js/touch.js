@@ -15,6 +15,7 @@ const TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || /[?&]t
 // botões: [rótulo, tecla, shift?, classe]
 const PADS = {
   play: [['STICK'], ['FOGO', ' ', 0, 'fire round']],
+  playOcean: [['STICK'], ['FOGO', ' ', 0, 'fire round'], ['BOMBA', 'b', 0, 'bomb']],
   over: [['▲', 'ArrowUp', 0, 'u'], ['▼', 'ArrowDown', 0, 'd'], ['ponte ▲', 'PageUp', 0, 'pu'], ['ponte ▼', 'PageDown', 0, 'pd'],
          ['−', '-', 0, 'minus'], ['+', '+', 0, 'plus'], ['VOLTAR', ' ', 0, 'fire']],
   title: [['◀ ▶ modo', 'ArrowRight', 0, 'mode'], ['JOGAR', 'Enter', 0, 'fire']],
@@ -79,7 +80,7 @@ if (TOUCH) {
   };
   // troca o conjunto de botões quando muda a tela do jogo
   (function watch() {
-    const which = state === 'over' ? 'over' : state === 'title' ? 'title' : 'play';
+    const which = state === 'over' ? 'over' : state === 'title' ? 'title' : mode === 'ocean' ? 'playOcean' : 'play';
     if (which !== shown) { for (const k in keys) keys[k] = false; stick.x = stick.y = 0; build(which); shown = which; }
     requestAnimationFrame(watch);
   })();

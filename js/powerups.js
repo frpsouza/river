@@ -5,7 +5,7 @@
 //   shield (escudo) ..... 8 s: inimigos e projéteis explodem no escudo em vez de derrubar o jato
 //   triple (tiro triplo)  10 s: cada disparo sai em leque de três mísseis
 //   rapid (tiro rápido) . 10 s: dispara sem esperar o míssil anterior sumir
-//   bomb (bomba) ........ na hora: destrói todos os inimigos na tela
+//   bomb (bomba) ........ na hora: destrói todos os inimigos na tela (no oceano vai para o estoque; ver useBomb)
 //   life (vida extra) ... na hora: +1 vida
 //
 //   spawnPowerup(blk, r) ... às vezes acrescenta um power-up ao bloco (chamada por spawnObjs)
@@ -24,6 +24,9 @@ const PU = {
 };
 const PU_SIZE = 14;
 let pw = { shield: 0, triple: 0, rapid: 0 };
+// oceano: a bomba vai para um estoque e é solta com o 2º botão (X/B no teclado, B no controle, BOMBA na tela)
+const BOMB_MAX = 5, BOMB_POWER = 40;                  // estoque máximo e orçamento de dano de cada bomba
+let bombs = 1;
 
 function spawnPowerup(blk, r) {
   if (mode === 'classic' || blk.bridge || r() > 0.16) return;
@@ -42,15 +45,25 @@ function collectPowerup(o) {
   o.alive = false;
   if (def.dur) pw[o.kind] = def.dur;
   if (o.kind === 'life') { if (mode !== 'ocean') lives++; hp = 100; }   // no oceano (vida única) é só REPARO total
-  if (o.kind === 'bomb') smartBomb();
+  if (o.kind === 'bomb') { if (mode === 'ocean') bombs = Math.min(BOMB_MAX, bombs + 1); else smartBomb(); }
   addScore(50);
   def.notes.forEach((f, k) => setTimeout(() => beep(f, 0.12, 'triangle', 0.05), k * 60));   // arpejo
-  pickupFx(o.x + o.w / 2, o.Y + o.h / 2, o.kind === 'life' && mode === 'ocean' ? Object.assign({}, def, { name: 'REPARO TOTAL' }) : def);
+  const label = mode !== 'ocean' ? def.name : o.kind === 'life' ? 'REPARO TOTAL' : o.kind === 'bomb' ? 'BOMBA +1 (' + bombs + ')' : def.name;
+  pickupFx(o.x + o.w / 2, o.Y + o.h / 2, Object.assign({}, def, { name: label }));
+}
+
+// solta uma bomba do estoque (oceano)
+function useBomb() {
+  if (bombs <= 0 || state !== 'play') { beep(140, 0.08, 'square', 0.03); return; }   // sem bomba: "clique" vazio
+  bombs--;
+  oceanBomb(BOMB_POWER);
+  fx.push({ x: px + PW / 2, y: scroll + py + PH / 2, t: 40, life: 40, kind: 'bomb', flash: 10,
+    rings: [['rgba(255,255,255,.95)', 220, 30, 1], ['rgba(255,138,61,.9)', 150, 26, 1]], parts: [] });
+  [196, 147, 110, 82].forEach((f, k) => setTimeout(() => beep(f, 0.3, 'sawtooth', 0.06), k * 50));
 }
 
 function smartBomb() {
   const g0 = Math.max(0, Math.floor(scroll / BH) - 1), g1 = Math.floor((scroll + VIEW_H) / BH) + 1;
-  if (mode === 'ocean') oceanBomb();
   for (let g = g0; g <= g1; g++) for (const o of getBlock(g).objs) {
     if (o.alive && o.type === 'carrier') { o.hp = Math.max(1, o.hp - 5); o.flash = 8; continue; }
     if (!o.alive || !['ship', 'heli', 'plane', 'tank', 'balloon'].includes(o.type)) continue;
@@ -64,7 +77,7 @@ function smartBomb() {
 }
 
 function tickPowerups() { for (const k in pw) if (pw[k] > 0) pw[k]--; }
-function resetPowerups() { pw = { shield: 0, triple: 0, rapid: 0 }; }
+function resetPowerups() { pw = { shield: 0, triple: 0, rapid: 0 }; bombs = 1; }
 
 // ---- desenho ----
 function drawPowerup(o, sy) {

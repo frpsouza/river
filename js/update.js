@@ -55,6 +55,7 @@ function update() {
   // com TIRO TRIPLO, três em leque
   tickPowerups();
   if (safeT > 0) safeT--;
+  if (mode === 'ocean' && tp.some(t => 'xXbB'.includes(t.key) && t.key.length === 1)) useBomb();   // 2º botão: bomba
   if (hurtT > 0) hurtT--;
   if (fireCool > 0) fireCool--;
   const canFire = pw.rapid > 0 ? fireCool === 0 : missiles.length === 0;

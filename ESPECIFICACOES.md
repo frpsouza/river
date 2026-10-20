@@ -49,6 +49,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | ↑ (W) | clássico: acelerar · moderno: subir na tela |
 | ↓ (S) | clássico: frear · moderno: descer na tela |
 | Espaço (Z) | atirar (um míssil por vez) |
+| X ou B | soltar uma bomba do estoque (modo oceano) |
 | Enter ou Espaço | iniciar (na tela de título) |
 | setas, 1/2/3 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
@@ -58,7 +59,8 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 |---|---|
 | analógico esquerdo | mover (analógico: quanto mais inclinado, mais forte) · nos menus, escolher |
 | direcional (d-pad) | setas |
-| A, B ou RT | atirar · no fim de jogo, voltar |
+| A ou RT | atirar · no fim de jogo, voltar |
+| B | soltar bomba (oceano) |
 | Start | começar (título) |
 | LB / RB | ponte anterior / próxima (fim de jogo) |
 | X / Y | − / + velocidade da rolagem (fim de jogo) |
@@ -599,6 +601,32 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
   - As torres do dirigível caíram com 77 tiros, e só então o núcleo pôde ser ferido.
   - **Correção:** na vista de cima, um míssil acertava a blindagem do envelope antes de chegar a uma torre. As torres foram para a borda da frente, e um tiro alinhado com uma torre agora a acerta.
 - **Outra correção:** no voo alto, com o mar encolhido, apareciam faixas verdes nas laterais, porque as "margens" do rio eram desenhadas fora da tela. No oceano as margens não são mais desenhadas.
+
+## Mudanças da versão 23 — bombas em estoque no oceano e ajuda nos chefes
+
+### 44. Bomba no 2º botão (modo oceano)
+- **Antes:** pegar o power-up de bomba detonava na hora e destruía todos os inimigos da tela.
+- **Agora, no oceano:**
+  - Cada power-up de bomba guarda **uma bomba no estoque**, até 5 (`BOMB_MAX`). O jogo começa com 1.
+  - O estoque aparece no HUD, no canto direito (onde nos outros modos ficam as vidas), com as bombas disponíveis acesas.
+  - A bomba é solta pelo **2º botão**: **X** ou **B** no teclado, **B** no controle e o botão **BOMBA** na tela do celular, embaixo do FOGO.
+  - Sem bomba no estoque, o botão só faz um "clique" vazio.
+- **Poder limitado:** cada bomba tem um orçamento de **40 pontos de dano** (`BOMB_POWER`), aplicado nesta ordem:
+  1. apaga todos os tiros inimigos da tela (de graça);
+  2. derruba os inimigos pequenos (caças, navios, helicópteros, balões, aviões), dos mais próximos do jato para os mais distantes, gastando 1 ponto cada;
+  3. com o que sobrar, fere os porta-aviões (até 6 cada);
+  4. por fim, o chefe (até 15). No dirigível, ela pega as torres primeiro.
+- No voo alto, a bomba não alcança a superfície.
+- **Efeito:** clarão, dois anéis de choque saindo do jato e um estrondo grave descendo.
+- **Medido:** com 50 caças na tela, uma bomba derrubou 39, apagou os 12 tiros e não sobrou dano para o porta-aviões. No chefe, tirou exatamente 15.
+- **Nos modos clássico e moderno:** nada muda. A bomba continua imediata ao ser coletada.
+
+### 45. Power-ups de ajuda durante os chefes
+- Durante cada luta com chefe cai um power-up perto do jato a cada ~7 s, com brilho e um aviso sonoro.
+- **Sorteio:** bomba 30%, escudo 20%, tiro triplo 20%, tiro rápido 15%, reparo 15%.
+- Como a câmera quase para durante a luta, eles descem devagar e dá tempo de pegar.
+- **Medido:** em 30 s de luta caíram 6 power-ups.
+- Para ajustar: `BOSS_DROPS` e o intervalo em `updateBoss()` (`js/ocean.js`).
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

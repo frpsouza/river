@@ -170,6 +170,18 @@ function drawHudTop() {
   rrect(hx + 2, 11, hw, 8, 4); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
   if (f > 0) { rrect(hx + 2, 11, Math.max(8, hw * f), 8, 4); ctx.fillStyle = low ? '#ff8a8a' : f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill();
                rrect(hx + 2, 11, Math.max(8, hw * f), 3.5, 1.8); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fill(); }
+  // oceano: bombas disponíveis (no lugar das vidas, que lá não existem)
+  if (mode === 'ocean') {
+    const nb = Math.max(bombs, 1);
+    pill(W - 14 - nb * 13, 5, nb * 13 + 8, 20);
+    for (let k = 0; k < nb; k++) {
+      const bx = W - 8 - nb * 13 + k * 13 + 6, on = k < bombs;
+      ctx.globalAlpha = on ? 1 : 0.3;
+      ell(bx, 16, 4.6, 4.6, on ? '#e5484d' : '#5c6378'); ctx.fillStyle = '#f5f2ea'; ctx.fillRect(bx + 1.6, 8.6, 1.4, 2.6);
+      ell(bx - 1.4, 14.6, 1.4, 1.4, 'rgba(255,255,255,.5)');
+      ctx.globalAlpha = 1;
+    }
+  }
   // vidas (o jato em jogo não conta)
   const n = Math.min(lives - (state === 'play' ? 1 : 0), 4);
   if (n > 0) { pill(W - 10 - n * 15, 5, n * 15 + 4, 20); for (let k = 0; k < n; k++) drawJet(W - 4 - n * 15 + k * 15 + 6, 7, 0, 0.8, false); }

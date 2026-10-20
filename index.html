@@ -46,11 +46,16 @@
   #pad .pu{grid-area:pu}#pad .pd{grid-area:pd}#pad .minus{grid-area:minus}#pad .plus{grid-area:plus}
   #pad[data-screen="title"]{grid-template-columns:1fr 1fr;grid-template-rows:minmax(56px,1fr);grid-template-areas:"mode fire"}
   #pad .mode{grid-area:mode;font-size:16px}
+  /* oceano: botão de bomba embaixo do FOGO */
+  #pad[data-screen="playOcean"]{grid-template-columns:1.15fr 1fr;grid-template-rows:1fr auto;grid-template-areas:"dpad fire" "dpad bomb"}
+  #pad[data-screen="playOcean"] .fire.round{height:min(100%,30vw,128px)}
+  #pad .bomb{grid-area:bomb;height:46px;border-radius:23px;background:#ff8a3d;box-shadow:0 4px 0 #b35a22;font-size:16px}
+  #pad .bomb.on{background:#d9672a;box-shadow:0 1px 0 #b35a22}
 </style>
 </head>
 <body>
 <canvas id="c" width="304" height="368"></canvas>
-<small>← → move · ↑ acelera · ↓ freia · ESPAÇO atira · ENTER inicia · fim de jogo: ↑↓ rolagem, PgUp/PgDn pontes, −/+ velocidade, ESPAÇO volta · também com controle (gamepad)</small>
+<small>← → move · ↑ acelera · ↓ freia · ESPAÇO atira · X/B bomba (oceano) · ENTER inicia · fim de jogo: ↑↓ rolagem, PgUp/PgDn pontes, −/+ velocidade, ESPAÇO volta · também com controle (gamepad)</small>
 <script src="js/config.js" charset="utf-8"></script>
 <script src="js/util.js" charset="utf-8"></script>
 <script src="js/audio.js" charset="utf-8"></script>
