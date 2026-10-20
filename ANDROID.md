@@ -47,7 +47,7 @@ Ao publicar uma versão nova do PWA, troque `VERSION` em `sw.js` para os aparelh
 
 ## Controle físico
 
-Um joystick/gamepad ligado ao celular (Bluetooth ou USB-OTG) também funciona, com os mesmos botões da versão de PC (veja a tabela em `ESPECIFICACOES.md`).
+Um joystick/gamepad ligado ao celular (Bluetooth ou USB-OTG) funciona em todos os modos: o app repassa os botões e o analógico para o jogo (não depende do WebView suportar a Gamepad API). Ao conectar aparece "🎮 Controller connected" e os botões de toque somem. O botão B é a bomba (não fecha o app). Tabela de botões em `ESPECIFICACOES.md`.
 
 ## Controles na tela
 

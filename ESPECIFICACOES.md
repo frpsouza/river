@@ -57,7 +57,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | Enter ou Espaço | iniciar (na tela de título) |
 | setas, 1–5 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
-**Com joystick/controle (gamepad):**
+**Com joystick/controle (gamepad)** — vale para **todos os modos** (Classic, Modern, Ocean, Retro Ocean, PICO-8), no título e no fim de jogo, no navegador e no app Android:
 
 | Controle | Ação |
 |---|---|
@@ -702,6 +702,19 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Som:** estrondo em cinco notas descendo, seguido de um ronco grave prolongado.
 - **Medido:** com 12 caças espalhados, eles caíram em sequência entre ~0,5 s e 1 s depois da detonação.
 - Para ajustar: `useBomb()` (`js/powerups.js`), `BOMB_WAVE` (`js/ocean.js`) e `shake()` / `freezeT` (`js/effects.js`).
+
+## Mudanças da versão 26 — controle físico em todas as versões
+
+### 50. Joystick/controle em todos os modos e no app Android
+- **No navegador:** o controle já alimentava as mesmas entradas do teclado, então funciona em todos os modos. Ganhou dois complementos:
+  - **Aviso de conexão:** "🎮 Controller connected" / "disconnected" no topo da tela por 2,5 s, em qualquer tela e modo.
+  - **Botões de toque:** com um controle conectado, os botões somem no celular e o jogo fica centralizado na tela. Voltam quando o controle desconecta.
+- **No app Android:**
+  - O `MainActivity.java` agora captura os eventos do controle (Bluetooth ou USB) e os repassa ao jogo. A captura usa `dispatchKeyEvent` para os botões e `dispatchGenericMotionEvent` para o analógico e o direcional do tipo "hat".
+  - Assim o controle funciona mesmo em aparelhos cujo WebView não oferece a Gamepad API. Quando os eventos vêm do Java, a leitura pela Gamepad API é desligada, para não duplicar os toques.
+  - O botão **B** (que no Android costuma ser "voltar") não fecha mais o app: no oceano, é a bomba.
+- **Mapeamento no Android:** A/R2/centro do direcional = atirar · B = bomba · X/Y = −/+ · L1/R1 = ponte anterior/próxima · Start = começar · direcional = setas · analógico esquerdo = movimento contínuo.
+- **Testado com um controle simulado nos 5 modos:** o Start começou o jogo, o analógico moveu o jato e o A atirou em todos eles, e o aviso apareceu. A parte nativa do Android compila, mas ainda precisa ser testada num aparelho com controle.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
