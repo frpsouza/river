@@ -1,5 +1,5 @@
 // touch.js — CONTROLES NA TELA (celular / versão Android)
-// Botões de toque que "apertam" as mesmas teclas do teclado: escrevem em `keys`
+// Joystick analógico (escreve em `stick`) e botões de toque que "apertam" as mesmas teclas do teclado: escrevem em `keys`
 // (tecla segurada) e em `taps` (toque novo), exatamente como os eventos de teclado
 // em main.js. Assim o resto do jogo não precisa saber se o jogador usa toque ou teclado.
 //
@@ -14,7 +14,7 @@ const TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || /[?&]t
 
 // botões: [rótulo, tecla, shift?, classe]
 const PADS = {
-  play: [['DPAD'], ['FOGO', ' ', 0, 'fire round']],
+  play: [['STICK'], ['FOGO', ' ', 0, 'fire round']],
   over: [['▲', 'ArrowUp', 0, 'u'], ['▼', 'ArrowDown', 0, 'd'], ['ponte ▲', 'PageUp', 0, 'pu'], ['ponte ▼', 'PageDown', 0, 'pd'],
          ['−', '-', 0, 'minus'], ['+', '+', 0, 'plus'], ['VOLTAR', ' ', 0, 'fire']],
   title: [['◀ ▶ modo', 'ArrowRight', 0, 'mode'], ['JOGAR', 'Enter', 0, 'fire']],
@@ -25,57 +25,37 @@ function release(key) { keys[key] = false; }
 // segura o dedo no elemento mesmo se ele escorregar para fora (ignora falha em eventos sintéticos)
 function capture(el, id) { try { el.setPointerCapture(id); } catch (e) { /* sem captura */ } }
 
-// Direcional em cruz, como num controle físico: um único bloco quadrado que lê onde o
-// dedo está. Os 4 braços dão as direções; os 4 CANTOS (áreas visíveis entre os braços)
-// dão as diagonais. Há uma zona morta no meio, e o dedo pode deslizar de uma área para
-// outra sem levantar.
-const DIRS = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-function buildDpad() {
-  const pad = document.createElement('div');
-  pad.className = 'dpad';
-  const arms = {};
-  for (const [name, glyph] of [['up', '▲'], ['left', '◀'], ['right', '▶'], ['down', '▼']]) {
-    const a = document.createElement('div');
-    a.className = 'arm ' + name; a.textContent = glyph;
-    pad.appendChild(a); arms[name] = a;
-  }
-  const corners = {};
-  for (const [name, glyph, a, b] of [['ul', '◤', 'up', 'left'], ['ur', '◥', 'up', 'right'], ['dl', '◣', 'down', 'left'], ['dr', '◢', 'down', 'right']]) {
-    const c = document.createElement('div');
-    c.className = 'corner ' + name; c.textContent = glyph;
-    pad.insertBefore(c, pad.firstChild); corners[name] = [c, a, b];
-  }
-  const hub = document.createElement('div'); hub.className = 'hub'; pad.appendChild(hub);
-
-  let active = new Set();
-  const apply = dirs => {
-    for (const [name, key] of Object.entries(DIRS)) {
-      const on = dirs.has(name);
-      if (on && !active.has(name)) press(key);
-      if (!on && active.has(name)) release(key);
-      arms[name].classList.toggle('on', on);
-    }
-    for (const [c, a, b] of Object.values(corners)) c.classList.toggle('on', dirs.has(a) && dirs.has(b));
-    active = dirs;
-  };
-  const read = e => {
-    const r = pad.getBoundingClientRect();
-    const dx = (e.clientX - r.left) / r.width * 2 - 1, dy = (e.clientY - r.top) / r.height * 2 - 1;
-    const dirs = new Set();
-    const ax = Math.abs(dx), ay = Math.abs(dy), band = 0.3;          // meia-largura dos braços
-    if (Math.hypot(dx, dy) < 0.16) return dirs;                       // zona morta no centro
-    if (ax > band && ay > band) {                                     // canto → diagonal
-      dirs.add(dx > 0 ? 'right' : 'left'); dirs.add(dy > 0 ? 'down' : 'up');
-    } else if (ax >= ay) dirs.add(dx > 0 ? 'right' : 'left');         // braço horizontal
-    else dirs.add(dy > 0 ? 'down' : 'up');                            // braço vertical
-    return dirs;
-  };
+// Joystick analógico: uma área circular com um botão que segue o dedo. A distância do
+// centro dá a intensidade (0 no meio, 1 na borda) e a direção é livre, em 360°. O valor
+// vai para `stick` (main.js), que o update soma às teclas. Há uma zona morta pequena no
+// meio, e ao soltar o botão volta para o centro.
+function buildStick() {
+  const base = document.createElement('div'); base.className = 'stick';
+  for (const d of ['up', 'down', 'left', 'right']) { const m = document.createElement('i'); m.className = 'mark ' + d; base.appendChild(m); }
+  const knob = document.createElement('div'); knob.className = 'knob'; base.appendChild(knob);
+  const DEAD = 0.12, REACH = 0.62;                          // zona morta e alcance do botão (fração do raio)
   let pid = null;
-  pad.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; capture(pad, pid); apply(read(e)); });
-  pad.addEventListener('pointermove', e => { if (e.pointerId === pid) apply(read(e)); });
-  const end = e => { if (e.pointerId === pid) { pid = null; apply(new Set()); } };
-  pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end); pad.addEventListener('lostpointercapture', end);
-  return pad;
+  const move = e => {
+    const r = base.getBoundingClientRect(), R = r.width / 2;
+    let dx = (e.clientX - r.left - R) / (R * REACH), dy = (e.clientY - r.top - R) / (R * REACH);
+    const m = Math.hypot(dx, dy);
+    if (m > 1) { dx /= m; dy /= m; }                        // limita à borda do círculo
+    knob.style.transform = `translate(${dx * R * REACH}px, ${dy * R * REACH}px)`;
+    const k = Math.min(1, m), s = k < DEAD ? 0 : (k - DEAD) / (1 - DEAD) / (k || 1);   // reescala após a zona morta
+    stick.x = dx * s; stick.y = dy * s;
+  };
+  const end = e => {
+    if (e.pointerId !== pid) return;
+    pid = null; stick.x = stick.y = 0;
+    knob.classList.add('free'); knob.style.transform = ''; base.classList.remove('on');
+  };
+  base.addEventListener('pointerdown', e => {
+    e.preventDefault(); pid = e.pointerId; capture(base, pid);
+    knob.classList.remove('free'); base.classList.add('on'); move(e);
+  });
+  base.addEventListener('pointermove', e => { if (e.pointerId === pid) move(e); });
+  base.addEventListener('pointerup', end); base.addEventListener('pointercancel', end); base.addEventListener('lostpointercapture', end);
+  return base;
 }
 
 if (TOUCH) {
@@ -88,7 +68,7 @@ if (TOUCH) {
   const build = which => {
     pad.innerHTML = ''; pad.dataset.screen = which;
     for (const [label, key, shift, cls] of PADS[which]) {
-      if (label === 'DPAD') { pad.appendChild(buildDpad()); continue; }
+      if (label === 'STICK') { pad.appendChild(buildStick()); continue; }
       const b = document.createElement('button');
       b.textContent = label; b.className = 'btn ' + cls;
       b.addEventListener('pointerdown', e => { e.preventDefault(); capture(b, e.pointerId); b.classList.add('on'); press(key, shift); });
@@ -100,7 +80,7 @@ if (TOUCH) {
   // troca o conjunto de botões quando muda a tela do jogo
   (function watch() {
     const which = state === 'over' ? 'over' : state === 'title' ? 'title' : 'play';
-    if (which !== shown) { for (const k in keys) keys[k] = false; build(which); shown = which; }
+    if (which !== shown) { for (const k in keys) keys[k] = false; stick.x = stick.y = 0; build(which); shown = which; }
     requestAnimationFrame(watch);
   })();
 

@@ -25,7 +25,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
 | 13 | `render/frame.js` | monta cada quadro (`draw`), painel, telas de título e de fim de jogo |
 | 14 | `main.js` | teclado e laço principal (`update` a 60 passos/s, `draw` a cada quadro) |
-| 15 | `touch.js` | controles na tela para celular/Android: botões que escrevem nas mesmas `keys`/`taps` do teclado |
+| 15 | `touch.js` | controles na tela para celular/Android: joystick analógico (`stick`) e botões que escrevem nas mesmas `keys`/`taps` do teclado |
 
 **Fluxo de um quadro:** `main.js` chama `update()`, que usa `state`, `terrain`, `objects`, `effects` e `gameover`. Depois chama `draw()`, que usa os módulos de `render/` e o `effects`.
 
@@ -368,6 +368,23 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
   - um núcleo branco, como metal em brasa.
 - A área de colisão não mudou. Só o desenho ficou maior e mais contrastado.
 - Para ajustar: `drawShell()` em `js/render/frame.js`.
+
+## Mudanças da versão 16 — joystick analógico na tela
+
+### 30. Direcional em cruz vira joystick analógico
+- **Antes:** uma cruz digital, em que cada direção estava ligada ou desligada, com cantos para as diagonais.
+- **Agora:** uma área circular com um botão azul que segue o dedo, em qualquer direção (360°).
+  - A distância do centro dá a intensidade: 0 no meio e 1 na borda. Um toque leve faz um ajuste fino, e o dedo na borda dá o movimento máximo.
+  - O botão fica limitado ao círculo. Com o dedo fora dele, o valor fica em 1 na direção do dedo.
+  - Há uma zona morta pequena no centro (12%). Ao soltar, o botão volta deslizando para o meio.
+  - A borda da base acende enquanto o joystick está em uso, e há marcas discretas indicando as quatro direções.
+- **No jogo** (`stick.x`, `stick.y`, de −1 a 1, somados às teclas):
+  - **Horizontal:** a velocidade lateral e a inclinação das asas são proporcionais ao desvio.
+  - **Vertical no moderno:** o jato sobe e desce na tela proporcionalmente.
+  - **Vertical no clássico:** a rolagem varia continuamente entre 0,6 (freando) e 1,9 (acelerando).
+- O teclado continua igual: cada tecla vale ±1.
+- **Medido no teste:** toque leve à direita = 0,23, borda = 1,00, diagonal a 45° = 0,71 em cada eixo (a velocidade total não passa de 1).
+- Para ajustar: `buildStick()` em `js/touch.js` (`DEAD`, `REACH`) e o CSS `#pad .stick` / `.knob` em `index.html`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

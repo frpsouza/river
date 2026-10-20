@@ -32,17 +32,18 @@ function update() {
 
   // controles
   const lvl = 1 + Math.min(sectionOf(scroll), 8) * 0.07;       // fica mais rápido a cada seção
-  const up = keys.ArrowUp || keys.w, down = keys.ArrowDown || keys.s;
+  // entrada vertical e horizontal de -1 a 1: teclas valem ±1, o joystick da tela dá valores intermediários
+  const vert = clamp((keys.ArrowUp || keys.w ? 1 : 0) - (keys.ArrowDown || keys.s ? 1 : 0) - stick.y, -1, 1);
   let sp;
   if (mode === 'modern') {
     // moderno: a câmera anda em velocidade constante e o jato voa livre pela tela (↑↓ movem na vertical)
     sp = 1.25 * lvl;
-    py = clamp(py + ((up ? 1 : 0) - (down ? 1 : 0)) * 2, PLAYER_Y, VIEW_H - PH - 24);
+    py = clamp(py + vert * 2, PLAYER_Y, VIEW_H - PH - 24);
   } else {
     // clássico: o jato fica embaixo; ↑ acelera e ↓ freia a rolagem
-    sp = (up ? 1.9 : down ? 0.6 : 1.1) * lvl;
+    sp = (1.1 + (vert > 0 ? vert * 0.8 : vert * 0.5)) * lvl;          // de 0,6 (freando) a 1,9 (acelerando)
   }
-  const steer = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0);
+  const steer = clamp((keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0) + stick.x, -1, 1);
   px += steer * 2;
   bank += (steer - bank) * 0.18;                 // inclinação suave das asas
   scroll += sp;

@@ -5,6 +5,7 @@
 'use strict';
 
 keys = {};
+let stick = { x: 0, y: 0 };                          // joystick analógico da tela (-1..1 em cada eixo; y < 0 = para cima)
 
 let taps = [];                                       // teclas apertadas neste quadro (sem auto-repetição)
 
