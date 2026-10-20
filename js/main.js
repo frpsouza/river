@@ -23,7 +23,7 @@ let last = performance.now(), acc = 0;
 
 function loop(now) {
   acc += Math.min(100, now - last); last = now;
-  while (acc >= 1000 / 60) { update(); acc -= 1000 / 60; }
+  while (acc >= 1000 / 60) { pollGamepad(); update(); acc -= 1000 / 60; }
   draw();
   requestAnimationFrame(loop);
 }

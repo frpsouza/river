@@ -9,7 +9,7 @@ const SCALE = 2;
 
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 
-cv.width = W * SCALE; cv.height = (VIEW_H + PANEL_H) * SCALE;
+cv.width = W * SCALE; cv.height = SCREEN_H * SCALE;
 
 const mix = (c1, c2, t) => {
   const a = parseInt(c1.slice(1), 16), b = parseInt(c2.slice(1), 16);

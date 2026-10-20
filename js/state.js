@@ -9,7 +9,7 @@
 let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens
 let bank = 0;
 let safeT = 0;
-let hp = 100, hurtT = 0;                             // oceano: vida do jato (0–100) e invulnerabilidade após um dano                                       // proteção ao renascer: enquanto > 0, inimigos e tiros não derrubam
+let hp = 100, hurtT = 0;                             // voo livre: vida do jato (0–100) e invulnerabilidade após um dano                                       // proteção ao renascer: enquanto > 0, inimigos e tiros não derrubam
 let py = PLAYER_Y;                                   // altura do jato acima do fundo da tela (no moderno ele sobe e desce)
 
 let shells = [];
@@ -17,6 +17,7 @@ let shells = [];
 let state, scroll, px, fuel, lives, score, nextLife, checkpoint, missiles = [], fx, dyingT, keys, frame, audio;
 
 function newGame() {
+  VIEW_H = mode === 'classic' ? SCREEN_H - PANEL_H : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
   newOceanGame();
   seed = (Math.random() * 1e9) | 0;
   rng = mulberry32(seed);
@@ -46,10 +47,11 @@ function addScore(n) {
   if (score >= nextLife) { nextLife += 10000; lives++; beep(880, 0.3); }
 }
 
-// dano com gravidade: no oceano tira vida da barra; nos outros modos, qualquer dano derruba.
+// dano com gravidade: nos modos de voo livre (moderno e oceano) tira vida da barra;
+// no clássico, qualquer dano derruba.
 // Devolve true se o jato caiu (o chamador deve parar o passo).
 function hurt(dmg) {
-  if (mode !== 'ocean') { kill(); return true; }
+  if (mode === 'classic') { kill(); return true; }
   if (hurtT > 0 || safeT > 0) return false;
   hp -= dmg; hurtT = 45;
   beep(150, 0.12, 'square', 0.05);

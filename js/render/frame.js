@@ -7,7 +7,7 @@
 
 function draw() {
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, VIEW_H + PANEL_H);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, SCREEN_H);
   if (!blocks) { drawTitle(); return; }
 
   ctx.fillStyle = mode === 'ocean' ? OCEAN_WATER : PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
@@ -60,14 +60,14 @@ function draw() {
     ctx.globalAlpha = 1;
   }
   if (state === 'play') drawShield(px + PW / 2, VIEW_H - py - PH / 2);
-  if (state === 'play' && mode === 'ocean' && (hurtT > 0 || hp < 40)) {   // barrinha de vida sobre o jato
+  if (state === 'play' && mode !== 'classic' && (hurtT > 0 || hp < 40)) {   // barrinha de vida sobre o jato
     const bx = px + PW / 2 - 12, by = VIEW_H - py - PH - 7;
     rrect(bx, by, 24, 3, 1.5); ctx.fillStyle = 'rgba(12,15,28,.7)'; ctx.fill();
     rrect(bx, by, Math.max(3, 24 * hp / 100), 3, 1.5); ctx.fillStyle = hp > 50 ? '#3fbf6a' : hp > 25 ? '#ffc93c' : '#e5484d'; ctx.fill();
   }
   fx.forEach(drawExplosion);
   if (mode === 'ocean') drawClouds();                               // nuvens por cima de tudo (menos o painel)
-  drawPanel();
+  if (mode === 'classic') drawPanel(); else drawHudTop();          // clássico: painel embaixo · voo livre: HUD no topo
   if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
 }
@@ -119,6 +119,29 @@ function drawTitle() {
   ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
   ctx.font = '10px Arial, sans-serif';
   ctx.fillText('setas ou clique escolhem · ENTER ou 2º clique joga', W / 2, 244);
+}
+
+// HUD dos modos de voo livre: no topo, por cima do cenário (pílulas translúcidas)
+function drawHudTop() {
+  const pill = (x, y, w, h) => { rrect(x, y, w, h, h / 2); ctx.fillStyle = 'rgba(12,15,28,.55)'; ctx.fill(); };
+  // placar e modo
+  pill(6, 5, 84, 20);
+  ctx.textAlign = 'left'; ctx.font = 'bold 14px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
+  ctx.fillText(String(score).padStart(6, '0'), 14, 20);
+  ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = { modern: '#9fe0ff', ocean: '#4fd1e0' }[mode] || '#ffc93c';
+  ctx.fillText({ modern: 'MODERNO', ocean: 'OCEANO' }[mode] || '', 14, 33);
+  // vida: barra larga no centro, pisca quando está baixa
+  const f = hp / 100, hx = 104, hw = 118, low = f < 0.25 && frame % 20 < 10;
+  pill(hx - 14, 7, hw + 20, 16);
+  ctx.fillStyle = '#e5484d'; ctx.font = 'bold 10px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('♥', hx - 5, 19);
+  rrect(hx + 2, 11, hw, 8, 4); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+  if (f > 0) { rrect(hx + 2, 11, Math.max(8, hw * f), 8, 4); ctx.fillStyle = low ? '#ff8a8a' : f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill();
+               rrect(hx + 2, 11, Math.max(8, hw * f), 3.5, 1.8); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fill(); }
+  // vidas (o jato em jogo não conta)
+  const n = Math.min(lives - (state === 'play' ? 1 : 0), 4);
+  if (n > 0) { pill(W - 10 - n * 15, 5, n * 15 + 4, 20); for (let k = 0; k < n; k++) drawJet(W - 4 - n * 15 + k * 15 + 6, 7, 0, 0.8, false); }
+  // power-ups ativos, logo abaixo da vida
+  drawPowerHud(hx + 2, 28);
 }
 
 function drawPanel() {

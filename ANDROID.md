@@ -45,6 +45,10 @@ No celular, abra `http://<ip-do-pc>:8000`.
 
 Ao publicar uma versão nova do PWA, troque `VERSION` em `sw.js` para os aparelhos baixarem os arquivos novos.
 
+## Controle físico
+
+Um joystick/gamepad ligado ao celular (Bluetooth ou USB-OTG) também funciona, com os mesmos botões da versão de PC (veja a tabela em `ESPECIFICACOES.md`).
+
 ## Controles na tela
 
 | Tela | Botões |

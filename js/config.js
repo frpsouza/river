@@ -2,13 +2,15 @@
 // Tamanhos da tela, da grade do mapa e escalas dos objetos. Tudo aqui é fixo
 // e serve de referência para os outros módulos (nenhum outro arquivo é necessário).
 //
-//   W × VIEW_H ........ área de jogo (304 × 320 px) + painel de PANEL_H px
+//   W × VIEW_H ........ área de jogo: 304 × 320 px + painel de PANEL_H px embaixo (clássico);
+//                       nos modos de voo livre não há painel e a área vai até SCREEN_H (368 px)
 //   LINE, LINES, BH ... um bloco do mapa tem 32 linhas de 2 px = 64 px de altura
 //   BLOCKS_PER_SECTION  16 blocos por seção; o último é a ponte
 //   SC, JET_SC ........ escalas dos sprites, tendo a casa como régua (parede 24 px ≈ 10 m)
 'use strict';
 
-const W = 304, VIEW_H = 320, PANEL_H = 48;
+const W = 304, PANEL_H = 48, SCREEN_H = 368;
+let VIEW_H = SCREEN_H - PANEL_H;                     // muda por modo em newGame()
 
 const LINE = 2, LINES = 32, BH = LINE * LINES;      // bloco: 32 linhas de 2px = 64px
 

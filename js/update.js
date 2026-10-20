@@ -36,17 +36,17 @@ function update() {
   // controles
   const lvl = 1 + Math.min(sectionOf(scroll), 8) * 0.07;       // fica mais rápido a cada seção
   // entrada vertical e horizontal de -1 a 1: teclas valem ±1, o joystick da tela dá valores intermediários
-  const vert = clamp((keys.ArrowUp || keys.w ? 1 : 0) - (keys.ArrowDown || keys.s ? 1 : 0) - stick.y, -1, 1);
+  const vert = clamp((keys.ArrowUp || keys.w ? 1 : 0) - (keys.ArrowDown || keys.s ? 1 : 0) - stick.y - gpad.y, -1, 1);
   let sp;
   if (mode !== 'classic') {
     // moderno e oceano: a câmera anda em velocidade constante (no oceano, quase para durante o chefe) e o jato voa livre pela tela (↑↓ movem na vertical)
     sp = (mode === 'ocean' && boss ? 0.3 : 1.25) * lvl;
-    py = clamp(py + vert * 2, PLAYER_Y, VIEW_H - PH - 24);
+    py = clamp(py + vert * 2, PLAYER_Y, VIEW_H - PH - 36);           // não entra embaixo do HUD
   } else {
     // clássico: o jato fica embaixo; ↑ acelera e ↓ freia a rolagem
     sp = (1.1 + (vert > 0 ? vert * 0.8 : vert * 0.5)) * lvl;          // de 0,6 (freando) a 1,9 (acelerando)
   }
-  const steer = clamp((keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0) + stick.x, -1, 1);
+  const steer = clamp((keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0) + stick.x + gpad.x, -1, 1);
   px += steer * 2;
   bank += (steer - bank) * 0.18;                 // inclinação suave das asas
   scroll += sp;
@@ -66,9 +66,12 @@ function update() {
   }
 
   // combustível
-  fuel -= 0.04 * (mode === 'classic' && sp > 1.5 * lvl ? 1.2 : 1);
-  if (fuel < 25 && frame % 20 === 0) beep(300, 0.05, 'square', 0.02);
-  if (fuel <= 0) { fuel = 0; kill(); return; }
+  // combustível só existe no clássico; no voo livre os postos recuperam a vida
+  if (mode === 'classic') {
+    fuel -= 0.04 * (sp > 1.5 * lvl ? 1.2 : 1);
+    if (fuel < 25 && frame % 20 === 0) beep(300, 0.05, 'square', 0.02);
+    if (fuel <= 0) { fuel = 0; kill(); return; }
+  }
 
   // colisão com terreno e ponte
   const pBot = scroll + py, pTop = pBot + PH;
@@ -83,7 +86,15 @@ function update() {
   } else {
     // moderno: voa por cima da terra; só não pode sair da tela nem bater num paredão de rocha
     px = clamp(px, 0, W - PW);
-    if (cliffHit(px + 2, px + PW - 2, pBot + 2, pTop - 2)) { kill(); return; }
+    if (cliffHit(px + 2, px + PW - 2, pBot + 2, pTop - 2)) {
+      // bater no paredão tira 40 de vida e empurra o jato para fora da rocha
+      const { b, i } = lineAt(pBot + PH / 2), cx = px + PW / 2;
+      let dir = 0;
+      if (b.cliffL[i] > 0 && cx < b.L[i] + PW) dir = cx < b.L[i] - b.cliffL[i] / 2 ? -1 : 1;
+      else if (b.cliffR[i] > 0) dir = cx > b.R[i] + b.cliffR[i] / 2 ? 1 : -1;
+      px = clamp(px + dir * 8, 0, W - PW);
+      if (hurt(40)) return;
+    }
   }
   // checkpoint ao passar pela ponte
   // (no oceano não há ponte: o checkpoint é derrotar o chefe — ocean.js)
@@ -136,7 +147,10 @@ function update() {
       if (!o.alive) continue;
       // colisão com jogador
       if (px1 > o.x + 1 && px0 < o.x + o.w - 1 && pTop > o.Y + 1 && pBot < o.Y + o.h - 1) {
-        if (o.type === 'fuel') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
+        if (o.type === 'fuel') {
+          if (mode === 'classic') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
+          else if (hp < 100) { hp = Math.min(100, hp + 0.8); if (frame % 4 === 0) beep(620 + hp * 3, 0.03, 'sine', 0.03); }   // posto: recupera a vida
+        }
         else if (o.type === 'pu') collectPowerup(o);                         // coleta imediata
         else if (safeT > 0 && o.type !== 'house') { /* recém-renascido: atravessa sem bater */ }
         else if (mode !== 'classic' && (o.type === 'house' || o.type === 'tank' || o.type === 'carrier')) { /* no chão/no mar: o jato passa por cima */ }

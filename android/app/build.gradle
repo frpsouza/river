@@ -7,8 +7,8 @@ android {
         applicationId 'com.riverraid.game'
         minSdk 21
         targetSdk 34
-        versionCode 20
-        versionName '20'
+        versionCode 21
+        versionName '21'
     }
     buildTypes { release { minifyEnabled false } }
     compileOptions {

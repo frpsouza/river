@@ -304,10 +304,11 @@ function drawBoss(B) {
 
 function drawBossBar(B) {
   const w = W - 60, f = Math.max(0, B.hp / B.maxHp);
-  rrect(30, 8, w, 7, 3.5); ctx.fillStyle = 'rgba(12,15,28,.75)'; ctx.fill();
-  rrect(30, 8, Math.max(7, w * f), 7, 3.5); ctx.fillStyle = f > 0.3 ? '#e5484d' : '#ff8a3d'; ctx.fill();
+  const by = 48;                                        // abaixo do HUD do topo
+  rrect(30, by, w, 7, 3.5); ctx.fillStyle = 'rgba(12,15,28,.75)'; ctx.fill();
+  rrect(30, by, Math.max(7, w * f), 7, 3.5); ctx.fillStyle = f > 0.3 ? '#e5484d' : '#ff8a3d'; ctx.fill();
   ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText('CHEFE — SEÇÃO ' + (B.sec + 1), 32, 25);
+  ctx.fillText('CHEFE — SEÇÃO ' + (B.sec + 1), 32, by + 17);
 }
 
 function drawCarrier(x, y, dir, o) {

@@ -90,7 +90,7 @@ if (TOUCH) {
 // título: clicar (mouse) ou tocar numa opção escolhe o modo; de novo na escolhida, começa o jogo
 const titlePick = e => {
   const r = cv.getBoundingClientRect();
-  const y = (e.clientY - r.top) / r.height * (VIEW_H + PANEL_H);
+  const y = (e.clientY - r.top) / r.height * SCREEN_H;
   const k = Math.floor((y - TITLE_OPT_Y) / 40), off = (y - TITLE_OPT_Y) % 40;
   return y >= TITLE_OPT_Y && off < 34 && k < 3 ? ['classic', 'modern', 'ocean'][k] : null;
 };

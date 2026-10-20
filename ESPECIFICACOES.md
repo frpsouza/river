@@ -26,6 +26,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
 | 13 | `render/frame.js` | monta cada quadro (`draw`), painel, telas de título e de fim de jogo |
 | 14 | `main.js` | teclado e laço principal (`update` a 60 passos/s, `draw` a cada quadro) |
+| 14b | `gamepad.js` | joystick/controle físico (Gamepad API): analógico, direcional e botões nas mesmas entradas do teclado |
 | 15 | `touch.js` | controles na tela para celular/Android: joystick analógico (`stick`) e botões que escrevem nas mesmas `keys`/`taps` do teclado |
 
 **Fluxo de um quadro:** `main.js` chama `update()`, que usa `state`, `terrain`, `objects`, `effects` e `gameover`. Depois chama `draw()`, que usa os módulos de `render/` e o `effects`.
@@ -50,6 +51,17 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | Espaço (Z) | atirar (um míssil por vez) |
 | Enter ou Espaço | iniciar (na tela de título) |
 | setas, 1/2/3 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
+
+**Com joystick/controle (gamepad):**
+
+| Controle | Ação |
+|---|---|
+| analógico esquerdo | mover (analógico: quanto mais inclinado, mais forte) · nos menus, escolher |
+| direcional (d-pad) | setas |
+| A, B ou RT | atirar · no fim de jogo, voltar |
+| Start | começar (título) |
+| LB / RB | ponte anterior / próxima (fim de jogo) |
+| X / Y | − / + velocidade da rolagem (fim de jogo) |
 
 **No fim de jogo** o mapa continua rolando sob o quadro "FIM DE JOGO":
 
@@ -498,6 +510,40 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 
 - As nuvens altas começam abaixo da tela e se estendem para cima, por isso o desenho considera blocos um pouco antes da tela, para elas não "brotarem" de repente.
 - Continuam translúcidas sobre o jato, agora com o teste levando em conta o formato esticado.
+
+## Mudanças da versão 21 — sem combustível no voo livre, HUD no topo e controle físico
+
+### 37. Moderno (e oceano): sem combustível, os postos recuperam a vida
+- **Antes:** o moderno tinha combustível como o clássico, e qualquer dano derrubava o jato.
+- **Agora, nos modos de voo livre (moderno e oceano):**
+  - O combustível não existe mais, e não há como cair por falta dele.
+  - Os postos de abastecimento recuperam a **vida**: +0,8 por quadro enquanto o jato está sobre eles, com um bipe que sobe de tom.
+  - O moderno ganhou a mesma barra de vida do oceano, com dano conforme a gravidade e 0,75 s de invulnerabilidade depois de cada dano.
+  - **Paredão de rocha:** em vez de derrubar, tira 40 de vida e empurra o jato 8 px para fora da rocha.
+- **No clássico:** nada muda. Continua com combustível e qualquer dano derruba.
+
+### 38. HUD no topo da tela, sobre o cenário
+- **Nos modos de voo livre:**
+  - O painel de baixo sai e o cenário ocupa a tela inteira: `VIEW_H` passa de 320 para 368 px, definido por modo em `newGame()`.
+  - O HUD fica no alto, por cima do cenário, em pílulas translúcidas:
+    - à esquerda, o placar e o nome do modo;
+    - no centro, a barra de vida, que pisca quando está abaixo de 25%;
+    - à direita, as vidas restantes;
+    - logo abaixo da vida, os ícones dos power-ups ativos.
+  - A barra do chefe (oceano) desceu para ficar abaixo do HUD.
+  - O jato não sobe por baixo do HUD.
+- **No clássico:** continua o painel embaixo, como no original.
+
+### 39. Joystick / controle físico
+- Funciona com qualquer controle que o navegador reconheça no mapeamento padrão (Xbox, PlayStation e a maioria dos genéricos, por USB ou Bluetooth). Os botões estão na tabela de controles.
+- O analógico é contínuo, como o joystick da tela, e nos menus vira "toques" de seta.
+- Os botões usam as mesmas entradas do teclado, então valem no título, no jogo e no fim de jogo.
+- Testado com um controle simulado:
+  - o direcional e o analógico trocaram o modo no título;
+  - o Start começou o jogo;
+  - o analógico na diagonal moveu o jato 60 px para o lado e 60 px para cima em 0,5 s;
+  - o botão A disparou.
+- Para ajustar: o mapa `GP_BUTTONS` em `js/gamepad.js`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
