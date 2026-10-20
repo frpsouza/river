@@ -334,6 +334,19 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - Na tela de título, clicar numa opção a escolhe, e clicar de novo na opção já escolhida começa o jogo. O cursor vira mãozinha sobre as opções.
 - Antes isso só funcionava com toque. Agora vale para mouse e toque, além das setas e das teclas 1 e 2.
 
+## Mudanças da versão 13 — direcional em cruz
+
+### 27. Controles na tela com direcional em cruz
+- **Antes:** quatro botões soltos (◀ ▶ ▲ ▼) numa grade, ao lado de um FOGO retangular.
+- **Agora:** um direcional em cruz à esquerda, como num controle físico, e um botão de FOGO redondo à direita.
+  - O direcional é um bloco só, que lê onde o dedo está em relação ao centro.
+  - São 8 setores de 45°: as 4 direções e as 4 diagonais, como ▲+▶ para subir e ir para a direita no modo moderno. Há uma zona morta pequena no meio.
+  - O polegar pode deslizar de uma direção para outra sem levantar.
+  - Cada braço da cruz acende em azul enquanto está ativo.
+  - Direcional e FOGO funcionam ao mesmo tempo, com dois dedos.
+- As telas de título e de fim de jogo continuam com os botões próprios.
+- Para ajustar: `buildDpad()` em `js/touch.js` e o CSS `#pad .dpad` / `.arm` em `index.html`.
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

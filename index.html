@@ -19,13 +19,26 @@
   body.touch small{display:none}
   body.touch canvas{width:100vw;height:auto;max-width:100vw;max-height:calc(100vh - 150px);aspect-ratio:304/368}
   #pad{flex:1;width:100%;max-width:520px;max-height:320px;display:grid;gap:8px;padding:8px 10px 12px;box-sizing:border-box;
-    grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,minmax(52px,1fr));grid-template-areas:"l u fire fire" "r d fire fire"}
+    grid-template-columns:1.15fr 1fr;grid-template-rows:minmax(120px,1fr);grid-template-areas:"dpad fire";align-items:center}
   #pad .btn{border:0;border-radius:14px;background:#26334f;color:#e8ecf5;font:bold 20px Arial,sans-serif;touch-action:none;
     box-shadow:0 4px 0 #161e30;-webkit-tap-highlight-color:transparent}
   #pad .btn.on{transform:translateY(3px);box-shadow:0 1px 0 #161e30;background:#33446a}
   #pad .fire{grid-area:fire;background:#e5484d;box-shadow:0 4px 0 #8f2a2e;font-size:22px}
   #pad .fire.on{background:#c23a3f;box-shadow:0 1px 0 #8f2a2e}
-  #pad .l{grid-area:l}#pad .r{grid-area:r}#pad .u{grid-area:u}#pad .d{grid-area:d}
+  /* direcional em cruz */
+  #pad .dpad{grid-area:dpad;position:relative;height:min(100%,44vw,190px);aspect-ratio:1;justify-self:center;touch-action:none}
+  #pad .arm,#pad .hub{position:absolute;background:#26334f;color:#9aa6c2;display:flex;align-items:center;justify-content:center;
+    font:bold 18px Arial,sans-serif;box-shadow:0 4px 0 #161e30}
+  #pad .arm.up{left:33%;top:0;width:34%;height:38%;border-radius:12px 12px 0 0}
+  #pad .arm.down{left:33%;bottom:0;width:34%;height:38%;border-radius:0 0 12px 12px}
+  #pad .arm.left{top:33%;left:0;width:38%;height:34%;border-radius:12px 0 0 12px}
+  #pad .arm.right{top:33%;right:0;width:38%;height:34%;border-radius:0 12px 12px 0}
+  #pad .hub{left:32%;top:32%;width:36%;height:36%;box-shadow:none}
+  #pad .hub::after{content:"";width:40%;height:40%;border-radius:50%;background:#1d2840}
+  #pad .arm.on{background:#3b63e0;color:#fff}
+  /* botão de fogo redondo */
+  #pad .fire.round{justify-self:center;height:min(100%,34vw,150px);aspect-ratio:1;border-radius:50%;font-size:20px}
+  #pad .u{grid-area:u}#pad .d{grid-area:d}
   #pad[data-screen="over"]{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,minmax(44px,1fr));
     grid-template-areas:"u pu minus plus" "d pd minus plus" "fire fire fire fire"}
   #pad[data-screen="over"] .btn{font-size:15px}

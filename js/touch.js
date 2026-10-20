@@ -14,7 +14,7 @@ const TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || /[?&]t
 
 // botões: [rótulo, tecla, shift?, classe]
 const PADS = {
-  play: [['◀', 'ArrowLeft', 0, 'l'], ['▶', 'ArrowRight', 0, 'r'], ['▲', 'ArrowUp', 0, 'u'], ['▼', 'ArrowDown', 0, 'd'], ['FOGO', ' ', 0, 'fire']],
+  play: [['DPAD'], ['FOGO', ' ', 0, 'fire round']],
   over: [['▲', 'ArrowUp', 0, 'u'], ['▼', 'ArrowDown', 0, 'd'], ['ponte ▲', 'PageUp', 0, 'pu'], ['ponte ▼', 'PageDown', 0, 'pd'],
          ['−', '-', 0, 'minus'], ['+', '+', 0, 'plus'], ['VOLTAR', ' ', 0, 'fire']],
   title: [['◀ ▶ modo', 'ArrowRight', 0, 'mode'], ['JOGAR', 'Enter', 0, 'fire']],
@@ -22,6 +22,52 @@ const PADS = {
 
 function press(key, shift) { keys[key] = true; taps.push({ key, shift: !!shift }); }
 function release(key) { keys[key] = false; }
+// segura o dedo no elemento mesmo se ele escorregar para fora (ignora falha em eventos sintéticos)
+function capture(el, id) { try { el.setPointerCapture(id); } catch (e) { /* sem captura */ } }
+
+// Direcional em cruz, como num controle físico: um único bloco que lê onde o dedo está
+// em relação ao centro. São 8 setores de 45° (4 direções + 4 diagonais), com uma zona
+// morta no meio; o dedo pode deslizar de uma direção para outra sem levantar.
+const DIRS = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+function buildDpad() {
+  const pad = document.createElement('div');
+  pad.className = 'dpad';
+  const arms = {};
+  for (const [name, glyph] of [['up', '▲'], ['left', '◀'], ['right', '▶'], ['down', '▼']]) {
+    const a = document.createElement('div');
+    a.className = 'arm ' + name; a.textContent = glyph;
+    pad.appendChild(a); arms[name] = a;
+  }
+  const hub = document.createElement('div'); hub.className = 'hub'; pad.appendChild(hub);
+
+  let active = new Set();
+  const apply = dirs => {
+    for (const [name, key] of Object.entries(DIRS)) {
+      const on = dirs.has(name);
+      if (on && !active.has(name)) press(key);
+      if (!on && active.has(name)) release(key);
+      arms[name].classList.toggle('on', on);
+    }
+    active = dirs;
+  };
+  const read = e => {
+    const r = pad.getBoundingClientRect();
+    const dx = (e.clientX - r.left) / r.width * 2 - 1, dy = (e.clientY - r.top) / r.height * 2 - 1;
+    const dirs = new Set();
+    if (Math.hypot(dx, dy) < 0.16) return dirs;                       // zona morta no centro
+    const sector = Math.round(Math.atan2(dy, dx) / (Math.PI / 4));    // -4..4, 0 = direita
+    const map = { 0: ['right'], 1: ['right', 'down'], 2: ['down'], 3: ['down', 'left'], 4: ['left'], '-4': ['left'],
+                  '-3': ['left', 'up'], '-2': ['up'], '-1': ['up', 'right'] };
+    for (const d of map[sector]) dirs.add(d);
+    return dirs;
+  };
+  let pid = null;
+  pad.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; capture(pad, pid); apply(read(e)); });
+  pad.addEventListener('pointermove', e => { if (e.pointerId === pid) apply(read(e)); });
+  const end = e => { if (e.pointerId === pid) { pid = null; apply(new Set()); } };
+  pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end); pad.addEventListener('lostpointercapture', end);
+  return pad;
+}
 
 if (TOUCH) {
   document.body.classList.add('touch');
@@ -33,9 +79,10 @@ if (TOUCH) {
   const build = which => {
     pad.innerHTML = ''; pad.dataset.screen = which;
     for (const [label, key, shift, cls] of PADS[which]) {
+      if (label === 'DPAD') { pad.appendChild(buildDpad()); continue; }
       const b = document.createElement('button');
       b.textContent = label; b.className = 'btn ' + cls;
-      b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); b.classList.add('on'); press(key, shift); });
+      b.addEventListener('pointerdown', e => { e.preventDefault(); capture(b, e.pointerId); b.classList.add('on'); press(key, shift); });
       const up = () => { b.classList.remove('on'); release(key); };
       b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
       pad.appendChild(b);
