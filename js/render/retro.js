@@ -350,7 +350,7 @@ function drawRetroHud() {
     const B = boss, bw = W - 40, bf = Math.max(0, B.hp / B.maxHp);
     prect(20, 3, bw, 5, '#0c0f1c'); prect(21, 4, (bw - 2) * bf, 3, bf > 0.3 ? '#e5484d' : '#ff8a3d');
     const st = B.kind === 'gunship' && B.shield > 0 ? ' · SHIELD' : B.kind === 'airship' && B.turrets.some(t => t.hp > 0) ? ' · ARMORED' : B.kind === 'interceptor' && B.mode === 'dash' ? ' · UNTOUCHABLE' : '';
-    ptext(BOSS_INFO[B.kind].name + st, 21, 10, '#ffffff');
+    ptext(BOSS_INFO[B.kind].name + (B.dying ? ' · GOING DOWN!' : st), 21, 10, '#ffffff');
   }
   // fim de jogo
   if (state === 'over') {

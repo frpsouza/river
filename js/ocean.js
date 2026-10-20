@@ -208,14 +208,39 @@ function bossShot(mx, sy) {                                    // míssil chegan
   if (B.kind === 'airship' && B.turrets.some(t => t.hp > 0)) { ping(mx, sy); return true; }  // núcleo blindado
   B.hp--; B.flash = 4; addScore(10);
   fx.push({ x: mx, y: worldY(sy), t: 10, life: 10, kind: 'spark', parts: burst(5, 1.8, { col: '#ffe58a', r: 0.9, life: 10 }) });
-  if (B.hp <= 0) { B.dying = 90; shells = []; }
+  if (B.hp <= 0) { B.dying = 1; shells = []; }                            // começa a queda (bossDie)
   return true;
 }
 
+// derrota do chefe: ele não some — perde o controle, solta fumaça preta dos motores, pega fogo,
+// gira e deriva enquanto cai (vista de cima: encolhe ao se afastar da câmera rumo ao mar) e
+// termina num grande respingo no oceano; só então vêm os pontos, o checkpoint e a cura
+const BOSS_FALL = 150;                                // duração da queda (quadros)
+const bossFallScale = B => B.fall ? 1 - 0.7 * (B.fall.t / BOSS_FALL) : 1;
 function bossDie(B) {
-  if (B.dying % 6 === 0) boom(B.x + rnd(-55, 55), worldY(B.y + rnd(-25, 25)), B.dying % 18 ? 'fuel' : 'bridge');
-  if (--B.dying) return;
-  boom(B.x, worldY(B.y), 'player');
+  if (!B.fall) {
+    const sg = () => (Math.random() < 0.5 ? -1 : 1);
+    B.fall = { t: 0, vx: sg() * rnd(0.3, 0.7), vr: sg() * rnd(0.012, 0.022), rot: 0 };
+    [622, 554, 494, 440, 392, 349, 311, 277].forEach((f, k) => setTimeout(() => beep(f, 0.22, 'sine', 0.03), k * 150));   // assobio de queda
+  }
+  const F = B.fall, u = ++F.t / BOSS_FALL, s = bossFallScale(B);
+  B.x += F.vx; B.y += 0.25 + u * 0.6; F.rot += F.vr * (0.5 + u);
+  const at = d => [B.x + Math.cos(F.rot) * d * s, B.y + Math.sin(F.rot) * d * s];   // ponto da asa, girado com o avião
+  if (F.t % 2 === 0) for (const d of [-40, 0, 40]) {                       // fumaça preta e cinza
+    const [x, y] = at(d + rnd(-6, 6));
+    fx.push({ x, y: worldY(y), t: 64, life: 64, kind: 'smoke',
+      parts: [P({ x: rnd(-2, 2), vx: rnd(-0.2, 0.2), vy: -rnd(0.1, 0.4), r: (2.5 + Math.random() * 2) * (0.6 + s * 0.6), grow: 1.035, col: Math.random() < 0.6 ? '#26334f' : '#5c6378', life: 64 })] });
+  }
+  if (F.t % 7 === 0) { const [x, y] = at(rnd(-44, 44)); fx.push({ x, y: worldY(y), t: 16, life: 16, kind: 'flame', fire: [[7 * s + 2, 16, 0]], parts: [] }); }   // motores em chamas
+  if (F.t % 18 === 0 && u < 0.7) { const [x, y] = at(rnd(-40, 40)); boom(x, worldY(y), 'fuel'); }                         // explosões
+  if (F.t < BOSS_FALL) return;
+  // respingo no oceano
+  boom(B.x, worldY(B.y), 'carrier');
+  fx.push({ x: B.x, y: worldY(B.y), t: 80, life: 80, kind: 'splash', flash: 6,
+    rings: [['rgba(191,227,255,.95)', 110, 56, 0.5, 0, 6], ['rgba(255,255,255,.9)', 70, 44, 0.5, 8, 4], ['rgba(191,227,255,.8)', 150, 70, 0.5, 16, 3]],
+    parts: [...parts(46, () => P({ x: rnd(-20, 20), vx: rnd(-1.8, 1.8), vy: rnd(-4.5, -1.5), g: 0.12, r: rnd(1, 2.4), col: Math.random() < 0.5 ? '#ffffff' : '#bfe3ff', life: 60 })),
+            ...parts(16, k => { const a = k / 16 * Math.PI * 2; return P({ x: Math.cos(a) * 14, y: Math.sin(a) * 6, vx: Math.cos(a) * 1.2, vy: Math.sin(a) * 0.5, r: 3.5, grow: 1.02, col: '#f5f2ea', life: 70, delay: 6 }); })] });
+  shake(5, 30);
   addScore(3000 + 1000 * Math.min(B.sec, 5));
   bossDone[B.sec] = true;
   checkpoint = Math.max(checkpoint, (B.sec + 1) * BLOCKS_PER_SECTION);   // derrotar o chefe é o checkpoint
@@ -564,13 +589,20 @@ function drawOceanAir() {
 }
 
 function drawBoss(B) {
-  if (B.kind === 'gunship') return drawGunship(B);
-  if (B.kind === 'airship') return drawAirship(B);
-  if (B.kind === 'interceptor') return drawInterceptor(B);
-  drawBomber(B);
+  const falling = !!B.fall;
+  if (falling) {                                     // caindo: gira e encolhe rumo ao mar
+    const s = bossFallScale(B);
+    ctx.save(); ctx.translate(B.x, B.y); ctx.rotate(B.fall.rot); ctx.scale(s, s); ctx.translate(-B.x, -B.y);
+  }
+  if (B.kind === 'gunship') drawGunship(B);
+  else if (B.kind === 'airship') drawAirship(B);
+  else if (B.kind === 'interceptor') drawInterceptor(B);
+  else drawBomber(B);
+  if (falling) ctx.restore();
 }
 
-const bossShadow = (B, rx, ry) => ell(B.x + 22 + 20 * altT, B.y + 36 + 30 * altT, rx, ry, 'rgba(0,0,30,' + (0.22 - 0.12 * altT).toFixed(2) + ')');
+// sombra no mar; durante a queda ela se aproxima do avião (ele está chegando à água)
+const bossShadow = (B, rx, ry) => { const k = B.fall ? 1 - B.fall.t / BOSS_FALL : 1; ell(B.x + (22 + 20 * altT) * k, B.y + (36 + 30 * altT) * k, rx, ry, 'rgba(0,0,30,' + ((0.22 - 0.12 * altT) * (2 - k)).toFixed(2) + ')'); };
 function bossFlash(B, draw) { if (B.flash > 0) { ctx.globalAlpha = 0.55; draw(); ctx.globalAlpha = 1; } }
 
 function drawGunship(B) {
@@ -683,7 +715,8 @@ function drawBossBar(B) {
   rrect(30, by, Math.max(7, w * f), 7, 3.5); ctx.fillStyle = f > 0.3 ? '#e5484d' : '#ff8a3d'; ctx.fill();
   ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'left';
   const st = B.kind === 'gunship' && B.shield > 0 ? ' · SHIELD' : B.kind === 'airship' && B.turrets.some(t => t.hp > 0) ? ' · ARMORED (' + B.turrets.filter(t => t.hp > 0).length + ' turrets)' : B.kind === 'interceptor' && B.mode === 'dash' ? ' · UNTOUCHABLE' : '';
-  ctx.fillText(BOSS_INFO[B.kind].name + ' — SECTION ' + (B.sec + 1) + st, 32, by + 17);
+  const st2 = B.dying ? ' · GOING DOWN!' : st;
+  ctx.fillText(BOSS_INFO[B.kind].name + ' — SECTION ' + (B.sec + 1) + st2, 32, by + 17);
 }
 
 function drawCarrier(x, y, dir, o) {

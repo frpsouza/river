@@ -853,6 +853,23 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Medido:** no meio do looping, um tiro em cima do jato não tirou vida e o gatilho não disparou. Depois da manobra, o tiro voltou.
 - Para ajustar: `maneuverPose()`, `stepManeuver()` e as durações em `setAltitude()` (`js/ocean.js`).
 
+## Mudanças da versão 35 — chefe derrotado cai em chamas no oceano
+
+### 59. Queda do chefe (Ocean e Retro Ocean)
+- **Antes:** o chefe derrotado explodia por 1,5 s e sumia.
+- **Agora ele cai no mar**, numa sequência de **2,5 s** (`BOSS_FALL = 150` quadros):
+  - **perde o controle:** gira cada vez mais rápido no próprio eixo e deriva para um lado;
+  - **cai rumo ao mar:** na vista de cima, encolhe até 30% do tamanho ao se afastar da câmera, e a sombra se aproxima do avião;
+  - **fumaça:** solta fumaça preta e cinza grossa dos dois motores e do corpo (pontos que giram junto com o avião), deixando um rastro;
+  - **motores em chamas:** pequenas labaredas, e explosões espaçadas nos primeiros ~70% da queda;
+  - **som:** um assobio grave de queda que vai descendo;
+  - **barra do chefe:** mostra "· GOING DOWN!".
+- **Respingo no oceano:** explosão de impacto, três anéis de água, coluna de 46 gotas que sobem e caem, anel de espuma e um tremor de tela.
+- **Só então** vêm os pontos, o checkpoint, a cura de +40 e a volta ao voo rasante (com o mergulho em parafuso).
+- **Durante a queda,** o chefe não atira, não colide e não recebe mais tiros.
+- **Medido:** queda de 150 quadros; escala 1,00 → 0,86 → 0,72 → 0,58 → 0,44; ~90 nuvens de fumaça na tela; ao fim, +4010 pontos, checkpoint avançado, vida 50 → 90 e respingo criado.
+- Para ajustar: `bossDie()`, `BOSS_FALL` e `bossFallScale()` (`js/ocean.js`).
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.
