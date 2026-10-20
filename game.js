@@ -10,7 +10,9 @@ const BLOCKS_PER_SECTION = 16;
 const MAXD = 40;
 const smooth = t => t * t * (3 - 2 * t);               // curva suave (sem degraus)
 const PLAYER_Y = 6;                                   // jato rente ao painel de placar
-const PW = 15, PH = 16;
+const JET_SC = 1.25;                                  // escalas relativas à casa (parede de 24 px ≈ 10 m)
+const SC = { ship: 1.2, heli: 1.35, tank: 0.68, balloon: 1.5, plane: 1.25, cow: 0.65, tree: 1.25 };
+const PW = Math.round(15 * JET_SC), PH = Math.round(16 * JET_SC);
 const WATER = '#2d32b8', LAND_DARK = '#355f18', LAND_LIGHT = '#6e9c42';
 
 // ---------- util ----------
@@ -115,14 +117,14 @@ function spawnObjs(blk) {
     // tanque atravessando a ponte pela estrada (dá para acertar enquanto está sobre o rio)
     if (r() < 0.6) {
       const dir = r() < 0.5 ? 1 : -1;
-      blk.objs.push({ type: 'tank', onRoad: true, x: dir > 0 ? 4 : W - 30, Y: base + 12 * LINE, w: 26, h: 14,
-        alive: true, dir, aim: dir, vx: 0.5 + Math.min(blk.s, 8) * 0.05, minX: 0, maxX: W - 26 });
+      blk.objs.push({ type: 'tank', onRoad: true, x: dir > 0 ? 4 : W - 23, Y: base + 12 * LINE, w: 19, h: 10,
+        alive: true, dir, aim: dir, vx: 0.5 + Math.min(blk.s, 8) * 0.05, minX: 0, maxX: W - 19 });
     }
     return;
   }
   const k = r();
   const type = k < 0.26 ? 'fuel' : k < 0.46 ? 'ship' : k < 0.66 ? 'heli' : k < 0.78 ? 'house' : k < 0.9 ? 'tank' : 'balloon';
-  const dims = { fuel: [18, 28], ship: [36, 12], heli: [20, 14], house: [36, 23], tank: [26, 14], balloon: [16, 24] }[type];
+  const dims = { fuel: [18, 28], ship: [43, 14], heli: [27, 19], house: [36, 23], tank: [19, 10], balloon: [24, 36] }[type];
   const [w, h] = dims;
   for (let tries = 0; tries < 30; tries++) {
     const yi = 3 + Math.floor(r() * (LINES - 6 - h / LINE));
@@ -161,7 +163,7 @@ function spawnObjs(blk) {
   }
   // avião inimigo ocasional: cruza a tela quando o jogador se aproxima
   if (blk.g > 3 && r() < 0.18)
-    blk.objs.push({ type: 'plane', x: -100, Y: base + 24 * LINE, w: 20, h: 10, alive: true,
+    blk.objs.push({ type: 'plane', x: -100, Y: base + 22 * LINE, w: 25, h: 13, alive: true,
       dir: r() < 0.5 ? -1 : 1, active: false, vx: 2.2 + Math.min(blk.s, 10) * 0.1 });
 }
 
@@ -223,17 +225,71 @@ function kill() {
 }
 
 // ---------- atualização ----------
+// ---------- fim de jogo: o mapa segue rolando sob o quadro ----------
+let overDir = 1, overTarget = null, overT = 0, overSpeed = 1.1;
+const bridgeView = s => (s * BLOCKS_PER_SECTION + 15) * BH + 16 * LINE - VIEW_H / 2;   // ponte no meio da tela
+
+function jumpBridge(d) {
+  const cur = overTarget ?? scroll;
+  // perto de uma ponte (±60 px) conta como "nela": PgUp vai para a seguinte, PgDn para a anterior
+  let s = 0;
+  while (bridgeView(s) <= cur + 60) s++;           // s = próxima ponte bem à frente
+  if (d < 0) { s = 0; while (bridgeView(s + 1) < cur - 60) s++; if (bridgeView(s) >= cur - 60) s = -1; }
+  overTarget = s < 0 ? 0 : Math.max(0, bridgeView(s));
+}
+
+function animateObjects() {
+  const g0 = Math.max(0, Math.floor(scroll / BH) - 1), g1 = Math.floor((scroll + VIEW_H) / BH) + 2;
+  getBlock(g1 + 2);
+  for (let g = g0; g <= g1; g++) for (const o of blocks[g].objs) {
+    if (!o.alive) continue;
+    const sy = VIEW_H - (o.Y + o.h - scroll);
+    if (o.type === 'plane') {
+      if (!o.active && sy < 150 && sy > 0) { o.active = true; o.x = o.dir > 0 ? -o.w : W; }
+      if (o.active) { o.x += o.dir * o.vx; if (o.x < -o.w - 4 || o.x > W + 4) o.alive = false; }
+    } else if (o.type === 'tank' || o.type === 'balloon') {
+      o.x += o.dir * o.vx;
+      const lo = o.type === 'tank' ? o.minX : 4, hi = o.type === 'tank' ? o.maxX : W - o.w - 4;
+      if (o.x < lo || o.x > hi) { o.dir = -o.dir; o.x = clamp(o.x, lo, hi); }
+      if (o.onRoad) o.aim = o.dir;
+    } else if (o.moving && sy > -20 && sy < VIEW_H) {
+      const nx = o.x + o.dir * o.vx;
+      if (waterFree(nx, nx + o.w, o.Y, o.Y + o.h)) o.x = nx; else o.dir = -o.dir;
+    }
+  }
+}
+
+function updateOver(tp) {
+  overT++;
+  if (overT > 40 && tp.some(t => t.key === ' ')) { state = 'title'; return; }   // pausa curta: quem estava atirando não pula o quadro
+  for (const t of tp) {
+    if (t.key === 'PageUp' || (t.shift && t.key === 'ArrowUp')) jumpBridge(1);
+    else if (t.key === 'PageDown' || (t.shift && t.key === 'ArrowDown')) jumpBridge(-1);
+    else if (t.key === 'ArrowUp') { overDir = 1; overTarget = null; }
+    else if (t.key === 'ArrowDown') { overDir = -1; overTarget = null; }
+    else if (t.key === '-' || t.key === '_') overSpeed = Math.max(0.25, overSpeed / 1.5);       // − diminui
+    else if (t.key === '=' || t.key === '+') overSpeed = Math.min(12, overSpeed * 1.5);         // = / + aumenta
+  }
+  if (overTarget !== null) {
+    scroll += (overTarget - scroll) * 0.12;
+    if (Math.abs(overTarget - scroll) < 0.5) { scroll = overTarget; overTarget = null; }
+  } else scroll = Math.max(0, scroll + overDir * overSpeed);
+  animateObjects();
+}
+
 function update() {
   frame++;
-  if (state === 'title') { if (keys.Enter || keys[' ']) { newGame(); } return; }
-  if (state === 'over') { if (keys.Enter) state = 'title'; return; }
+  const tp = taps; taps = [];
+  if (state === 'title') { if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame(); return; }
 
   fx.forEach(e => e.t--);
   fx = fx.filter(e => e.t > 0);
 
+  if (state === 'over') { updateOver(tp); return; }
   if (state === 'dying') {
     if (--dyingT <= 0) {
-      if (--lives <= 0) state = 'over'; else respawn();
+      if (--lives <= 0) { state = 'over'; overT = 0; overDir = 1; overSpeed = 1.1; overTarget = null; missile = null; shells = []; }
+      else respawn();
     }
     return;
   }
@@ -293,7 +349,7 @@ function update() {
           } else if (sy > 40 && sy < VIEW_H - 30 && --o.cool <= 0) {
             // atira na direção do rio
             o.cool = 110 + Math.random() * 90;
-            shells.push({ x: o.aim > 0 ? o.x + o.w + 2 : o.x - 2, Y: o.Y + o.h - 3.4, vx: o.aim * 1.8 });
+            shells.push({ x: o.aim > 0 ? o.x + o.w + 2 : o.x - 2, Y: o.Y + o.h - 3.4 * SC.tank, vx: o.aim * 1.8 });
             beep(220, 0.06, 'square', 0.02);
           }
         }
@@ -514,6 +570,7 @@ function getDeco(blk) {
 }
 
 function drawTree(x, y, sc, pine, pal) {
+  sc *= SC.tree;
   ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
   ell(1.5, 0.3, 4.6, 1.2, 'rgba(0,0,0,.18)');
   ctx.fillStyle = '#7a5a3c'; ctx.fillRect(-0.8, -3.6, 1.6, 3.8);
@@ -536,7 +593,7 @@ function drawField(x, y, w, h, pal) {
 
 function drawCow(x, y, dir, phase) {
   const graze = Math.sin((frame + phase) * 0.03) > 0.3;          // às vezes abaixa a cabeça para pastar
-  ctx.save(); ctx.translate(x, y); if (dir < 0) ctx.scale(-1, 1);
+  ctx.save(); ctx.translate(x, y); ctx.scale(dir < 0 ? -SC.cow : SC.cow, SC.cow);
   ctx.fillStyle = '#26334f'; ctx.fillRect(-3, -2.2, 1, 2.2); ctx.fillRect(2.2, -2.2, 1, 2.2);
   rrect(-4.2, -5.6, 8.4, 3.6, 1.6); ctx.fillStyle = '#f5f2ea'; ctx.fill();
   ell(-1, -4, 1.6, 1.1, '#26334f');
@@ -587,7 +644,7 @@ function drawFuel(x, y) {
 }
 
 function drawHeli(x, y, dir) {
-  ctx.save(); ctx.translate(x + (dir > 0 ? 20 : 0), y); if (dir > 0) ctx.scale(-1, 1);
+  ctx.save(); ctx.translate(x + (dir > 0 ? 20 * SC.heli : 0), y); ctx.scale(dir > 0 ? -SC.heli : SC.heli, SC.heli);
   ell(10, 13.4, 7, 1.3, 'rgba(0,0,30,.18)');
   const L = frame % 6 < 3 ? 9 : 4;
   ctx.fillStyle = '#ffb547'; ctx.fillRect(9 - L, 1.6, 2 * L, 1.2);
@@ -603,7 +660,7 @@ function drawHeli(x, y, dir) {
 }
 
 function drawShip(x, y, dir) {
-  ctx.save(); ctx.translate(x + (dir > 0 ? 36 : 0), y); if (dir > 0) ctx.scale(-1, 1);
+  ctx.save(); ctx.translate(x + (dir > 0 ? 36 * SC.ship : 0), y); ctx.scale(dir > 0 ? -SC.ship : SC.ship, SC.ship);
   ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(30, 10.6, 6, 1); ctx.fillRect(33, 9, 3, 1);
   poly([0, 5, 34, 5, 31, 10.6, 5, 10.6], '#e5484d');
   poly([3.6, 8.4, 32.1, 8.4, 31, 10.6, 5, 10.6], '#b8363b');
@@ -614,7 +671,7 @@ function drawShip(x, y, dir) {
 }
 
 function drawPlane(x, y, dir) {
-  ctx.save(); ctx.translate(x + (dir < 0 ? 20 : 0), y + Math.sin(frame * 0.3) * 0.4); if (dir < 0) ctx.scale(-1, 1);
+  ctx.save(); ctx.translate(x + (dir < 0 ? 20 * SC.plane : 0), y + Math.sin(frame * 0.3) * 0.4); ctx.scale(dir < 0 ? -SC.plane : SC.plane, SC.plane);
   poly([13, 5, 4, 0, 2, 0, 6, 5], '#9fe0ff');            // asa de cima (luz)
   poly([13, 5, 4, 10, 2, 10, 6, 5], '#4aa8e0');          // asa de baixo (sombra)
   poly([20, 5, 14, 3.4, 1, 3.6, 0, 5, 1, 6.4, 14, 6.6], '#6cc8f2');
@@ -637,7 +694,7 @@ function drawHouse(x, y, variant) {
 
 function drawTank(x, y, aim, dir) {
   // vista lateral, flat: esteira, casco, cúpula e canhão virado para `aim`
-  ctx.save(); ctx.translate(x + (aim < 0 ? 26 : 0), y); if (aim < 0) ctx.scale(-1, 1);
+  ctx.save(); ctx.translate(x + (aim < 0 ? 28 * SC.tank : 0), y); ctx.scale(aim < 0 ? -SC.tank : SC.tank, SC.tank);
   groundShadow(13.5, 14, 13, 1.4);
   rrect(1, 9, 23, 5, 2.5); ctx.fillStyle = '#33372d'; ctx.fill();
   const roll = ((frame * 0.25 * dir * (aim < 0 ? -1 : 1)) % 5 + 5) % 5;
@@ -654,8 +711,8 @@ function drawTank(x, y, aim, dir) {
 
 function drawBalloon(x, y, hue, phase) {
   const bob = Math.sin(frame * 0.05 + phase) * 1.5;
-  ell(x + 14, y + 30, 5, 1.6, 'rgba(0,0,30,.2)');               // sombra deslocada: está no ar
-  ctx.save(); ctx.translate(x, y + bob);
+  ell(x + 14 * SC.balloon, y + 30 * SC.balloon, 5 * SC.balloon, 1.6 * SC.balloon, 'rgba(0,0,30,.2)');               // sombra deslocada: está no ar
+  ctx.save(); ctx.translate(x, y + bob); ctx.scale(SC.balloon, SC.balloon);
   const c1 = hue ? '#ffb547' : '#e5484d', c2 = hue ? '#e8962e' : '#b8363b';
   ctx.beginPath(); ctx.arc(8, 7.6, 7.4, Math.PI * 0.85, Math.PI * 2.15); ctx.lineTo(8, 17.6); ctx.closePath();
   ctx.fillStyle = c1; ctx.fill();
@@ -726,18 +783,21 @@ function draw() {
     rrect(missile.x - 0.3, my, 2.6, 8, 1.2); ctx.fillStyle = '#ffd23a'; ctx.fill();
     ell(missile.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
-  if (state === 'play') drawJet(px + PW / 2, VIEW_H - (PLAYER_Y + PH), bank, 1, true);
+  if (state === 'play') drawJet(px + PW / 2, VIEW_H - (PLAYER_Y + PH), bank, JET_SC, true);
   fx.forEach(e => drawExplosion(e.x, e.y, e.t, e.big));
   drawPanel();
-  if (state === 'over') banner('FIM DE JOGO', 'ENTER para voltar');
+  if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
 }
 
-function banner(a, b) {
-  ctx.fillStyle = 'rgba(8,10,25,.72)'; rrect(20, 118, W - 40, 76, 8); ctx.fill();
+function banner(a, b, c) {
+  const lines = c ? [].concat(c) : [];
+  ctx.fillStyle = 'rgba(8,10,25,.72)'; rrect(16, 118, W - 32, 76 + lines.length * 13, 8); ctx.fill();
   ctx.fillStyle = '#ffe45a'; ctx.textAlign = 'center';
   ctx.font = 'bold 22px Arial, sans-serif'; ctx.fillText(a, W / 2, 152);
   ctx.font = '12px Arial, sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(b, W / 2, 175);
+  ctx.font = '9.5px Arial, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.7)';
+  lines.forEach((t, k) => ctx.fillText(t, W / 2, 196 + k * 13));
 }
 
 function drawTitle() {
@@ -777,10 +837,12 @@ function drawPanel() {
 
 // ---------- loop ----------
 keys = {};
+let taps = [];                                       // teclas apertadas neste quadro (sem auto-repetição)
 state = 'title'; frame = 0; fx = []; scroll = 0;
 addEventListener('keydown', e => {
   keys[e.key] = true; keys[e.key.toLowerCase()] = true;
-  if (e.key.startsWith('Arrow') || e.key === ' ') e.preventDefault();
+  if (!e.repeat) taps.push({ key: e.key, shift: e.shiftKey });
+  if (e.key.startsWith('Arrow') || e.key === ' ' || e.key.startsWith('Page')) e.preventDefault();
 });
 addEventListener('keyup', e => { keys[e.key] = false; keys[e.key.toLowerCase()] = false; });
 

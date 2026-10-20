@@ -16,7 +16,17 @@ Para jogar: abrir `index.html` no navegador e apertar **Enter**.
 | ↑ (W) | acelerar |
 | ↓ (S) | frear |
 | Espaço (Z) | atirar (um míssil por vez) |
-| Enter | iniciar / voltar ao título |
+| Enter ou Espaço | iniciar (na tela de título) |
+
+**No fim de jogo** o mapa continua rolando sob o quadro "FIM DE JOGO":
+
+| Tecla | Ação |
+|---|---|
+| Espaço | voltar ao título |
+| ↑ / ↓ | rolar para a frente / para trás (inverte a direção) |
+| PgUp ou Shift+↑ | ir para a próxima ponte |
+| PgDn ou Shift+↓ | voltar para a ponte anterior |
+| + (ou =) / − | aumentar / diminuir a velocidade da rolagem (passos de 1,5×, de 0,23× a 11×) |
 
 ### Geração automática do mapa (segundo `river-raid-comentarios.md`)
 - Uma **seção** tem 16 blocos; o último é a **ponte**.
@@ -155,6 +165,33 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - **Agora:** a água tem 9 pequenas ondas por bloco, desenhadas como senoides. Elas correm ao longo do traço, balançam de um lado para o outro e pulsam de opacidade, cada uma com fase e velocidade próprias.
 - As posições são sempre iguais para o mesmo bloco, e as ondas não encostam nas margens nem nas ilhas.
 - Para ajustar: o laço "ondas animadas" em `drawTerrain()`, fase 0.
+
+## Mudanças da versão 7 — fim de jogo navegável e proporções consistentes
+
+### 13. Fim de jogo com o mapa rolando
+- **Antes:** a tela parava, e Enter voltava ao título.
+- **Agora:** o mapa segue rolando e os inimigos continuam se movendo, sem colisões. O quadro "FIM DE JOGO" fica por cima com as instruções e a velocidade atual.
+- **Teclas:** as setas ↑/↓ escolhem a direção da rolagem. PgUp/PgDn ou Shift+↑/↓ deslizam até a próxima ponte ou a anterior, que para no meio da tela. −/+ (ou =) mudam a velocidade.
+- **Voltar ao título:** Espaço volta ao título. Ele só responde depois de ~0,7 s, para quem estava atirando ao morrer não pular o quadro sem querer.
+- As teclas são lidas por toque, sem a repetição automática de tecla segurada, inclusive na tela de título.
+
+### 14. Proporções consistentes com as casas
+- **Antes:** veículos, árvores e vacas tinham tamanhos arbitrários. O tanque era quase do tamanho da casa e a vaca, metade dela.
+- **Agora:** todos seguem uma escala única, com a parede da casa (24 px) valendo ~10 m, ou seja, ~2,4 px/m. Os tamanhos ficam aproximados onde a jogabilidade pede.
+
+| Objeto | Antes (px) | Agora (px) | Referência |
+|---|---|---|---|
+| Tanque | 26 × 14 | 19 × 10 | ~7 m, menor que a casa |
+| Navio | 36 × 12 | 43 × 14 | lancha-patrulha, maior que a casa |
+| Helicóptero | 20 × 14 | 27 × 19 | ~12 m |
+| Avião inimigo | 20 × 10 | 25 × 13 | caça, mesmo porte do jato |
+| Jato do jogador | 15 × 16 | 19 × 20 | caça |
+| Balão | 16 × 24 | 24 × 36 | mais alto que a casa |
+| Árvores | 12–19 de altura | 15–24 de altura | mais altas que a casa |
+| Vaca | ~11 de comprimento | ~7 de comprimento | ~2,5 m |
+
+- As áreas de colisão acompanham os novos tamanhos. O jato maior deixa as passagens estreitas um pouco mais difíceis.
+- Para ajustar: as constantes `SC` e `JET_SC` no topo do `game.js`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
