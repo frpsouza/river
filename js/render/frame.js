@@ -23,7 +23,10 @@ function draw() {
     if (sy > VIEW_H || sy < -40) continue;
     if (mode === 'ocean') {                                         // oceano: tudo visto de cima
       if (o.type === 'fuel') drawFuelTop(o.x, sy);
-      else if (o.type === 'ship') drawShipTop(o.x, sy, o.dir);
+      else if (o.type === 'ship') {
+        const gp = shipGun(o);
+        drawShipTop(o.x, sy, o.dir, Math.atan2(VIEW_H - py - PH / 2 - gp.y, px + PW / 2 - gp.x), o.gunFlash || 0);   // canhão mira o jato
+      }
       else if (o.type === 'heli') drawHeliTop(o.x, sy, o.dir, o.alt || 1);
       else if (o.type === 'balloon') drawBalloonTop(o.x, sy, o.hue, o.phase);
       else if (o.type === 'pu') drawPowerup(o, sy);

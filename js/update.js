@@ -140,6 +140,7 @@ function update() {
         else if (o.type === 'pu') collectPowerup(o);                         // coleta imediata
         else if (safeT > 0 && o.type !== 'house') { /* recém-renascido: atravessa sem bater */ }
         else if (mode !== 'classic' && (o.type === 'house' || o.type === 'tank' || o.type === 'carrier')) { /* no chão/no mar: o jato passa por cima */ }
+        else if (mode === 'ocean' && o.type === 'ship') { /* oceano: o jato sobrevoa os navios (mas eles atiram) */ }
         else if (pw.shield > 0 && o.type !== 'house') {
           o.alive = false; addScore(10); boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);   // o escudo absorve
         }

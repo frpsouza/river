@@ -429,7 +429,7 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 |---|---|
 | tiro inimigo | −12 |
 | trombada num caça | −30 |
-| trombada num navio, helicóptero ou balão | −35 |
+| trombada num helicóptero ou balão | −35 |
 | trombada no chefe | −50 |
 
   - Depois de cada dano há 0,75 s de invulnerabilidade, com o jato piscando.
@@ -448,6 +448,20 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
   - aviões que cruzam a tela.
 - O jato, os caças, o porta-aviões e o chefe já são desenhados vistos de cima.
 - Nos modos clássico e moderno continua a vista de lado.
+
+## Mudanças da versão 19 — navios do oceano atiram
+
+### 34. No oceano, o jato sobrevoa os navios, e eles atiram
+- **Antes:** no oceano, encostar num navio derrubava 35 de vida, e os navios não atacavam.
+- **Agora:**
+  - O jato passa por cima dos navios sem colidir, como já fazia com os porta-aviões.
+  - Cada navio tem um canhão giratório na proa que acompanha o jato o tempo todo e dispara um tiro mirado, com clarão na boca do cano e um som curto.
+  - O primeiro disparo vem entre 0,7 e 2 s depois que o navio entra na tela. Depois, um a cada ~2–4 s, e mais rápido com a dificuldade.
+  - O navio só atira quando está na tela, à frente do jato.
+  - O tiro faz o dano normal de tiro inimigo (−12 de vida).
+- O navio continua valendo 30 pontos ao ser destruído com o míssil.
+- Nos modos clássico e moderno, os navios não mudaram: não atiram e colidem.
+- Para ajustar: `shipFire()` em `js/ocean.js` e o canhão em `drawShipTop()`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

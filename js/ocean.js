@@ -151,9 +151,11 @@ function updateOcean(pBot, g0, g1) {
     spawnSquad(kind, { x: 70 + Math.random() * (W - 140), y: 40 + Math.random() * 100, side: Math.random() < 0.5 ? 1 : -1 }, n, delay);
     squadT = 300 - 120 * d + Math.random() * 120;
   }
-  // porta-aviões lançam caças
+  // navios atiram mirando no jogador; porta-aviões lançam caças
   for (let g = Math.max(0, g0); g <= g1; g++) for (const o of blocks[g].objs) {
-    if (!o.alive || o.type !== 'carrier') continue;
+    if (!o.alive) continue;
+    if (o.type === 'ship') { shipFire(o, d); continue; }
+    if (o.type !== 'carrier') continue;
     const sy = screenY(o.Y + o.h);
     if (o.flash > 0) o.flash--;
     if (sy > 20 && sy < VIEW_H - 90 && --o.cool <= 0) {
@@ -182,6 +184,23 @@ function updateOcean(pBot, g0, g1) {
   }
   fliers = fliers.filter(f => f.alive);
   if (boss && !boss.dying && safeT <= 0 && bossHitbox(pcx, pcy)) { kill(); return; }
+}
+
+// canhão do navio (vista de cima): fica na proa, gira para o jato e dispara de tempos em tempos
+function shipGun(o) {
+  const sy = screenY(o.Y + o.h);
+  return { x: o.dir > 0 ? o.x + o.w - 15 : o.x + 15, y: sy + o.h / 2 };
+}
+function shipFire(o, d) {
+  if (o.gunFlash > 0) o.gunFlash--;
+  const gpos = shipGun(o);
+  if (gpos.y < 10 || gpos.y > VIEW_H - 40) return;                 // só atira quando está na tela, à frente do jato
+  if (o.gunCool === undefined) o.gunCool = 40 + Math.random() * 80;
+  if (--o.gunCool > 0) return;
+  o.gunCool = 170 - 70 * d + Math.random() * 90;
+  aimShot(gpos.x, gpos.y, 1.5 + 0.3 * d);
+  o.gunFlash = 6;
+  beep(260, 0.07, 'square', 0.025);
 }
 
 function oceanMissileHit(m, my0, my1) {

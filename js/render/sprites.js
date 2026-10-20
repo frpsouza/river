@@ -142,7 +142,7 @@ function drawFuelTop(x, y) {
   ctx.restore();
 }
 
-function drawShipTop(x, y, dir) {
+function drawShipTop(x, y, dir, aim = 0, flash = 0) {
   // navio de patrulha visto de cima: casco afilado na proa, convés, ponte de comando e canhão
   const L = 43, H = 14;
   ctx.save(); ctx.translate(x + (dir > 0 ? 0 : L), y); if (dir < 0) ctx.scale(-1, 1);   // proa para `dir`
@@ -153,7 +153,12 @@ function drawShipTop(x, y, dir) {
   poly([3, 4, L - 12, 4, L - 5, H / 2, L - 12, H - 4, 3, H - 4], '#ddd8cc');                // convés
   ctx.fillStyle = '#f5f2ea'; ctx.fillRect(12, 4.5, 11, H - 9);                               // ponte de comando
   ctx.fillStyle = '#26334f'; ctx.fillRect(21, 5.5, 1.6, H - 11);
-  ell(L - 15, H / 2, 2.8, 2.8, '#5c6378'); ctx.fillStyle = '#3a3f58'; ctx.fillRect(L - 15, H / 2 - 0.6, 7, 1.2);   // canhão
+  // canhão girando para o alvo (aim = ângulo na tela; espelhado quando a proa aponta para a esquerda)
+  ctx.save(); ctx.translate(L - 15, H / 2); ctx.rotate(dir > 0 ? aim : Math.PI - aim);
+  ctx.fillStyle = '#3a3f58'; ctx.fillRect(0, -0.7, 8, 1.4);
+  if (flash > 0) { ell(9.5, 0, 2.6, 2.2, '#fff3b0'); ell(9.5, 0, 1.4, 1.2, '#ffffff'); }       // clarão do disparo
+  ctx.restore();
+  ell(L - 15, H / 2, 2.8, 2.8, '#5c6378'); ell(L - 15.6, H / 2 - 0.6, 1.2, 1.2, '#7d8394');
   ctx.restore();
 }
 
