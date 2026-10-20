@@ -36,6 +36,14 @@
   #pad .hub{left:32%;top:32%;width:36%;height:36%;box-shadow:none}
   #pad .hub::after{content:"";width:40%;height:40%;border-radius:50%;background:#1d2840}
   #pad .arm.on{background:#3b63e0;color:#fff}
+  /* cantos = diagonais: áreas visíveis entre os braços */
+  #pad .corner{position:absolute;width:35%;height:35%;background:#1b2438;color:#56627e;display:flex;font:13px Arial,sans-serif;
+    box-shadow:0 3px 0 #121a2a}
+  #pad .corner.ul{left:0;top:0;border-radius:18px 4px 4px 4px;align-items:flex-start;justify-content:flex-start;padding:9% 0 0 9%;box-sizing:border-box}
+  #pad .corner.ur{right:0;top:0;border-radius:4px 18px 4px 4px;align-items:flex-start;justify-content:flex-end;padding:9% 9% 0 0;box-sizing:border-box}
+  #pad .corner.dl{left:0;bottom:0;border-radius:4px 4px 4px 18px;align-items:flex-end;justify-content:flex-start;padding:0 0 9% 9%;box-sizing:border-box}
+  #pad .corner.dr{right:0;bottom:0;border-radius:4px 4px 18px 4px;align-items:flex-end;justify-content:flex-end;padding:0 9% 9% 0;box-sizing:border-box}
+  #pad .corner.on{background:#2c4bb5;color:#fff}
   /* botão de fogo redondo */
   #pad .fire.round{justify-self:center;height:min(100%,34vw,150px);aspect-ratio:1;border-radius:50%;font-size:20px}
   #pad .u{grid-area:u}#pad .d{grid-area:d}

@@ -25,9 +25,10 @@ function release(key) { keys[key] = false; }
 // segura o dedo no elemento mesmo se ele escorregar para fora (ignora falha em eventos sintéticos)
 function capture(el, id) { try { el.setPointerCapture(id); } catch (e) { /* sem captura */ } }
 
-// Direcional em cruz, como num controle físico: um único bloco que lê onde o dedo está
-// em relação ao centro. São 8 setores de 45° (4 direções + 4 diagonais), com uma zona
-// morta no meio; o dedo pode deslizar de uma direção para outra sem levantar.
+// Direcional em cruz, como num controle físico: um único bloco quadrado que lê onde o
+// dedo está. Os 4 braços dão as direções; os 4 CANTOS (áreas visíveis entre os braços)
+// dão as diagonais. Há uma zona morta no meio, e o dedo pode deslizar de uma área para
+// outra sem levantar.
 const DIRS = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 function buildDpad() {
   const pad = document.createElement('div');
@@ -37,6 +38,12 @@ function buildDpad() {
     const a = document.createElement('div');
     a.className = 'arm ' + name; a.textContent = glyph;
     pad.appendChild(a); arms[name] = a;
+  }
+  const corners = {};
+  for (const [name, glyph, a, b] of [['ul', '◤', 'up', 'left'], ['ur', '◥', 'up', 'right'], ['dl', '◣', 'down', 'left'], ['dr', '◢', 'down', 'right']]) {
+    const c = document.createElement('div');
+    c.className = 'corner ' + name; c.textContent = glyph;
+    pad.insertBefore(c, pad.firstChild); corners[name] = [c, a, b];
   }
   const hub = document.createElement('div'); hub.className = 'hub'; pad.appendChild(hub);
 
@@ -48,17 +55,19 @@ function buildDpad() {
       if (!on && active.has(name)) release(key);
       arms[name].classList.toggle('on', on);
     }
+    for (const [c, a, b] of Object.values(corners)) c.classList.toggle('on', dirs.has(a) && dirs.has(b));
     active = dirs;
   };
   const read = e => {
     const r = pad.getBoundingClientRect();
     const dx = (e.clientX - r.left) / r.width * 2 - 1, dy = (e.clientY - r.top) / r.height * 2 - 1;
     const dirs = new Set();
+    const ax = Math.abs(dx), ay = Math.abs(dy), band = 0.3;          // meia-largura dos braços
     if (Math.hypot(dx, dy) < 0.16) return dirs;                       // zona morta no centro
-    const sector = Math.round(Math.atan2(dy, dx) / (Math.PI / 4));    // -4..4, 0 = direita
-    const map = { 0: ['right'], 1: ['right', 'down'], 2: ['down'], 3: ['down', 'left'], 4: ['left'], '-4': ['left'],
-                  '-3': ['left', 'up'], '-2': ['up'], '-1': ['up', 'right'] };
-    for (const d of map[sector]) dirs.add(d);
+    if (ax > band && ay > band) {                                     // canto → diagonal
+      dirs.add(dx > 0 ? 'right' : 'left'); dirs.add(dy > 0 ? 'down' : 'up');
+    } else if (ax >= ay) dirs.add(dx > 0 ? 'right' : 'left');         // braço horizontal
+    else dirs.add(dy > 0 ? 'down' : 'up');                            // braço vertical
     return dirs;
   };
   let pid = null;

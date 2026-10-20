@@ -347,6 +347,16 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - As telas de título e de fim de jogo continuam com os botões próprios.
 - Para ajustar: `buildDpad()` em `js/touch.js` e o CSS `#pad .dpad` / `.arm` em `index.html`.
 
+## Mudanças da versão 14 — cantos do direcional para as diagonais
+
+### 28. Cantos do direcional viram áreas de diagonal
+- **Antes:** as diagonais funcionavam só pelo ângulo do dedo, e os cantos entre os braços ficavam vazios.
+- **Agora:** os quatro cantos são áreas visíveis, com setas ◤ ◥ ◣ ◢.
+  - Tocar em qualquer ponto de um canto aciona aquela diagonal (por exemplo, o canto superior direito = ▲ + ▶).
+  - O canto e os dois braços correspondentes acendem juntos.
+  - Fora dos cantos vale o braço tocado, ou seja, o eixo dominante. O centro continua sendo uma zona morta.
+- A área total de toque é o quadrado inteiro do direcional, sem nenhuma parte "morta" nos cantos.
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.
