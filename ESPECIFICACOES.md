@@ -745,6 +745,31 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Sem conflito entre fontes:** cada tecla do controle guarda quais fontes a seguram (botão, gatilho, cruz em eixo). Assim, A e RT juntos não "soltam" o tiro quando só um deles é solto.
 - **Testado com controles simulados:** a cruz moveu o jato ±40 px em 20 quadros; o RT atirou; A+RT soltando só A manteve o fogo; o LT soltou a bomba no oceano e foi ignorado no clássico; a cruz por eixos (fora do padrão) moveu o jato na diagonal. A parte do Android compila, mas ainda precisa ser testada num aparelho com controle.
 
+## Mudanças da versão 29 — mais bombas e power-ups no oceano
+
+### 53. Começa com 3 bombas e há mais prêmios (Ocean e Retro Ocean)
+- **Estoque de bombas:** o jogo começa com **3 bombas** (antes 1), e o estoque vai até **9** (antes 5). O HUD mostra todas.
+- **Power-ups no mapa:** aparecem em ~**32%** dos blocos (antes ~16%). No oceano a bomba é a mais comum.
+
+| Power-up | Chance no oceano |
+|---|---|
+| bomba | 32% |
+| escudo | 20% |
+| tiro triplo | 20% |
+| tiro rápido | 16% |
+| reparo | 12% |
+
+- **Recompensas novas:**
+  - **esquadrilha inteira derrubada:** além dos +500, solta um power-up onde caiu o último caça (50% de chance de ser bomba);
+  - **porta-aviões afundado:** solta uma **bomba** e mais um power-up sorteado, pelo míssil ou pela bomba.
+- **Lutas com chefes:** cai um power-up a cada **~5 s** (antes ~7 s), sorteando bomba 34%, escudo 20%, tiro triplo 20%, tiro rápido 14% e reparo 12%.
+- **Medido:**
+  - em 161 blocos gerados, 52 power-ups no oceano (16 bombas) e 59 no retro (20 bombas);
+  - a esquadrilha derrubada soltou exatamente 1 power-up;
+  - o porta-aviões afundado soltou bomba + reparo.
+- Os modos clássico e moderno não mudam.
+- Para ajustar: `BOMB_START`, `BOMB_MAX`, `OCEAN_PU_CHANCE` e `OCEAN_PU_W` (`js/powerups.js`); `BOSS_DROPS`, `dropPowerup()` e `carrierDrops()` (`js/ocean.js`).
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

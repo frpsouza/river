@@ -25,13 +25,16 @@ const PU = {
 const PU_SIZE = 14;
 let pw = { shield: 0, triple: 0, rapid: 0 };
 // oceano: a bomba vai para um estoque e é solta com o 2º botão (X/B no teclado, B no controle, BOMBA na tela)
-const BOMB_MAX = 5, BOMB_POWER = 40;                  // estoque máximo e orçamento de dano de cada bomba
-let bombs = 1;
+const BOMB_MAX = 9, BOMB_POWER = 40;                  // estoque máximo e orçamento de dano de cada bomba
+const BOMB_START = 3;                                 // o oceano começa com 3 bombas
+let bombs = BOMB_START;
+// no oceano os power-ups são mais frequentes e a bomba é a mais comum
+const OCEAN_PU_CHANCE = 0.32, OCEAN_PU_W = { bomb: 0.32, shield: 0.2, triple: 0.2, rapid: 0.16, life: 0.12 };
 
 function spawnPowerup(blk, r) {
-  if (isClassic() || blk.bridge || r() > 0.16) return;
+  if (isClassic() || blk.bridge || r() > (isOcean() ? OCEAN_PU_CHANCE : 0.16)) return;
   let k = r(), kind = 'life';
-  for (const [name, def] of Object.entries(PU)) { if (k < def.w) { kind = name; break; } k -= def.w; }
+  for (const [name, def] of Object.entries(PU)) { const w = isOcean() ? OCEAN_PU_W[name] : def.w; if (k < w) { kind = name; break; } k -= w; }
   for (let tries = 0; tries < 12; tries++) {
     const x = 10 + r() * (W - 20 - PU_SIZE), Y = blk.g * BH + (4 + r() * 22) * LINE;
     if (cliffHit(x - 4, x + PU_SIZE + 4, Y, Y + PU_SIZE)) continue;   // nunca dentro do paredão
@@ -87,7 +90,7 @@ function smartBomb() {
 }
 
 function tickPowerups() { for (const k in pw) if (pw[k] > 0) pw[k]--; }
-function resetPowerups() { pw = { shield: 0, triple: 0, rapid: 0 }; bombs = 1; }
+function resetPowerups() { pw = { shield: 0, triple: 0, rapid: 0 }; bombs = BOMB_START; }
 
 // ---- desenho ----
 function drawPowerup(o, sy) {

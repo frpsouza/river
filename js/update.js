@@ -202,6 +202,7 @@ function update() {
           o.alive = false;
           addScore({ fuel: 80, ship: 30, heli: 60, plane: 100, tank: 250, balloon: 60, carrier: 800 }[o.type]);
           boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);
+          if (o.type === 'carrier' && isOcean()) carrierDrops(o);       // porta-aviões afundado solta prêmios
           break;
         }
       }

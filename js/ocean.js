@@ -150,6 +150,7 @@ function destroyFlier(f, byPlayer) {
   if (sq && ++sq.killed === sq.n && sq.n > 2) {                          // esquadrilha inteira: bônus
     addScore(500);
     pickupFx(f.x, worldY(f.y), { name: 'SQUADRON +500', col: '#ffc93c' });
+    dropPowerup(f.x - 7, worldY(f.y) - 7, Math.random() < 0.5 ? 'bomb' : null);   // e solta um power-up
     [784, 988, 1175, 1568].forEach((fq, k) => setTimeout(() => beep(fq, 0.1, 'triangle', 0.05), k * 55));
   }
 }
@@ -234,7 +235,7 @@ function updateBoss(d) {
     fx.push({ x: B.x + (Math.random() < 0.5 ? -30 : 30), y: worldY(B.y), t: 40, life: 40, kind: 'smoke',
       parts: [P({ vy: -0.5, r: 3, grow: 1.03, col: '#3a3f58', life: 40 })] });
   const spd = 1.5 + 0.3 * d, pcx = px + PW / 2, pcy = VIEW_H - py - PH / 2, T = B.t - 140;
-  if (T > 0 && T % 420 === 200) bossDrop();                                // a cada ~7 s, um power-up de ajuda
+  if (T > 0 && T % 300 === 150) bossDrop();                                // a cada ~5 s, um power-up de ajuda
 
   if (B.kind === 'bomber') {
     B.x = W / 2 + Math.sin(B.t * 0.012) * (W / 2 - 75);
@@ -482,7 +483,7 @@ function oceanBomb(budget = BOMB_POWER) {
     later(Math.hypot(o.x + o.w / 2 - pcx, screenY(o.Y + o.h / 2) - pcy), () => {
       if (!o.alive) return;
       o.hp -= dmg; o.flash = 8;
-      if (o.hp <= 0) { o.alive = false; addScore(800); boom(o.x + o.w / 2, o.Y + o.h / 2, 'carrier', o); }
+      if (o.hp <= 0) { o.alive = false; addScore(800); boom(o.x + o.w / 2, o.Y + o.h / 2, 'carrier', o); carrierDrops(o); }
     });
   }
   if (boss && !boss.dying && boss.t > 140 && budget > 0) later(Math.hypot(boss.x - pcx, boss.y - pcy), () => bossBombHit(budget));
@@ -503,15 +504,20 @@ function bossBombHit(budget) {
   }
 }
 
-// durante a luta com o chefe caem power-ups perto do jato, para ajudar
-const BOSS_DROPS = [['bomb', 0.3], ['shield', 0.2], ['triple', 0.2], ['rapid', 0.15], ['life', 0.15]];
-function bossDrop() {
-  let k = Math.random(), kind = 'bomb';
-  for (const [name, w] of BOSS_DROPS) { if (k < w) { kind = name; break; } k -= w; }
-  const x = 30 + Math.random() * (W - 74), Y = worldY(150 + Math.random() * 60);
+// power-ups de recompensa: caem durante a luta com o chefe (a cada ~5 s), quando uma
+// esquadrilha inteira é derrubada e quando um porta-aviões afunda
+const BOSS_DROPS = [['bomb', 0.34], ['shield', 0.2], ['triple', 0.2], ['rapid', 0.14], ['life', 0.12]];
+function dropPowerup(x, Y, kind) {
+  if (!kind) { let k = Math.random(); kind = 'bomb'; for (const [name, w] of BOSS_DROPS) { if (k < w) { kind = name; break; } k -= w; } }
+  x = clamp(x, 6, W - PU_SIZE - 6);
   getBlock(Math.floor(Y / BH)).objs.push({ type: 'pu', kind, x, Y, w: PU_SIZE, h: PU_SIZE, alive: true, phase: Math.random() * 6.28 });
   fx.push({ x: x + 7, y: Y + 7, t: 24, life: 24, kind: 'spark', parts: burst(10, 1.6, { col: PU[kind].col, r: 1.2, life: 24 }) });
   beep(988, 0.08, 'triangle', 0.04); setTimeout(() => beep(1319, 0.1, 'triangle', 0.04), 70);
+}
+function bossDrop() { dropPowerup(30 + Math.random() * (W - 74), worldY(150 + Math.random() * 60)); }
+function carrierDrops(o) {                            // porta-aviões afundado: uma bomba e mais um power-up
+  dropPowerup(o.x + o.w / 2 - 20, o.Y + o.h / 2, 'bomb');
+  dropPowerup(o.x + o.w / 2 + 6, o.Y + o.h / 2 + 10);
 }
 
 // ---------- desenho ----------
