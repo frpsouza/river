@@ -160,9 +160,10 @@ function drawTitle() {
 }
 
 // HUD dos modos de voo livre: no topo, por cima do cenário (pílulas translúcidas)
-// HUD do oceano: embaixo, sobre o cenário — placar à esquerda, vida no meio, bombas à direita.
-// As bombas ficam alinhadas à direita, 5 por linha; passando disso, a contagem continua na linha de cima.
-const HUD_BOMBS_PER_ROW = 5;
+// HUD do oceano: embaixo, sobre o cenário — à esquerda o placar e, acima dele, a vida; à direita
+// as bombas, alinhadas à direita: a contagem anda para a esquerda até a metade da tela e então
+// continua na linha de cima.
+const HUD_HP_W = 52;                                  // barra de vida: 60% da antiga (87 px)
 function hudBomb(bx, cy, on) {
   ctx.globalAlpha = on ? 1 : 0.3;
   ell(bx, cy, 4.6, 4.6, on ? '#e5484d' : '#5c6378'); ctx.fillStyle = '#f5f2ea'; ctx.fillRect(bx + 1.6, cy - 7.4, 1.4, 2.6);
@@ -172,29 +173,29 @@ function hudBomb(bx, cy, on) {
 function drawHudBottom() {
   const pill = (x, y, w, h) => { rrect(x, y, w, h, h / 2); ctx.fillStyle = 'rgba(12,15,28,.55)'; ctx.fill(); };
   const by = VIEW_H - 25;                                            // linha de baixo do HUD
-  // esquerda: placar, e a etiqueta de modo/altitude logo acima
+  // esquerda, embaixo: placar com zeros à frente
   pill(6, by, 66, 20);
   ctx.textAlign = 'left'; ctx.font = 'bold 12px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
   ctx.fillText(String(score).padStart(6, '0'), 12, by + 14);
-  ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = '#4fd1e0';
-  ctx.fillText('OCEAN' + (altTarget ? ' · ▲ HIGH' : ' · ▼ LOW'), 10, by - 4);
-  // direita: bombas alinhadas à direita, linhas extras para cima
-  const nb = Math.max(bombs, 1), rows = Math.ceil(nb / HUD_BOMBS_PER_ROW);
-  for (let r = 0; r < rows; r++) {
-    const cnt = Math.min(HUD_BOMBS_PER_ROW, nb - r * HUD_BOMBS_PER_ROW), y = by - r * 22, w = cnt * 13 + 8;
-    pill(W - 6 - w, y, w, 20);
-    for (let k = 0; k < cnt; k++) hudBomb(W - 16 - k * 13, y + 11, r * HUD_BOMBS_PER_ROW + k < bombs);
-  }
-  // meio: vida (ocupa o espaço entre o placar e a linha de bombas de baixo)
-  const bw = Math.min(HUD_BOMBS_PER_ROW, nb) * 13 + 8, hx = 90, f = hp / 100, low = f < 0.25 && frame % 20 < 10;
-  const hw = Math.max(36, W - hx - 16 - bw);
-  pill(hx - 14, by + 2, hw + 20, 16);
-  ctx.fillStyle = '#e5484d'; ctx.font = 'bold 10px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('♥', hx - 5, by + 14);
-  rrect(hx + 2, by + 6, hw, 8, 4); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
-  if (f > 0) { rrect(hx + 2, by + 6, Math.max(8, hw * f), 8, 4); ctx.fillStyle = low ? '#ff8a8a' : f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill();
-               rrect(hx + 2, by + 6, Math.max(8, hw * f), 3.5, 1.8); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fill(); }
+  // esquerda, acima do placar: vida, e a altitude logo depois da barra
+  const ly = by - 18, hx = 24, hw = HUD_HP_W, f = hp / 100, low = f < 0.25 && frame % 20 < 10;
+  pill(6, ly, hw + 26, 16);
+  ctx.fillStyle = '#e5484d'; ctx.font = 'bold 10px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('♥', 15, ly + 12);
+  rrect(hx, ly + 4, hw, 8, 4); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+  if (f > 0) { rrect(hx, ly + 4, Math.max(8, hw * f), 8, 4); ctx.fillStyle = low ? '#ff8a8a' : f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill();
+               rrect(hx, ly + 4, Math.max(8, hw * f), 3.5, 1.8); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fill(); }
+  ctx.textAlign = 'left'; ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = '#4fd1e0';
+  ctx.fillText(altTarget ? '▲ HIGH' : '▼ LOW', hx + hw + 9, ly + 11);
   // power-ups ativos: logo acima da barra de vida
-  drawPowerHud(hx + 2, by - 18);
+  drawPowerHud(8, ly - 18);
+  // direita, embaixo: bombas alinhadas à direita; a contagem anda para a esquerda até a
+  // metade da tela e continua na linha de cima
+  const per = Math.max(1, Math.floor((W / 2 - 14) / 13)), nb = Math.max(bombs, 1), rows = Math.ceil(nb / per);
+  for (let r = 0; r < rows; r++) {
+    const cnt = Math.min(per, nb - r * per), y = by - r * 22, w = cnt * 13 + 8;
+    pill(W - 6 - w, y, w, 20);
+    for (let k = 0; k < cnt; k++) hudBomb(W - 16 - k * 13, y + 11, r * per + k < bombs);
+  }
   // aviso de troca de altitude (no topo, que agora fica livre)
   if (altMsg > 0) {
     ctx.globalAlpha = Math.min(1, altMsg / 30); ctx.textAlign = 'center'; ctx.font = 'bold 12px Arial, sans-serif';

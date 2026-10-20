@@ -944,6 +944,14 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Sem mudança de jogo:** só o código mudou de lugar. Os nomes são os mesmos e a ordem de carga está no `index.html`, no `sw.js` e na página do catálogo.
 - **Conferido:** um teste sem janela jogou 9.000 quadros em cada um dos 5 modos, sem erros (chefes derrotados e caindo no Ocean e no Retro). O catálogo regenerado só difere nas imagens com sorteio, as mesmas 31 que já mudam entre duas execuções da versão 36.
 
+## Mudanças da versão 38 — HUD de baixo reorganizado (Ocean e Retro Ocean)
+
+### 62. Placar e vida à esquerda, bombas à direita
+- **Esquerda, embaixo:** o placar, com zeros à frente (`004210`).
+- **Esquerda, acima do placar:** a barra de vida, agora com **60% do comprimento antigo** (Ocean: 87 → 52 px; Retro: 151 → 91 px). A altitude (`▲ HIGH` / `▼ LOW`) fica logo depois da barra, e os power-ups ativos logo acima dela.
+- **Direita, embaixo:** as bombas, alinhadas à direita. A contagem anda para a esquerda até a **metade da tela** e então continua na linha de cima (Ocean: 8 por linha; Retro: 12 por linha).
+- Para ajustar: `HUD_HP_W` e `drawHudBottom()` (`js/render/frame.js`); `drawRetroHud()` (`js/render/retro.js`).
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

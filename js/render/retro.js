@@ -316,9 +316,12 @@ function drawRetroHud() {
     const age = e.life - e.t; if (age > e.life * 0.8 && frame % 4 < 2) continue;
     ptext(e.label, e.x, Math.round(VIEW_H - (e.y - scroll) - 18 - age * 0.45), e.labelCol, 'center');
   }
-  // HUD embaixo: placar à esquerda, vida no meio, bombas à direita (6 por linha; mais linhas para cima)
-  const by = VIEW_H - 11, PER = 6, nb = Math.max(bombs, 1), rows = Math.ceil(nb / PER);
+  // HUD embaixo: à esquerda o placar e, acima dele, a vida; à direita as bombas, alinhadas à
+  // direita — a contagem anda para a esquerda até a metade da tela e continua na linha de cima
+  const by = VIEW_H - 11, ly = by - 10, PER = Math.floor((W / 2 - 8) / 9), nb = Math.max(bombs, 1), rows = Math.ceil(nb / PER);
+  const hx = 12, hw = 91;                                         // barra de vida: 60% da antiga (151 px)
   prect(0, by - 2, W, 13, 'rgba(12,15,28,.7)');
+  prect(0, ly - 2, hx + hw + 44, 10, 'rgba(12,15,28,.7)');
   for (let r = 1; r < rows; r++) { const cnt = Math.min(PER, nb - r * PER); prect(W - 6 - cnt * 9, by - 2 - r * 11, cnt * 9 + 6, 11, 'rgba(12,15,28,.7)'); }
   ptext(String(score).padStart(6, '0'), 3, by, '#ffffff');
   // bombas: alinhadas à direita, a contagem sobe de linha
@@ -327,19 +330,18 @@ function drawRetroHud() {
     prect(bx - 3, y, 7, 6, on ? '#e5484d' : '#3a3f58'); prect(bx - 2, y - 1, 5, 8, on ? '#e5484d' : '#3a3f58');
     prect(bx - 2, y + 1, 2, 2, on ? '#ff9d9a' : '#5c6378'); prect(bx + 1, y - 3, 1, 2, '#f5ecc8');
   }
-  // vida: entre o placar e as bombas da linha de baixo
-  const f = hp / 100, hx = 50, hw = Math.max(30, W - hx - 12 - Math.min(PER, nb) * 9);
-  ptext('♥', hx - 9, by, '#e5484d');
-  prect(hx, by + 1, hw + 2, 6, '#0c0f1c'); prect(hx + 1, by + 2, hw, 4, '#26334f');
-  if (f > 0) prect(hx + 1, by + 2, Math.max(1, hw * f), 4, f > 0.5 ? '#3f9a4a' : f > 0.25 ? '#ffc93c' : (frame % 20 < 10 ? '#e5484d' : '#ff9d9a'));
-  if (f > 0) prect(hx + 1, by + 2, Math.max(1, hw * f), 1, '#ffffff');
-  // modo e altitude, acima do placar
-  ptext('RETRO ' + (altTarget ? '▲ HIGH' : '▼ LOW'), 3, by - 11, '#4fd1e0');
+  // vida: acima do placar, e a altitude logo depois da barra
+  const f = hp / 100;
+  ptext('♥', 3, ly, '#e5484d');
+  prect(hx, ly + 1, hw + 2, 6, '#0c0f1c'); prect(hx + 1, ly + 2, hw, 4, '#26334f');
+  if (f > 0) prect(hx + 1, ly + 2, Math.max(1, hw * f), 4, f > 0.5 ? '#3f9a4a' : f > 0.25 ? '#ffc93c' : (frame % 20 < 10 ? '#e5484d' : '#ff9d9a'));
+  if (f > 0) prect(hx + 1, ly + 2, Math.max(1, hw * f), 1, '#ffffff');
+  ptext(altTarget ? '▲ HIGH' : '▼ LOW', hx + hw + 6, ly, '#4fd1e0');
   // power-ups ativos, acima da barra de vida
-  let ix = hx + 50;
+  let ix = 3;
   for (const k of ['shield', 'triple', 'rapid']) {
     if (pw[k] <= 0) continue;
-    const sp = puSprite(k, false), iy = by - 4 - sp.height; ctx.drawImage(sp, ix, iy);
+    const sp = puSprite(k, false), iy = ly - 4 - sp.height; ctx.drawImage(sp, ix, iy);
     prect(ix + 1, iy + sp.height, (sp.width - 2) * pw[k] / PU[k].dur, 1, PU[k].col);
     ix += sp.width + 2;
   }
