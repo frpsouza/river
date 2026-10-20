@@ -13,19 +13,22 @@ cv.width = W * SCALE; cv.height = SCREEN_H * SCALE;
 
 // O modo retro desenha em 240×320 reais (sem suavização) e a página só amplia os pixels.
 // Troca o tamanho do canvas quando entra/sai do retro; a tela de título é sempre a normal.
-let retroOn = false;
+// Idem para o PICO-8 (128×128). Devolve qual renderizador usar: 'retro', 'pico' ou ''.
+const PIXEL_SCREENS = { retro: [240, 320, 480, 640], pico: [128, 128, 512, 512] };   // [w, h, css w, css h]
+let screenOn = '';
 function syncCanvas() {
-  const want = mode === 'retro' && state !== 'title';
-  if (want !== retroOn) {
-    retroOn = want;
-    cv.width = want ? 240 : W_NORMAL * SCALE; cv.height = want ? 320 : SCREEN_H * SCALE;
+  const want = state !== 'title' && PIXEL_SCREENS[mode] ? mode : '';
+  if (want !== screenOn) {
+    screenOn = want;
+    const P = PIXEL_SCREENS[want];
+    cv.width = P ? P[0] : W_NORMAL * SCALE; cv.height = P ? P[1] : SCREEN_H * SCALE;
     const touch = document.body.classList.contains('touch');
-    cv.style.width = want && !touch ? '480px' : ''; cv.style.height = want && !touch ? '640px' : '';
-    cv.style.aspectRatio = want ? '240 / 320' : '';
-    cv.style.imageRendering = want ? 'pixelated' : '';
+    cv.style.width = P && !touch ? P[2] + 'px' : ''; cv.style.height = P && !touch ? P[3] + 'px' : '';
+    cv.style.aspectRatio = P ? P[0] + ' / ' + P[1] : '';
+    cv.style.imageRendering = P ? 'pixelated' : '';
   }
   if (state === 'title') W = W_NORMAL;
-  return retroOn;
+  return screenOn;
 }
 
 const mix = (c1, c2, t) => {

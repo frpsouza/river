@@ -11,18 +11,20 @@ function update() {
   const tp = taps; taps = [];
   if (state === 'title') {
     for (const t of tp) {
-      const M = ['classic', 'modern', 'ocean', 'retro'], k = M.indexOf(mode);
-      if (t.key === 'ArrowDown' || t.key === 'ArrowRight') mode = M[(k + 1) % 4];
-      if (t.key === 'ArrowUp' || t.key === 'ArrowLeft') mode = M[(k + 3) % 4];
+      const M = ['classic', 'modern', 'ocean', 'retro', 'pico'], k = M.indexOf(mode);
+      if (t.key === 'ArrowDown' || t.key === 'ArrowRight') mode = M[(k + 1) % M.length];
+      if (t.key === 'ArrowUp' || t.key === 'ArrowLeft') mode = M[(k + M.length - 1) % M.length];
       if (t.key === '1') mode = 'classic';
       if (t.key === '2') mode = 'modern';
       if (t.key === '3') mode = 'ocean';
       if (t.key === '4') mode = 'retro';
+      if (t.key === '5') mode = 'pico';
     }
     if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame();
     return;
   }
 
+  if (freezeT > 0) { freezeT--; return; }                          // pausa de impacto (bomba)
   stepFx();
 
   if (state === 'over') { updateOver(tp); return; }
@@ -39,7 +41,7 @@ function update() {
   // entrada vertical e horizontal de -1 a 1: teclas valem ±1, o joystick da tela dá valores intermediários
   const vert = clamp((keys.ArrowUp || keys.w ? 1 : 0) - (keys.ArrowDown || keys.s ? 1 : 0) - stick.y - gpad.y, -1, 1);
   let sp;
-  if (mode !== 'classic') {
+  if (!isClassic()) {
     // moderno e oceano: a câmera anda em velocidade constante (no oceano, quase para durante o chefe) e o jato voa livre pela tela (↑↓ movem na vertical)
     sp = (isOcean() && boss ? 0.3 : 1.25 * (isOcean() ? 1.15 - 0.3 * altT : 1)) * lvl;   // rasante parece mais rápido
     camSp = sp;
@@ -70,7 +72,7 @@ function update() {
 
   // combustível
   // combustível só existe no clássico; no voo livre os postos recuperam a vida
-  if (mode === 'classic') {
+  if (isClassic()) {
     fuel -= 0.04 * (sp > 1.5 * lvl ? 1.2 : 1);
     if (fuel < 25 && frame % 20 === 0) beep(300, 0.05, 'square', 0.02);
     if (fuel <= 0) { fuel = 0; kill(); return; }
@@ -78,7 +80,7 @@ function update() {
 
   // colisão com terreno e ponte
   const pBot = scroll + py, pTop = pBot + PH;
-  if (mode === 'classic') {
+  if (isClassic()) {
     // clássico: margens, ilhas e ponte inteira matam
     for (let Y = pBot; Y <= pTop; Y += LINE) {
       const { b, i } = lineAt(Y);
@@ -152,12 +154,12 @@ function update() {
       if (px1 > o.x + 1 && px0 < o.x + o.w - 1 && pTop > o.Y + 1 && pBot < o.Y + o.h - 1) {
         if (isOcean() && oceanHigh() && o.type !== 'pu') { /* voando alto: a superfície está lá embaixo */ }
         else if (o.type === 'fuel') {
-          if (mode === 'classic') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
+          if (isClassic()) { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
           else if (hp < 100) { hp = Math.min(100, hp + 0.8); if (frame % 4 === 0) beep(620 + hp * 3, 0.03, 'sine', 0.03); }   // posto: recupera a vida
         }
         else if (o.type === 'pu') collectPowerup(o);                         // coleta imediata
         else if (safeT > 0 && o.type !== 'house') { /* recém-renascido: atravessa sem bater */ }
-        else if (mode !== 'classic' && (o.type === 'house' || o.type === 'tank' || o.type === 'carrier')) { /* no chão/no mar: o jato passa por cima */ }
+        else if (!isClassic() && (o.type === 'house' || o.type === 'tank' || o.type === 'carrier')) { /* no chão/no mar: o jato passa por cima */ }
         else if (isOcean() && o.type === 'ship') { /* oceano: o jato sobrevoa os navios (mas eles atiram) */ }
         else if (pw.shield > 0 && o.type !== 'house') {
           o.alive = false; addScore(10); boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);   // o escudo absorve
@@ -187,7 +189,7 @@ function update() {
     const my0 = m.Y, my1 = m.Y + 8;
     let hit = m.Y > scroll + VIEW_H || m.x < -4 || m.x > W + 4;
     const { b, i } = lineAt(my1);
-    if (mode === 'classic') {
+    if (isClassic()) {
       if (m.x < b.L[i] || m.x > b.R[i] || (b.IR[i] > b.IL[i] && m.x > b.IL[i] && m.x < b.IR[i])) hit = true;
     } else if (cliffHit(m.x, m.x + 2, my1, my1)) hit = true;            // moderno: só o paredão para o míssil
     if (!hit && isOcean() && oceanMissileHit(m, my0, my1)) hit = true;

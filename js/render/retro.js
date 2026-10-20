@@ -241,8 +241,9 @@ const prect = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(Math.roun
 
 // ---------- quadro completo ----------
 function drawRetro() {
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = OCEAN_WATER; ctx.fillRect(0, 0, W, VIEW_H);
+  const [shx, shy] = shakeXY();                                   // tremor de tela (bomba)
+  ctx.setTransform(1, 0, 0, 1, shx, shy); ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = OCEAN_WATER; ctx.fillRect(-20, -20, W + 40, VIEW_H + 40);
   const zs = 1 - 0.28 * smooth(altT), ext = VIEW_H * (1 / zs - 1) / 2;
   if (zs < 1) { ctx.save(); ctx.translate(W / 2, VIEW_H / 2); ctx.scale(zs, zs); ctx.translate(-W / 2, -VIEW_H / 2); }
   const g0 = Math.max(0, Math.floor((scroll - ext) / BH) - 1), g1 = Math.floor((scroll + VIEW_H + ext) / BH) + 1;
@@ -298,6 +299,7 @@ function drawRetro() {
   }
   fxNoLabel = true; fx.forEach(drawExplosion); fxNoLabel = false;
   drawClouds(1 - altT);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   quantize();                                                     // tudo vira paleta de 32 cores + pontilhado
   drawRetroHud();
 }
@@ -324,7 +326,7 @@ function drawRetroHud() {
     prect(bx - 2, 5, 2, 2, on ? '#ff9d9a' : '#5c6378'); prect(bx + 1, 1, 1, 2, '#f5ecc8');
   }
   // modo e altitude
-  ptext('RETRO ' + (altTarget ? '▲ ALTO' : '▼ RASANTE'), 3, 16, '#4fd1e0');
+  ptext('RETRO ' + (altTarget ? '▲ HIGH' : '▼ LOW'), 3, 16, '#4fd1e0');
   // power-ups ativos
   let ix = 160;
   for (const k of ['shield', 'triple', 'rapid']) {
@@ -339,16 +341,16 @@ function drawRetroHud() {
   if (boss) {
     const B = boss, bw = W - 40, bf = Math.max(0, B.hp / B.maxHp);
     prect(20, 28, bw, 5, '#0c0f1c'); prect(21, 29, (bw - 2) * bf, 3, bf > 0.3 ? '#e5484d' : '#ff8a3d');
-    const st = B.kind === 'gunship' && B.shield > 0 ? ' · ESCUDO' : B.kind === 'airship' && B.turrets.some(t => t.hp > 0) ? ' · BLINDADO' : B.kind === 'interceptor' && B.mode === 'dash' ? ' · INTOCAVEL' : '';
+    const st = B.kind === 'gunship' && B.shield > 0 ? ' · SHIELD' : B.kind === 'airship' && B.turrets.some(t => t.hp > 0) ? ' · ARMORED' : B.kind === 'interceptor' && B.mode === 'dash' ? ' · UNTOUCHABLE' : '';
     ptext(BOSS_INFO[B.kind].name + st, 21, 35, '#ffffff');
   }
   // fim de jogo
   if (state === 'over') {
     prect(14, 104, W - 28, 78, '#0c0f1c'); prect(15, 105, W - 30, 76, '#26334f');
-    ptext('FIM DE JOGO', W / 2, 114, '#ffc93c', 'center');
-    ptext(String(score).padStart(6, '0') + ' PONTOS', W / 2, 130, '#ffffff', 'center');
-    ptext('ESPACO PARA VOLTAR', W / 2, 146, '#9fe0ff', 'center');
-    ptext('▲▼ ROLAGEM  -/+ VELOC.', W / 2, 160, '#c4c9d4', 'center');
-    ptext('VELOC. ' + (overSpeed / 1.1).toFixed(2) + '×', W / 2, 170, '#c4c9d4', 'center');
+    ptext('GAME OVER', W / 2, 114, '#ffc93c', 'center');
+    ptext(String(score).padStart(6, '0') + ' POINTS', W / 2, 130, '#ffffff', 'center');
+    ptext('SPACE TO RETURN', W / 2, 146, '#9fe0ff', 'center');
+    ptext('▲▼ SCROLL  -/+ SPEED', W / 2, 160, '#c4c9d4', 'center');
+    ptext('SPEED ' + (overSpeed / 1.1).toFixed(2) + '×', W / 2, 170, '#c4c9d4', 'center');
   }
 }

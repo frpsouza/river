@@ -8,6 +8,7 @@
 
 let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens · 'ocean' · 'retro'
 const isOcean = () => mode === 'ocean' || mode === 'retro';   // o retro usa toda a lógica do oceano
+const isClassic = () => mode === 'classic' || mode === 'pico'; // o PICO-8 usa toda a lógica do clássico
 let bank = 0;
 let safeT = 0;
 let hp = 100, hurtT = 0;                             // voo livre: vida do jato (0–100) e invulnerabilidade após um dano                                       // proteção ao renascer: enquanto > 0, inimigos e tiros não derrubam
@@ -18,8 +19,9 @@ let shells = [];
 let state, scroll, px, fuel, lives, score, nextLife, checkpoint, missiles = [], fx, dyingT, keys, frame, audio;
 
 function newGame() {
-  W = mode === 'retro' ? 240 : W_NORMAL;                           // retro: resolução 240×320 de verdade
-  VIEW_H = mode === 'classic' ? SCREEN_H - PANEL_H : mode === 'retro' ? 320 : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
+  // retro: 240×320 de verdade · pico: lógica em 256×224, desenhada pela metade = 128×112 + HUD de 16 px
+  W = mode === 'retro' ? 240 : mode === 'pico' ? 256 : W_NORMAL;
+  VIEW_H = mode === 'pico' ? 224 : isClassic() ? SCREEN_H - PANEL_H : mode === 'retro' ? 320 : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
   newOceanGame();
   seed = (Math.random() * 1e9) | 0;
   rng = mulberry32(seed);
@@ -56,7 +58,7 @@ function addScore(n) {
 // no clássico, qualquer dano derruba.
 // Devolve true se o jato caiu (o chamador deve parar o passo).
 function hurt(dmg) {
-  if (mode === 'classic') { kill(); return true; }
+  if (isClassic()) { kill(); return true; }
   if (hurtT > 0 || safeT > 0) return false;
   hp -= dmg; hurtT = 45;
   beep(150, 0.12, 'square', 0.05);

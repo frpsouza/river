@@ -14,11 +14,11 @@ const TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || /[?&]t
 
 // botões: [rótulo, tecla, shift?, classe]
 const PADS = {
-  play: [['STICK'], ['FOGO', ' ', 0, 'fire round']],
-  playOcean: [['STICK'], ['FOGO', ' ', 0, 'fire round'], ['BOMBA', 'b', 0, 'bomb']],
-  over: [['▲', 'ArrowUp', 0, 'u'], ['▼', 'ArrowDown', 0, 'd'], ['ponte ▲', 'PageUp', 0, 'pu'], ['ponte ▼', 'PageDown', 0, 'pd'],
-         ['−', '-', 0, 'minus'], ['+', '+', 0, 'plus'], ['VOLTAR', ' ', 0, 'fire']],
-  title: [['◀ ▶ modo', 'ArrowRight', 0, 'mode'], ['JOGAR', 'Enter', 0, 'fire']],
+  play: [['STICK'], ['FIRE', ' ', 0, 'fire round']],
+  playOcean: [['STICK'], ['FIRE', ' ', 0, 'fire round'], ['BOMB', 'b', 0, 'bomb']],
+  over: [['▲', 'ArrowUp', 0, 'u'], ['▼', 'ArrowDown', 0, 'd'], ['bridge ▲', 'PageUp', 0, 'pu'], ['bridge ▼', 'PageDown', 0, 'pd'],
+         ['−', '-', 0, 'minus'], ['+', '+', 0, 'plus'], ['BACK', ' ', 0, 'fire']],
+  title: [['◀ ▶ mode', 'ArrowRight', 0, 'mode'], ['PLAY', 'Enter', 0, 'fire']],
 };
 
 function press(key, shift) { keys[key] = true; taps.push({ key, shift: !!shift }); }
@@ -92,8 +92,8 @@ if (TOUCH) {
 const titlePick = e => {
   const r = cv.getBoundingClientRect();
   const y = (e.clientY - r.top) / r.height * SCREEN_H;
-  const k = Math.floor((y - TITLE_OPT_Y) / 40), off = (y - TITLE_OPT_Y) % 40;
-  return y >= TITLE_OPT_Y && off < 34 && k < 4 ? ['classic', 'modern', 'ocean', 'retro'][k] : null;
+  const k = Math.floor((y - TITLE_OPT_Y) / TITLE_OPT_GAP), off = (y - TITLE_OPT_Y) % TITLE_OPT_GAP;
+  return y >= TITLE_OPT_Y && off < 32 && k < 5 ? ['classic', 'modern', 'ocean', 'retro', 'pico'][k] : null;
 };
 cv.addEventListener('pointerdown', e => {
   if (state !== 'title') return;

@@ -73,8 +73,17 @@ function pickupFx(x, y, def) {
 const hexA = (hex, a) => 'rgba(' + [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16)).join(',') + ',' + a + ')';
 
 let fxNoLabel = false;                                // o retro desenha os rótulos com a fonte bitmap
+// tremor de tela e "pausa de impacto" (congela a simulação por alguns quadros, como nos fliperamas)
+let shakeT = 0, shakeMag = 0, freezeT = 0;
+function shake(mag, t) { shakeMag = Math.max(shakeMag, mag); shakeT = Math.max(shakeT, t); }
+function shakeXY() {
+  if (shakeT <= 0) return [0, 0];
+  const m = shakeMag * Math.min(1, shakeT / 20);
+  return [Math.round((Math.random() - 0.5) * 2 * m), Math.round((Math.random() - 0.5) * 2 * m)];
+}
 
 function stepFx() {
+  if (shakeT > 0 && --shakeT === 0) shakeMag = 0;
   for (const e of fx) {
     e.t--;
     const age = e.life - e.t;
@@ -89,11 +98,15 @@ function stepFx() {
 
 function drawExplosion(e) {
   const sx = e.x, sy = VIEW_H - (e.y - scroll), age = e.life - e.t;
-  if (e.flash && age < e.flash) { ctx.fillStyle = 'rgba(255,255,255,' + (0.25 * (1 - age / e.flash)).toFixed(3) + ')'; ctx.fillRect(0, 0, W, VIEW_H); }
-  for (const [col, R, dur, flat] of e.rings || []) {
-    if (age > dur) continue;
-    const q = age / dur;
-    ctx.strokeStyle = col.replace(/[\d.]+\)$/, (1 - q).toFixed(2) + ')'); ctx.lineWidth = 2 * (1 - q) + 0.5;
+  if (e.flash && age < e.flash) { ctx.fillStyle = 'rgba(255,255,255,' + ((e.flashA || 0.25) * (1 - age / e.flash)).toFixed(3) + ')'; ctx.fillRect(-20, -20, W + 40, VIEW_H + 40); }
+  if (e.tint && age < e.tint[1]) {                                    // tingimento da tela que esmaece (ex.: laranja da bomba)
+    ctx.fillStyle = e.tint[0].replace(/[\d.]+\)$/, (e.tint[2] * (1 - age / e.tint[1])).toFixed(3) + ')'); ctx.fillRect(-20, -20, W + 40, VIEW_H + 40);
+  }
+  for (const [col, R, dur, flat, delay = 0, width = 2] of e.rings || []) {
+    const a2 = age - delay;
+    if (a2 < 0 || a2 > dur) continue;
+    const q = a2 / dur;
+    ctx.strokeStyle = col.replace(/[\d.]+\)$/, (1 - q).toFixed(2) + ')'); ctx.lineWidth = width * (1 - q) + 0.5;
     ctx.beginPath(); ctx.ellipse(sx, sy, R * q + 2, (R * q + 2) * flat, 0, 0, Math.PI * 2); ctx.stroke();
   }
   for (const [R, dur, delay, dx = 0] of e.fire || []) {
@@ -113,8 +126,9 @@ function drawExplosion(e) {
     const x = sx + p.x, y = sy + p.y;
     if (p.shape === 'c') ell(x, y, p.r, p.r, p.col);
     else {
-      ctx.save(); ctx.translate(x, y); ctx.rotate(p.rot); ctx.fillStyle = p.col;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(p.shape === 'ray' ? Math.atan2(p.vy, p.vx) : p.rot); ctx.fillStyle = p.col;
       if (p.shape === 'r') ctx.fillRect(-p.r * 1.2, -p.r * 0.5, p.r * 2.4, p.r);
+      else if (p.shape === 'ray') ctx.fillRect(-p.r * 9, -p.r * 0.35, p.r * 9, p.r * 0.7);     // raio de luz (rastro atrás)
       else if (p.shape === 'blade') ctx.fillRect(-p.r, -0.6, p.r * 2, 1.2);                  // pá do rotor girando
       else if (p.shape === 'turret') {                                                      // torre do tanque voando
         ctx.beginPath(); ctx.moveTo(-p.r, 1); ctx.quadraticCurveTo(0, -p.r * 1.3, p.r, 1); ctx.closePath(); ctx.fill();

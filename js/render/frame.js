@@ -6,9 +6,12 @@
 'use strict';
 
 function draw() {
-  if (syncCanvas()) return drawRetro();                             // modo retro: renderizador próprio (render/retro.js)
-  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, SCREEN_H);
+  const scr = syncCanvas();                                         // modos em pixel art têm renderizador próprio
+  if (scr === 'retro') return drawRetro();
+  if (scr === 'pico') return drawPico();
+  const [shx, shy] = shakeXY();                                   // tremor de tela (bomba)
+  ctx.setTransform(SCALE, 0, 0, SCALE, shx * SCALE, shy * SCALE);
+  ctx.fillStyle = '#000'; ctx.fillRect(-20, -20, W + 40, SCREEN_H + 40);
   if (!blocks) { drawTitle(); return; }
 
   ctx.fillStyle = isOcean() ? OCEAN_WATER : PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
@@ -64,7 +67,7 @@ function draw() {
     rrect(m.x - 0.3, my, 2.6, 8, 1.2); ctx.fillStyle = pw.rapid > 0 ? '#ffe58a' : '#ffd23a'; ctx.fill();
     ell(m.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
-  if (state === 'play' && mode !== 'classic') {                      // voo livre: sombra do jato lá embaixo
+  if (state === 'play' && !isClassic()) {                      // voo livre: sombra do jato lá embaixo
     const a = isOcean() ? altT : 0;                             // mais alto = sombra mais longe e mais fraca
     ell(px + PW / 2 + 7 + 22 * a, VIEW_H - py - PH * 0.35 + 9 + 34 * a, PW * 0.42 * (1 - 0.3 * a), 3, 'rgba(0,0,30,' + (0.28 - 0.18 * a).toFixed(2) + ')');
   }
@@ -74,15 +77,15 @@ function draw() {
     ctx.globalAlpha = 1;
   }
   if (state === 'play') drawShield(px + PW / 2, VIEW_H - py - PH / 2);
-  if (state === 'play' && mode !== 'classic' && (hurtT > 0 || hp < 40)) {   // barrinha de vida sobre o jato
+  if (state === 'play' && !isClassic() && (hurtT > 0 || hp < 40)) {   // barrinha de vida sobre o jato
     const bx = px + PW / 2 - 12, by = VIEW_H - py - PH - 7;
     rrect(bx, by, 24, 3, 1.5); ctx.fillStyle = 'rgba(12,15,28,.7)'; ctx.fill();
     rrect(bx, by, Math.max(3, 24 * hp / 100), 3, 1.5); ctx.fillStyle = hp > 50 ? '#3fbf6a' : hp > 25 ? '#ffc93c' : '#e5484d'; ctx.fill();
   }
   fx.forEach(drawExplosion);
   if (isOcean()) drawClouds(1 - altT);                       // no rasante, as nuvens passam por cima de tudo
-  if (mode === 'classic') drawPanel(); else drawHudTop();          // clássico: painel embaixo · voo livre: HUD no topo
-  if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
+  if (isClassic()) drawPanel(); else drawHudTop();          // clássico: painel embaixo · voo livre: HUD no topo
+  if (state === 'over') banner('GAME OVER', 'SPACE to return', ['↑ ↓ reverse scrolling · PgUp/PgDn or Shift+↑↓: bridges', '− / + scroll speed: ' + (overSpeed / 1.1).toFixed(2) + '×']);
   if (state === 'title') drawTitle();
 }
 
@@ -127,28 +130,29 @@ function banner(a, b, c) {
   lines.forEach((t, k) => ctx.fillText(t, W / 2, 196 + k * 13));
 }
 
-const TITLE_OPT_Y = 102;                              // topo da 1ª opção de modo (as outras a cada 40 px)
+const TITLE_OPT_Y = 96, TITLE_OPT_GAP = 36;          // topo da 1ª opção de modo e distância entre elas
 
 function drawTitle() {
   ctx.fillStyle = PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
   ctx.fillStyle = PAL.dark.land; ctx.fillRect(0, 0, 70, VIEW_H); ctx.fillRect(W - 70, 0, 70, VIEW_H);
-  drawJet(W / 2, 312, 0, 1.4, true);
-  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 56, W - 32, 240, 8); ctx.fill();
+  drawJet(W / 2, 326, 0, 1.2, true);
+  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 52, W - 32, 266, 8); ctx.fill();
   ctx.textAlign = 'center'; ctx.fillStyle = '#ffe45a'; ctx.font = 'bold 24px Arial, sans-serif';
-  ctx.fillText('RIVER RAID', W / 2, 88);
-  const opts = [['classic', '1  CLÁSSICO', 'margens e ilhas matam, como no Atari'],
-                ['modern', '2  MODERNO', 'voo livre pela tela · paredões de rocha · power-ups'],
-                ['ocean', '3  OCEANO', 'mar aberto · porta-aviões · esquadrilhas · chefes · nuvens'],
-                ['retro', '4  RETRO OCEANO', 'o oceano em pixel art, 240×320']];
+  ctx.fillText('RIVER RAID', W / 2, 82);
+  const opts = [['classic', '1  CLASSIC', 'banks and islands are deadly, like the Atari original'],
+                ['modern', '2  MODERN', 'free flight · rock walls · power-ups'],
+                ['ocean', '3  OCEAN', 'open sea · carriers · squadrons · bosses · clouds'],
+                ['retro', '4  RETRO OCEAN', 'the ocean in pixel art, 240×320'],
+                ['pico', '5  CLASSIC - PICO-8', 'classic mode at 128×128, 16-color palette']];
   opts.forEach(([m, name, desc], k) => {
-    const y = TITLE_OPT_Y + k * 40, on = mode === m;
-    rrect(32, y, W - 64, 34, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
-    ctx.fillStyle = on ? '#26334f' : '#e8ecf5'; ctx.font = 'bold 13px Arial, sans-serif'; ctx.fillText(name, W / 2, y + 15);
-    ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '9px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 27);
+    const y = TITLE_OPT_Y + k * TITLE_OPT_GAP, on = mode === m;
+    rrect(32, y, W - 64, 32, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
+    ctx.fillStyle = on ? '#26334f' : '#e8ecf5'; ctx.font = 'bold 13px Arial, sans-serif'; ctx.fillText(name, W / 2, y + 14);
+    ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '9px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 26);
   });
   ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
   ctx.font = '10px Arial, sans-serif';
-  ctx.fillText('setas ou clique escolhem · ENTER ou 2º clique joga', W / 2, 284);
+  ctx.fillText('arrows or click to choose · ENTER or 2nd click to play', W / 2, TITLE_OPT_Y + opts.length * TITLE_OPT_GAP + 16);
 }
 
 // HUD dos modos de voo livre: no topo, por cima do cenário (pílulas translúcidas)
@@ -159,7 +163,7 @@ function drawHudTop() {
   ctx.textAlign = 'left'; ctx.font = 'bold 14px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
   ctx.fillText(String(score).padStart(6, '0'), 14, 20);
   ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = { modern: '#9fe0ff', ocean: '#4fd1e0' }[mode] || '#ffc93c';
-  ctx.fillText(({ modern: 'MODERNO', ocean: 'OCEANO' }[mode] || '') + (isOcean() ? (altTarget ? ' · ▲ ALTO' : ' · ▼ RASANTE') : ''), 14, 33);
+  ctx.fillText(({ modern: 'MODERN', ocean: 'OCEAN' }[mode] || '') + (isOcean() ? (altTarget ? ' · ▲ HIGH' : ' · ▼ LOW') : ''), 14, 33);
   if (isOcean() && altMsg > 0) {                              // aviso de troca de altitude
     ctx.globalAlpha = Math.min(1, altMsg / 30); ctx.textAlign = 'center'; ctx.font = 'bold 12px Arial, sans-serif';
     ctx.fillStyle = 'rgba(12,15,28,.6)'; rrect(W / 2 - 80, 62, 160, 20, 10); ctx.fill();
@@ -200,7 +204,7 @@ function drawPanel() {
   ctx.textAlign = 'left'; ctx.font = 'bold 20px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
   ctx.fillText(String(score).padStart(6, '0'), 10, y0 + 24);
   ctx.font = 'bold 8px Arial, sans-serif'; ctx.fillStyle = { classic: '#ffc93c', modern: '#9fe0ff', ocean: '#4fd1e0' }[mode];
-  ctx.fillText({ classic: 'CLÁSSICO', modern: 'MODERNO', ocean: 'OCEANO' }[mode], 12, y0 + 40);
+  ctx.fillText({ classic: 'CLASSIC', modern: 'MODERN', ocean: 'OCEAN' }[mode], 12, y0 + 40);
   if (isOcean()) {                                            // barra de vida do jato
     const f = hp / 100, hx = 74, hy = y0 + 42;
     rrect(hx, hy, 160, 4, 2); ctx.fillStyle = '#2b3042'; ctx.fill();

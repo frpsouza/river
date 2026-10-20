@@ -26,6 +26,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 10 | `render/canvas.js` | canvas em 2×, primitivas (`poly`, `ell`, `rrect`, `mix`) e paleta |
 | 11 | `render/terrain.js` | desenho da água, margens, ilhas, ponte e decoração (bosques, campos, vacas) |
 | 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
+| 13c | `render/pico.js` | modo CLASSIC - PICO-8: o clássico em 128×128 com a paleta de 16 cores, sprites em pixel art e fonte 3×5 |
 | 13b | `render/retro.js` | modo Retro Oceano: pixel art em 240×320, quadros intermediários, paleta de 32 cores com pontilhado e fonte bitmap 5×7 |
 | 13 | `render/frame.js` | monta cada quadro (`draw`), painel, telas de título e de fim de jogo |
 | 14 | `main.js` | teclado e laço principal (`update` a 60 passos/s, `draw` a cada quadro) |
@@ -54,7 +55,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | Espaço (Z) | atirar (um míssil por vez) |
 | X ou B | soltar uma bomba do estoque (modo oceano) |
 | Enter ou Espaço | iniciar (na tela de título) |
-| setas, 1/2/3/4 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
+| setas, 1–5 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
 **Com joystick/controle (gamepad):**
 
@@ -660,6 +661,47 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
   - Os rótulos dos power-ups e o quadro de fim de jogo também usam a fonte bitmap.
 - **Controles:** iguais aos do oceano, inclusive a BOMBA no 2º botão e na tela do celular.
 - **A verificar no aparelho:** o desempenho em celulares mais fracos. A quantização percorre os 76.800 pixels a cada quadro, e não foi possível medir o tempo no navegador de teste.
+
+## Mudanças da versão 25 — interface em inglês, modo CLASSIC - PICO-8 e bomba espetacular
+
+### 47. Interface padronizada em inglês
+- Todos os textos que aparecem no jogo passaram para o inglês. O código e esta documentação continuam em português.
+
+| Onde | Agora |
+|---|---|
+| modos (título) | CLASSIC, MODERN, OCEAN, RETRO OCEAN, CLASSIC - PICO-8, com descrições em inglês |
+| título | "arrows or click to choose · ENTER or 2nd click to play" |
+| HUD | CLASSIC / MODERN / OCEAN · ▲ HIGH / ▼ LOW |
+| avisos de altitude | ▲ ABOVE THE CLOUDS / ▼ LOW-LEVEL FLIGHT |
+| chefes | BOMBER, GUNSHIP, AIRSHIP, INTERCEPTOR — "BOSS — SECTION n", estados SHIELD / ARMORED (n turrets) / UNTOUCHABLE |
+| power-ups | SHIELD, TRIPLE SHOT, RAPID FIRE, BOMB!, +1 LIFE, FULL REPAIR, BOMB +1 (n) |
+| bônus | SQUADRON +500, BOSS DOWN! +40 |
+| fim de jogo | GAME OVER, SPACE to return, "↑ ↓ reverse scrolling · PgUp/PgDn or Shift+↑↓: bridges", "− / + scroll speed" |
+| botões de toque | FIRE, BOMB, BACK, PLAY, ◀ ▶ mode, bridge ▲ / bridge ▼ |
+| legenda da página | em inglês; `lang="en"` |
+
+### 48. Modo CLASSIC - PICO-8 (5ª opção do título)
+- O modo **clássico** (margens e ilhas matam, combustível, pontes) no estilo do console de fantasia PICO-8: **128×128 pixels** e a **paleta de 16 cores** do PICO-8, ampliado sem suavização (512×512 no PC, largura toda no celular, proporção 1:1).
+- **Escala:** a lógica do clássico roda numa escala interna 2× (`W = 256`, `VIEW_H = 224`) e é desenhada pela metade. Isso dá exatamente **128×112 de área de jogo + 16 px de HUD**. O código trata os dois como clássico por meio de `isClassic()`.
+- **Mapa em pixels:** cada linha do mapa vira 1 pixel, então margens, beiradas, ilhas, estrada, faixa amarela e o deck da ponte são desenhados linha a linha, nítidos. As marolas são fixas por linha e a ponte destruída mostra a água.
+- **Sprites em pixel art originais, só com as 16 cores:**
+  - jato com **5 quadros de inclinação**;
+  - navio, helicóptero com **2 quadros de rotor** (e a altitude mudando o tamanho);
+  - avião, duas casas com árvore, tanque com canhão, tambor de combustível listrado e balões (vermelho e amarelo);
+  - árvores redondas e pinheiros, campos com cerca e vacas.
+- **Explosões:** círculos que esfriam (branco → amarelo → laranja → vermelho) e faíscas de 1 pixel na cor mais próxima da paleta.
+- **HUD na faixa de baixo, com fonte 3×5 própria:** placar, medidor de combustível E–F (vermelho e piscando no fim), mini-jatos das vidas e a etiqueta PICO-8. O quadro de fim de jogo usa a mesma fonte.
+
+### 49. Bomba espetacular (oceano e retro)
+- **Pausa de impacto:** a simulação congela 7 quadros no instante da detonação, como nos fliperamas.
+- **Clarão e tingimento:** a tela fica quase toda branca e depois esmaece num tingimento laranja.
+- **Tremor de tela:** ~0,8 s, diminuindo aos poucos. Vale para os dois renderizadores.
+- **Três ondas de choque:** branca, amarela e ciano, grossas e com atraso entre elas, varrendo a tela inteira.
+- **Partículas:** 28 raios de luz saindo do jato, bola de fogo tripla, anel de fumaça que se expande, 40 faíscas e estrelinhas.
+- **Destruição em cascata:** cada alvo só é atingido quando a onda de choque chega até ele (6 px por quadro), do mais perto ao mais longe. As explosões se espalham pela tela em sequência, em vez de tudo sumir de uma vez. O orçamento de dano continua o mesmo.
+- **Som:** estrondo em cinco notas descendo, seguido de um ronco grave prolongado.
+- **Medido:** com 12 caças espalhados, eles caíram em sequência entre ~0,5 s e 1 s depois da detonação.
+- Para ajustar: `useBomb()` (`js/powerups.js`), `BOMB_WAVE` (`js/ocean.js`) e `shake()` / `freezeT` (`js/effects.js`).
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

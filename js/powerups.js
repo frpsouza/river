@@ -16,11 +16,11 @@
 'use strict';
 
 const PU = {
-  shield: { name: 'ESCUDO',      col: '#3b63e0', dark: '#2c4bb5', dur: 8 * 60,  notes: [523, 659, 784, 1047], w: 0.22 },
-  triple: { name: 'TIRO TRIPLO', col: '#ff8a3d', dark: '#d9672a', dur: 10 * 60, notes: [440, 554, 659, 880],  w: 0.28 },
-  rapid:  { name: 'TIRO RÁPIDO', col: '#ffc93c', dark: '#c9901c', dur: 10 * 60, notes: [659, 784, 988, 1319], w: 0.28 },
-  bomb:   { name: 'BOMBA!',      col: '#e5484d', dark: '#b8363b', dur: 0,       notes: [392, 330, 262, 196],  w: 0.14 },
-  life:   { name: '+1 VIDA',     col: '#3fbf6a', dark: '#2c9150', dur: 0,       notes: [523, 784, 1047, 1568], w: 0.08 },
+  shield: { name: 'SHIELD',      col: '#3b63e0', dark: '#2c4bb5', dur: 8 * 60,  notes: [523, 659, 784, 1047], w: 0.22 },
+  triple: { name: 'TRIPLE SHOT', col: '#ff8a3d', dark: '#d9672a', dur: 10 * 60, notes: [440, 554, 659, 880],  w: 0.28 },
+  rapid:  { name: 'RAPID FIRE',  col: '#ffc93c', dark: '#c9901c', dur: 10 * 60, notes: [659, 784, 988, 1319], w: 0.28 },
+  bomb:   { name: 'BOMB!',       col: '#e5484d', dark: '#b8363b', dur: 0,       notes: [392, 330, 262, 196],  w: 0.14 },
+  life:   { name: '+1 LIFE',     col: '#3fbf6a', dark: '#2c9150', dur: 0,       notes: [523, 784, 1047, 1568], w: 0.08 },
 };
 const PU_SIZE = 14;
 let pw = { shield: 0, triple: 0, rapid: 0 };
@@ -29,7 +29,7 @@ const BOMB_MAX = 5, BOMB_POWER = 40;                  // estoque máximo e orça
 let bombs = 1;
 
 function spawnPowerup(blk, r) {
-  if (mode === 'classic' || blk.bridge || r() > 0.16) return;
+  if (isClassic() || blk.bridge || r() > 0.16) return;
   let k = r(), kind = 'life';
   for (const [name, def] of Object.entries(PU)) { if (k < def.w) { kind = name; break; } k -= def.w; }
   for (let tries = 0; tries < 12; tries++) {
@@ -48,7 +48,7 @@ function collectPowerup(o) {
   if (o.kind === 'bomb') { if (isOcean()) bombs = Math.min(BOMB_MAX, bombs + 1); else smartBomb(); }
   addScore(50);
   def.notes.forEach((f, k) => setTimeout(() => beep(f, 0.12, 'triangle', 0.05), k * 60));   // arpejo
-  const label = !isOcean() ? def.name : o.kind === 'life' ? 'REPARO TOTAL' : o.kind === 'bomb' ? 'BOMBA +1 (' + bombs + ')' : def.name;
+  const label = !isOcean() ? def.name : o.kind === 'life' ? 'FULL REPAIR' : o.kind === 'bomb' ? 'BOMB +1 (' + bombs + ')' : def.name;
   pickupFx(o.x + o.w / 2, o.Y + o.h / 2, Object.assign({}, def, { name: label }));
 }
 
@@ -57,9 +57,19 @@ function useBomb() {
   if (bombs <= 0 || state !== 'play') { beep(140, 0.08, 'square', 0.03); return; }   // sem bomba: "clique" vazio
   bombs--;
   oceanBomb(BOMB_POWER);
-  fx.push({ x: px + PW / 2, y: scroll + py + PH / 2, t: 40, life: 40, kind: 'bomb', flash: 10,
-    rings: [['rgba(255,255,255,.95)', 220, 30, 1], ['rgba(255,138,61,.9)', 150, 26, 1]], parts: [] });
-  [196, 147, 110, 82].forEach((f, k) => setTimeout(() => beep(f, 0.3, 'sawtooth', 0.06), k * 50));
+  // o espetáculo: pausa de impacto, clarão branco que esquenta para laranja, tela tremendo,
+  // três ondas de choque, raios de luz, anel de fumaça e chuva de faíscas
+  freezeT = 7; shake(7, 48);
+  const cx = px + PW / 2, cy = scroll + py + PH / 2;
+  fx.push({ x: cx, y: cy, t: 90, life: 90, kind: 'bomb', flash: 12, flashA: 0.85, tint: ['rgba(255,138,61,.5)', 45, 0.45],
+    fire: [[34, 40, 0], [22, 30, 6], [14, 24, 12]],
+    rings: [['rgba(255,255,255,.95)', 340, 56, 1, 0, 6], ['rgba(255,201,60,.9)', 300, 60, 1, 6, 4], ['rgba(159,224,255,.9)', 260, 64, 1, 14, 3]],
+    parts: [...parts(28, k => { const a = k / 28 * Math.PI * 2; return P({ vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, shape: 'ray', r: 2.2, col: k % 2 ? '#ffffff' : '#ffe58a', life: 26 }); }),
+            ...parts(18, k => { const a = k / 18 * Math.PI * 2; return P({ x: Math.cos(a) * 10, y: Math.sin(a) * 10, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, r: 5, grow: 1.02, col: '#5c6378', life: 60, delay: 8 }); }),
+            ...burst(40, 5, { col: '#ffc93c', r: 1.2, g: 0.05, life: 44 }),
+            ...burst(16, 3, { shape: 'star', col: '#ffffff', r: 2.2, vr: 0.3, life: 36, delay: 4 })] });
+  [196, 147, 110, 82, 61].forEach((f, k) => setTimeout(() => beep(f, 0.5, 'sawtooth', 0.07), k * 60));   // estrondo descendo
+  [45, 40, 36].forEach((f, k) => setTimeout(() => beep(f, 0.9, 'triangle', 0.08), 200 + k * 220));         // ronco prolongado
 }
 
 function smartBomb() {

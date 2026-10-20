@@ -22,7 +22,9 @@ const FLIER_W = 20 * SC.plane, FLIER_H = 10 * SC.plane;
 const BOSS_AT = 11;                                   // bloco da seção em que o chefe aparece
 const bossSection = s => s % 2 === 1;                 // chefe a cada duas seções (2ª, 4ª, …): ~25 s de viagem entre eles
 let fliers = [], squadT = 0, squadId = 0, squads = {}, boss = null, bossDone = {};
-let camSp = 0;                                        // velocidade da câmera no passo atual (update.js)
+let camSp = 0;
+let bombQueue = [];                                  // destruições da bomba agendadas pela onda de choque
+const BOMB_WAVE = 6;                                  // velocidade da onda de choque (px por quadro)                                        // velocidade da câmera no passo atual (update.js)
 // altitude: altT vai de 0 (rasante) a 1 (acima das nuvens), suavemente
 const ALT_LOW = 14 * 60, ALT_HIGH = 10 * 60;          // duração de cada fase (quadros)
 let altT = 0, altTarget = 0, altTimer = ALT_LOW, altMsg = 0, altText = '';
@@ -31,7 +33,7 @@ const oceanHigh = () => isOcean() && altT > 0.25;   // alto: a superfície fica 
 const worldY = sy => scroll + VIEW_H - sy;            // tela → mundo
 const screenY = Y => VIEW_H - (Y - scroll);           // mundo → tela
 
-function resetOcean() { fliers = []; boss = null; squadT = 240; squads = {}; altT = 0; altTarget = 0; altTimer = ALT_LOW; altMsg = 0; }
+function resetOcean() { bombQueue = []; fliers = []; boss = null; squadT = 240; squads = {}; altT = 0; altTarget = 0; altTimer = ALT_LOW; altMsg = 0; }
 function newOceanGame() { resetOcean(); bossDone = {}; }
 
 // ---------- terreno: mar aberto com ilhas ----------
@@ -147,7 +149,7 @@ function destroyFlier(f, byPlayer) {
   const sq = squads[f.squad];
   if (sq && ++sq.killed === sq.n && sq.n > 2) {                          // esquadrilha inteira: bônus
     addScore(500);
-    pickupFx(f.x, worldY(f.y), { name: 'ESQUADRILHA +500', col: '#ffc93c' });
+    pickupFx(f.x, worldY(f.y), { name: 'SQUADRON +500', col: '#ffc93c' });
     [784, 988, 1175, 1568].forEach((fq, k) => setTimeout(() => beep(fq, 0.1, 'triangle', 0.05), k * 55));
   }
 }
@@ -159,10 +161,10 @@ function destroyFlier(f, byPlayer) {
 //   interceptador . ataque: rajadas, investida em mergulho + onda de choque · defesa: esquiva mísseis e é intocável na investida
 const BOSS_KINDS = ['bomber', 'gunship', 'airship', 'interceptor'];
 const BOSS_INFO = {
-  bomber:      { name: 'BOMBARDEIRO',   hp: 60, rx: 64, ry: 14 },
-  gunship:     { name: 'CANHONEIRA',    hp: 80, rx: 56, ry: 22 },
-  airship:     { name: 'DIRIGÍVEL',     hp: 50, rx: 66, ry: 26 },
-  interceptor: { name: 'INTERCEPTADOR', hp: 70, rx: 30, ry: 26 },
+  bomber:      { name: 'BOMBER',        hp: 60, rx: 64, ry: 14 },
+  gunship:     { name: 'GUNSHIP',       hp: 80, rx: 56, ry: 22 },
+  airship:     { name: 'AIRSHIP',       hp: 50, rx: 66, ry: 26 },
+  interceptor: { name: 'INTERCEPTOR',   hp: 70, rx: 30, ry: 26 },
 };
 const BOSS_Y = 92;                                    // altura de patrulha dos chefes (abaixo do HUD e da barra de vida)
 const AIRSHIP_TURRETS = [[-46, 8], [-20, 18], [20, 18], [46, 8]];   // na borda da frente (virada para o jato)
@@ -217,7 +219,7 @@ function bossDie(B) {
   bossDone[B.sec] = true;
   checkpoint = Math.max(checkpoint, (B.sec + 1) * BLOCKS_PER_SECTION);   // derrotar o chefe é o checkpoint
   hp = Math.min(100, hp + 40);                                           // e recupera 40 de vida
-  pickupFx(B.x, worldY(B.y), { name: 'CHEFE DERROTADO! +40', col: '#ffc93c' });
+  pickupFx(B.x, worldY(B.y), { name: 'BOSS DOWN! +40', col: '#ffc93c' });
   [523, 659, 784, 1047, 1319].forEach((fq, k) => setTimeout(() => beep(fq, 0.14, 'triangle', 0.06), k * 90));
   boss = null;
   setAltitude(0);                                                        // volta ao voo rasante
@@ -310,7 +312,7 @@ function updateBoss(d) {
 function setAltitude(v) {
   if (altTarget === v) return;
   altTarget = v; altTimer = v ? ALT_HIGH : ALT_LOW; altMsg = 150;
-  altText = v ? '▲  ACIMA DAS NUVENS' : '▼  VOO RASANTE';
+  altText = v ? '▲  ABOVE THE CLOUDS' : '▼  LOW-LEVEL FLIGHT';
   (v ? [330, 440, 554, 660] : [660, 554, 440, 330]).forEach((fq, k) => setTimeout(() => beep(fq, 0.12, 'sine', 0.035), k * 70));
 }
 function updateAltitude() {
@@ -347,6 +349,8 @@ function updateOcean(pBot, g0, g1) {
   const d = Math.min(sectionOf(pBot), 8) / 8;
   const b = Math.floor(pBot / BH) % BLOCKS_PER_SECTION, high = oceanHigh();
   updateAltitude();
+  for (const q of bombQueue) if (--q.t <= 0) q.act();                // cascata da bomba
+  bombQueue = bombQueue.filter(q => q.t > 0);
   // novas esquadrilhas (não durante o chefe nem na zona de respiro); lá em cima vêm em dobro
   squadT -= high ? 2 : 1;
   if (!boss && b >= CALM_BLOCKS && squadT <= 0) {
@@ -468,14 +472,24 @@ function oceanBomb(budget = BOMB_POWER) {
       small.push({ d: Math.hypot(o.x + o.w / 2 - pcx, sy + o.h / 2 - pcy), kill: () => {
         o.alive = false; addScore({ ship: 30, heli: 60, plane: 100, balloon: 60 }[o.type]); boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o); } });
   }
+  // cada alvo é atingido quando a onda de choque chega até ele (cascata do mais perto ao mais longe)
+  const later = (d, act) => bombQueue.push({ t: Math.round(d / BOMB_WAVE), act });
   small.sort((p, q) => p.d - q.d);
-  for (const t of small) { if (budget <= 0) break; t.kill(); budget--; }
+  for (const t of small) { if (budget <= 0) break; later(t.d, t.kill); budget--; }
   for (const o of carriers) {
     if (budget <= 0) break;
-    const dmg = Math.min(budget, 6, o.hp); budget -= dmg; o.hp -= dmg; o.flash = 8;
-    if (o.hp <= 0) { o.alive = false; addScore(800); boom(o.x + o.w / 2, o.Y + o.h / 2, 'carrier', o); }
+    const dmg = Math.min(budget, 6, o.hp); budget -= dmg;
+    later(Math.hypot(o.x + o.w / 2 - pcx, screenY(o.Y + o.h / 2) - pcy), () => {
+      if (!o.alive) return;
+      o.hp -= dmg; o.flash = 8;
+      if (o.hp <= 0) { o.alive = false; addScore(800); boom(o.x + o.w / 2, o.Y + o.h / 2, 'carrier', o); }
+    });
   }
-  if (boss && !boss.dying && boss.t > 140 && budget > 0) {
+  if (boss && !boss.dying && boss.t > 140 && budget > 0) later(Math.hypot(boss.x - pcx, boss.y - pcy), () => bossBombHit(budget));
+}
+
+function bossBombHit(budget) {
+  if (boss && !boss.dying) {
     let dmg = Math.min(budget, 15);
     if (boss.kind === 'airship') for (const tu of boss.turrets) {               // dirigível: a bomba pega as torres primeiro
       if (dmg <= 0 || tu.hp <= 0) continue;
@@ -485,6 +499,7 @@ function oceanBomb(budget = BOMB_POWER) {
     if (dmg > 0 && !(boss.kind === 'airship' && boss.turrets.some(t => t.hp > 0))) {
       boss.hp = Math.max(1, boss.hp - dmg); boss.flash = 8;
     }
+    boom(boss.x + rnd(-30, 30), worldY(boss.y + rnd(-10, 10)), 'fuel');
   }
 }
 
@@ -633,8 +648,8 @@ function drawBossBar(B) {
   rrect(30, by, w, 7, 3.5); ctx.fillStyle = 'rgba(12,15,28,.75)'; ctx.fill();
   rrect(30, by, Math.max(7, w * f), 7, 3.5); ctx.fillStyle = f > 0.3 ? '#e5484d' : '#ff8a3d'; ctx.fill();
   ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px Arial, sans-serif'; ctx.textAlign = 'left';
-  const st = B.kind === 'gunship' && B.shield > 0 ? ' · ESCUDO' : B.kind === 'airship' && B.turrets.some(t => t.hp > 0) ? ' · BLINDADO (' + B.turrets.filter(t => t.hp > 0).length + ' torres)' : B.kind === 'interceptor' && B.mode === 'dash' ? ' · INTOCÁVEL' : '';
-  ctx.fillText(BOSS_INFO[B.kind].name + ' — SEÇÃO ' + (B.sec + 1) + st, 32, by + 17);
+  const st = B.kind === 'gunship' && B.shield > 0 ? ' · SHIELD' : B.kind === 'airship' && B.turrets.some(t => t.hp > 0) ? ' · ARMORED (' + B.turrets.filter(t => t.hp > 0).length + ' turrets)' : B.kind === 'interceptor' && B.mode === 'dash' ? ' · UNTOUCHABLE' : '';
+  ctx.fillText(BOSS_INFO[B.kind].name + ' — SECTION ' + (B.sec + 1) + st, 32, by + 17);
 }
 
 function drawCarrier(x, y, dir, o) {
