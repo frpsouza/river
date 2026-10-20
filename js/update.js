@@ -4,8 +4,9 @@
 // Usa praticamente todos os módulos de lógica (state, terrain, objects, effects, gameover).
 'use strict';
 
-let fireCool = 0, burstT = 0, burstLock = false;
-const BURST_FRAMES = 60, BURST_GAP = 7, BURST_GAP_RAPID = 4;   // rajada: até 1 s, uma bala a cada 7 quadros (4 com tiro rápido)
+let fireCool = 0, burstT = 0, burstLock = false, burstShots = 0;
+// rajada: 10 tiros bem juntos (um a cada 4 quadros), no máximo 1 s; com tiro rápido, 15 tiros a cada 3 quadros
+const BURST_FRAMES = 60, BURST_SHOTS = 10, BURST_GAP = 4, BURST_SHOTS_RAPID = 15, BURST_GAP_RAPID = 3;
 
 function update() {
   frame++;
@@ -55,18 +56,20 @@ function update() {
   px += steer * 2;
   bank += (steer - bank) * 0.18;                 // inclinação suave das asas
   scroll += sp;
-  // disparo em RAJADA: segurando o gatilho, sai uma bala a cada BURST_GAP quadros por até
-  // BURST_FRAMES (1 s); depois a rajada acaba e é preciso soltar e apertar de novo.
-  // TIRO RÁPIDO encurta o intervalo; TIRO TRIPLO faz cada bala sair em leque de três.
+  // disparo em RAJADA: segurando o gatilho saem BURST_SHOTS balas (10), uma a cada BURST_GAP
+  // quadros, no máximo por BURST_FRAMES (1 s); depois é preciso soltar e apertar de novo.
+  // TIRO RÁPIDO: mais balas e mais juntas; TIRO TRIPLO: cada bala sai em leque de três.
   tickPowerups();
   if (safeT > 0) safeT--;
   if (isOcean() && tp.some(t => 'xXbB'.includes(t.key) && t.key.length === 1)) useBomb();   // 2º botão: bomba
   if (hurtT > 0) hurtT--;
   if (fireCool > 0) fireCool--;
-  if (!(keys[' '] || keys.z)) { burstT = 0; burstLock = false; }            // soltou: rajada nova liberada
+  if (!(keys[' '] || keys.z)) { burstT = 0; burstShots = 0; burstLock = false; }   // soltou: rajada nova liberada
   else if (!burstLock) {
-    if (++burstT > BURST_FRAMES) burstLock = true;                          // acabou a rajada
+    const maxShots = pw.rapid > 0 ? BURST_SHOTS_RAPID : BURST_SHOTS;
+    if (++burstT > BURST_FRAMES || burstShots >= maxShots) burstLock = true;   // acabou a rajada
     else if (fireCool <= 0) {
+      burstShots++;
       const x = px + PW / 2 - 1, Y = scroll + py + PH;
       missiles.push({ x, Y, vx: 0 });
       if (pw.triple > 0) missiles.push({ x: x - 3, Y: Y - 2, vx: -1.1 }, { x: x + 3, Y: Y - 2, vx: 1.1 });

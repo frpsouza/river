@@ -52,7 +52,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | ← → (A D) | mover o jato |
 | ↑ (W) | clássico: acelerar · moderno: subir na tela |
 | ↓ (S) | clássico: frear · moderno: descer na tela |
-| Espaço (Z) | atirar em rajada: segure até 1 s; para outra rajada, solte e aperte de novo |
+| Espaço (Z) | atirar em rajada de 10 tiros (até 1 s); para outra rajada, solte e aperte de novo |
 | X ou B | soltar uma bomba do estoque (modo oceano) |
 | Enter ou Espaço | iniciar (na tela de título) |
 | setas, 1–5 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
@@ -789,6 +789,19 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
   - depois de soltar e apertar, a rajada recomeça;
   - começar segurando Espaço não dispara nada.
 - Para ajustar: `BURST_FRAMES`, `BURST_GAP` e `BURST_GAP_RAPID` em `js/update.js`.
+
+## Mudanças da versão 31 — rajada de 10 tiros, mais juntos
+
+### 55. Rajada com número fixo de tiros
+- **Antes (v30):** uma bala a cada 7 quadros durante até 1 s (≈ 9 balas, a ~63 px uma da outra).
+- **Agora:** cada aperto do gatilho dá uma rajada de **10 tiros**, um a cada **4 quadros**, com as balas a **~36 px** umas das outras (bem mais juntas).
+  - Os 10 tiros saem em ~0,6 s.
+  - A rajada termina ao completar os 10 tiros, ao chegar a 1 s ou ao soltar o gatilho, o que vier primeiro.
+  - Para outra rajada, é preciso **soltar e apertar de novo**.
+- **Tiro rápido (power-up):** 15 tiros, um a cada 3 quadros (~27 px entre balas).
+- **Tiro triplo:** cada um dos tiros sai em leque de três.
+- **Medido:** segurando por 2 s, saíram 10 tiros (do quadro 0 ao 36) e nenhum depois. Ao soltar e apertar, saíram mais 10. Com tiro rápido, 15 e 15.
+- Para ajustar: `BURST_SHOTS`, `BURST_GAP`, `BURST_SHOTS_RAPID`, `BURST_GAP_RAPID` e `BURST_FRAMES` em `js/update.js`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
