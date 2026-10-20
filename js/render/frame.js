@@ -158,39 +158,48 @@ function drawTitle() {
 // HUD dos modos de voo livre: no topo, por cima do cenário (pílulas translúcidas)
 function drawHudTop() {
   const pill = (x, y, w, h) => { rrect(x, y, w, h, h / 2); ctx.fillStyle = 'rgba(12,15,28,.55)'; ctx.fill(); };
+  const narrow = W < 300;                                            // oceano (240 px): HUD compacto
   // placar e modo
-  pill(6, 5, 84, 20);
-  ctx.textAlign = 'left'; ctx.font = 'bold 14px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
-  ctx.fillText(String(score).padStart(6, '0'), 14, 20);
+  pill(6, 5, narrow ? 66 : 84, 20);
+  ctx.textAlign = 'left'; ctx.font = 'bold ' + (narrow ? 12 : 14) + 'px "Courier New", monospace'; ctx.fillStyle = '#e8ecf5';
+  ctx.fillText(String(score).padStart(6, '0'), narrow ? 12 : 14, narrow ? 19 : 20);
   ctx.font = 'bold 7px Arial, sans-serif'; ctx.fillStyle = { modern: '#9fe0ff', ocean: '#4fd1e0' }[mode] || '#ffc93c';
-  ctx.fillText(({ modern: 'MODERN', ocean: 'OCEAN' }[mode] || '') + (isOcean() ? (altTarget ? ' · ▲ HIGH' : ' · ▼ LOW') : ''), 14, 33);
+  ctx.fillText(({ modern: 'MODERN', ocean: 'OCEAN' }[mode] || '') + (isOcean() ? (altTarget ? ' · ▲ HIGH' : ' · ▼ LOW') : ''), 12, 33);
   if (isOcean() && altMsg > 0) {                              // aviso de troca de altitude
     ctx.globalAlpha = Math.min(1, altMsg / 30); ctx.textAlign = 'center'; ctx.font = 'bold 12px Arial, sans-serif';
     ctx.fillStyle = 'rgba(12,15,28,.6)'; rrect(W / 2 - 80, 62, 160, 20, 10); ctx.fill();
     ctx.fillStyle = altTarget ? '#9ff3ff' : '#ffc93c'; ctx.fillText(altText, W / 2, 76); ctx.globalAlpha = 1; ctx.textAlign = 'left';
   }
-  // vida: barra larga no centro, pisca quando está baixa
-  const f = hp / 100, hx = 104, hw = 118, low = f < 0.25 && frame % 20 < 10;
+  // bombas (oceano): até 4 ícones; com mais, um ícone e o contador "×N"
+  const bombIcon = (bx, on) => {
+    ctx.globalAlpha = on ? 1 : 0.3;
+    ell(bx, 16, 4.6, 4.6, on ? '#e5484d' : '#5c6378'); ctx.fillStyle = '#f5f2ea'; ctx.fillRect(bx + 1.6, 8.6, 1.4, 2.6);
+    ell(bx - 1.4, 14.6, 1.4, 1.4, 'rgba(255,255,255,.5)');
+    ctx.globalAlpha = 1;
+  };
+  let bombW = 0;
+  if (isOcean()) {
+    if (bombs > 4 || narrow) {
+      bombW = 46; pill(W - 6 - bombW, 5, bombW, 20); bombIcon(W - bombW + 6, bombs > 0);
+      ctx.fillStyle = bombs > 0 ? '#ffffff' : '#9097a8'; ctx.font = 'bold 11px Arial, sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText('×' + bombs, W - bombW + 14, 20);
+    } else {
+      const nb = Math.max(bombs, 1); bombW = nb * 13 + 8;
+      pill(W - 6 - bombW, 5, bombW, 20);
+      for (let k = 0; k < nb; k++) bombIcon(W - 6 - bombW + 10 + k * 13, k < bombs);
+    }
+  }
+  // vida: barra no centro (ocupa o espaço que sobrar), pisca quando está baixa
+  const hx = narrow ? 88 : 104, f = hp / 100, low = f < 0.25 && frame % 20 < 10;
+  const hw = Math.max(40, Math.min(118, W - hx - 20 - bombW));
   pill(hx - 14, 7, hw + 20, 16);
   ctx.fillStyle = '#e5484d'; ctx.font = 'bold 10px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('♥', hx - 5, 19);
   rrect(hx + 2, 11, hw, 8, 4); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
   if (f > 0) { rrect(hx + 2, 11, Math.max(8, hw * f), 8, 4); ctx.fillStyle = low ? '#ff8a8a' : f > 0.5 ? '#3fbf6a' : f > 0.25 ? '#ffc93c' : '#e5484d'; ctx.fill();
                rrect(hx + 2, 11, Math.max(8, hw * f), 3.5, 1.8); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fill(); }
-  // oceano: bombas disponíveis (no lugar das vidas, que lá não existem)
-  if (isOcean()) {
-    const nb = Math.max(bombs, 1);
-    pill(W - 14 - nb * 13, 5, nb * 13 + 8, 20);
-    for (let k = 0; k < nb; k++) {
-      const bx = W - 8 - nb * 13 + k * 13 + 6, on = k < bombs;
-      ctx.globalAlpha = on ? 1 : 0.3;
-      ell(bx, 16, 4.6, 4.6, on ? '#e5484d' : '#5c6378'); ctx.fillStyle = '#f5f2ea'; ctx.fillRect(bx + 1.6, 8.6, 1.4, 2.6);
-      ell(bx - 1.4, 14.6, 1.4, 1.4, 'rgba(255,255,255,.5)');
-      ctx.globalAlpha = 1;
-    }
-  }
-  // vidas (o jato em jogo não conta)
+  // vidas (o jato em jogo não conta; o oceano tem vida única)
   const n = Math.min(lives - (state === 'play' ? 1 : 0), 4);
-  if (n > 0) { pill(W - 10 - n * 15, 5, n * 15 + 4, 20); for (let k = 0; k < n; k++) drawJet(W - 4 - n * 15 + k * 15 + 6, 7, 0, 0.8, false); }
+  if (n > 0 && !isOcean()) { pill(W - 10 - n * 15, 5, n * 15 + 4, 20); for (let k = 0; k < n; k++) drawJet(W - 4 - n * 15 + k * 15 + 6, 7, 0, 0.8, false); }
   // power-ups ativos, logo abaixo da vida
   drawPowerHud(hx + 2, 28);
 }

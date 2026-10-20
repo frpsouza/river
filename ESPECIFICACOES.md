@@ -803,6 +803,18 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Medido:** segurando por 2 s, saíram 10 tiros (do quadro 0 ao 36) e nenhum depois. Ao soltar e apertar, saíram mais 10. Com tiro rápido, 15 e 15.
 - Para ajustar: `BURST_SHOTS`, `BURST_GAP`, `BURST_SHOTS_RAPID`, `BURST_GAP_RAPID` e `BURST_FRAMES` em `js/update.js`.
 
+## Mudanças da versão 32 — Ocean e Retro Ocean com a mesma jogabilidade
+
+### 56. Mesma área de jogo, só o desenho muda
+- **Antes:** a lógica dos dois modos já era a mesma, mas a **área de jogo** era diferente. O Ocean usava 304×368 unidades e o Retro 240×320, e isso mudava o tamanho do campo, a distância entre inimigos, o espaço de manobra e a proporção dos objetos na tela.
+- **Agora os dois usam 240×320** (`W = 240`, `VIEW_H = 320` em `newGame()`):
+  - o **Ocean** desenha em **vetor a 2×** (canvas de 480×640, nítido, sem pixelização);
+  - o **Retro Ocean** continua em **pixel art a 1×** (240×320 reais, ampliado sem suavização).
+  - Os dois aparecem com a mesma proporção (3:4) e o mesmo tamanho na página (480×640 no PC; largura toda no celular).
+- **Ficam iguais:** campo, velocidades, inimigos, chefes, bombas, power-ups, altitude e colisões. O que muda é só o desenho: vetorial e flat no Ocean, pixel art com paleta de 32 cores no Retro.
+- **HUD compacto no Ocean**, para caber na largura menor: placar menor à esquerda, barra de vida no meio (ocupando o espaço que sobra) e o estoque de bombas como **um ícone com contador** ("×9") à direita. Fora do oceano o HUD do topo não muda.
+- A troca do tamanho do canvas fica em `syncCanvas()` (`js/render/canvas.js`), na tabela `SCREENS`.
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

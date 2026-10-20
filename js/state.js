@@ -20,8 +20,9 @@ let state, scroll, px, fuel, lives, score, nextLife, checkpoint, missiles = [], 
 
 function newGame() {
   // retro: 240×320 de verdade · pico: lógica em 256×224, desenhada pela metade = 128×112 + HUD de 16 px
-  W = mode === 'retro' ? 240 : mode === 'pico' ? 256 : W_NORMAL;
-  VIEW_H = mode === 'pico' ? 224 : isClassic() ? SCREEN_H - PANEL_H : mode === 'retro' ? 320 : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
+  // ocean e retro: MESMA área de jogo (240×320), só o desenho muda (vetorial em 2× × pixel art em 1×)
+  W = isOcean() ? 240 : mode === 'pico' ? 256 : W_NORMAL;
+  VIEW_H = mode === 'pico' ? 224 : isClassic() ? SCREEN_H - PANEL_H : isOcean() ? 320 : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
   newOceanGame();
   seed = (Math.random() * 1e9) | 0;
   rng = mulberry32(seed);
