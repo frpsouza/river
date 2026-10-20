@@ -1,0 +1,116 @@
+# River Raid (clone) — especificações e mudanças
+
+Arquivos: `index.html` (página), `game.js` (jogo), `sprites/` (sprites extraídos de `river.png`).
+Para jogar: abrir `index.html` no navegador e apertar **Enter**.
+
+## Especificações do jogo
+
+### Tela
+- Área de jogo: 304 × 320 px, mais um painel de 48 px com placar, medidor de combustível e vidas.
+- O jato fica na parte de baixo da área de jogo, na linha logo acima do placar. A tela rola de baixo para cima.
+
+### Controles
+| Tecla | Ação |
+|---|---|
+| ← → (A D) | mover o jato |
+| ↑ (W) | acelerar |
+| ↓ (S) | frear |
+| Espaço (Z) | atirar (um míssil por vez) |
+| Enter | iniciar / voltar ao título |
+
+### Geração automática do mapa (segundo `river-raid-comentarios.md`)
+- Uma **seção** tem 16 blocos; o último é a **ponte**.
+- Cada **bloco** tem 32 linhas de 2 px (64 px de altura) e sorteia o formato do rio: largura, posição e, às vezes, uma ilha.
+- Cada bloco recebe um objeto sorteado: combustível, navio, helicóptero, casa, tanque ou balão. Aviões aparecem de vez em quando, e a ponte pode ter um tanque atravessando.
+- O rio começa largo e estreita conforme a dificuldade sobe (veja a mudança 6).
+- As margens de blocos vizinhos se emendam. Cada margem anda no máximo 40 px por bloco, para o jato conseguir seguir o rio.
+- O bloco antes da ponte afunila o rio (cerca de 94 px), e a ponte tem uma abertura de 64 px.
+- O verde da margem alterna entre claro e escuro a cada seção.
+
+### Objetos e pontuação
+| Objeto | Comportamento | Pontos |
+|---|---|---|
+| Navio | patrulha na horizontal | 30 |
+| Helicóptero | patrulha na horizontal | 60 |
+| Avião | cruza a tela rápido quando o jogador se aproxima | 100 |
+| Combustível | atirar destrói; passar por cima reabastece | 80 |
+| Ponte | destruída com um míssil | 500 |
+| Casa | só cenário; o míssil passa, mas bater nela mata | — |
+| Tanque na margem | patrulha em terra e atira projéteis na direção do rio; não dá para acertá-lo | — |
+| Tanque na ponte | atravessa a estrada; dá para acertá-lo sobre o rio, e ele cai se a ponte for destruída | 250 |
+| Balão | flutua devagar, balançando, sobre o rio e a terra | 60 |
+
+- Ganha-se uma vida extra a cada 10.000 pontos. Começa-se com 3 vidas.
+- Morre-se ao bater em margem, ilha, ponte ou inimigo, ou ao ficar sem combustível.
+- Depois de passar por uma ponte, o jogador recomeça dali ao morrer. Antes disso, recomeça no início da seção.
+
+### Sprites
+Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, helicóptero (hélice animada), navio, avião, casa com árvore, tanque (esteiras animadas), balão e o jato do jogador. Os PNGs extraídos de `river.png` continuam em `sprites/` como referência, mas o jogo não os usa mais.
+
+## Mudanças desta versão
+
+### 1. Margens e ilhas em curva, sem pixels
+- **Antes:** as margens eram desenhadas em degraus de 2 px, e as ilhas eram retângulos aproximados.
+- **Agora:**
+  - A transição entre blocos usa uma curva suave (smoothstep), sem arredondar em degraus. A margem sai e chega na horizontal, sem quebra de inclinação entre blocos.
+  - As margens são desenhadas como polígonos contínuos, e a rolagem é sub-pixel.
+  - As ilhas têm formato de elipse com pontas arredondadas, que começa e termina com largura zero.
+  - A colisão usa a mesma geometria suave que é desenhada.
+- Para ajustar: `smooth()` e o laço da ilha em `genBlock()`, e `drawTerrain()` no `game.js`.
+
+### 2. Jato mais abaixo
+- A base do jato passou de 54 px para 6 px acima do painel (`PLAYER_Y`). Ele fica na linha logo acima do placar e o jogador enxerga mais rio à frente.
+- Os míssils, colisões e o ponto de recomeço acompanham a nova posição.
+
+### 3. Início mais lento
+| | Antes | Agora |
+|---|---|---|
+| Velocidade normal | 2 px/quadro | 1,1 px/quadro |
+| Acelerando | 3 | 1,9 |
+| Freando | 1 | 0,6 |
+| Movimento lateral | 2,5 | 2 |
+| Consumo de combustível | 0,045 por quadro | 0,04 por quadro (1,2× acelerando) |
+
+- A velocidade aumenta 7% a cada seção, até a 8ª seção (+56%). O jogo começa tranquilo e fica mais difícil conforme se avança.
+
+## Mudanças da versão 3 — visual vetorial e inclinação do jato
+
+### 4. Sprites e terreno em estilo vetorial / flat design
+- **Antes:** os sprites eram PNGs em pixel art copiados do mapa original, e o terreno era de cor chapada.
+- **Agora:** tudo é desenhado com formas vetoriais. O canvas é renderizado em resolução 2× para as bordas ficarem nítidas.
+- **Sombreamento:**
+  - Os objetos têm um lado iluminado e outro sombreado, além de sombra projetada no chão ou na água.
+  - O tanque de combustível tem brilho cilíndrico. O helicóptero tem barriga escura e cabine de vidro. O navio tem casco em dois tons e esteira. O avião tem a asa de baixo mais escura.
+- **Margens e ilhas:** ganharam uma faixa de água rasa mais clara, sombra escura na beira e uma faixa de luz no lado da terra. Há arbustos com sombra e destaque, e marolas na água em posições fixas por bloco.
+- **Ponte:** estrada com meio-fio, faixa amarela tracejada e deck de madeira com tábuas e sombra na água. Quando a ponte é destruída, sobram só as pontas quebradas.
+- **Painel:** fundo em degradê, medidor de combustível arredondado (vermelho → amarelo → verde) com marcações e ponteiro, e vidas com o jato em miniatura.
+- **Explosões:** círculos concêntricos que somem aos poucos.
+- O desenho é feito em 3 passadas: água e sombras, depois a terra, depois luz e detalhes. Isso evita marcas nas emendas entre blocos.
+
+### 5. O jato inclina as asas
+- Ao mover para a esquerda ou para a direita, o jato gira sobre o eixo cabine–bocal, com transição suave (`bank` vai de −1 a 1).
+- A asa que desce fica mais curta, por causa da perspectiva, e mais escura, porque mostra a parte de baixo. A asa que sobe fica mais longa e mais clara.
+- A cabine e a deriva se deslocam para o lado da curva, e a chama do bocal pisca.
+- Para ajustar: `drawJet()` no `game.js` (o ângulo é `bank × 0,9 rad`).
+
+## Mudanças da versão 4 — tanques, balões e rio que estreita com a dificuldade
+
+### 6. Rio largo no início, estreito só com a dificuldade
+- **Antes:** qualquer bloco podia sortear um rio de 70 px desde a primeira seção.
+- **Agora:** a largura mínima sorteada depende da dificuldade `d` (seção 0 → 0, seção 8 em diante → 1). Ela vai de 150 px no começo até 70 px na dificuldade máxima. Com a dificuldade, o sorteio também favorece larguras menores (`rng()^(1+d)`).
+- Num teste, o trecho mais estreito de cada seção ficou entre ~145 e 175 px nas primeiras seções e caiu para ~65–75 px por volta da 7ª–8ª.
+- A ponte (64 px) e o afunilamento antes dela não mudaram.
+- Para ajustar: `wMin` em `genBlock()`.
+
+### 7. Tanques de guerra
+- **Na margem:** patrulham em terra, com esteiras animadas e o canhão virado para o rio. De tempos em tempos (a cada ~2–3 s) disparam um projétil na horizontal, e ser atingido mata.
+- **Na ponte:** atravessam pela estrada. Dá para acertá-los com o míssil quando passam sobre o rio (250 pontos). Se a ponte for destruída com o tanque sobre o vão, ele cai.
+- O míssil agora testa os objetos antes da ponte, para poder acertar o tanque que está em cima dela.
+
+### 8. Balões
+- Balões de ar quente listrados (vermelho e branco ou amarelo), com cesto e sombra deslocada na água, porque estão no ar.
+- Flutuam devagar de um lado para o outro, balançando. Valem 60 pontos, e bater neles mata.
+
+## Observações
+- Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
+- O som são só bipes simples.
