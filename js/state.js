@@ -62,7 +62,7 @@ function addScore(n) {
 // Devolve true se o jato caiu (o chamador deve parar o passo).
 function hurt(dmg) {
   if (isClassic()) { kill(); return true; }
-  if (hurtT > 0 || safeT > 0) return false;
+  if (hurtT > 0 || safeT > 0 || (isOcean() && maneuver)) return false;   // em manobra (looping/mergulho) não leva dano
   hp -= dmg; hurtT = 45;
   beep(150, 0.12, 'square', 0.05);
   fx.push({ x: px + PW / 2, y: scroll + py + PH / 2, t: 16, life: 16, kind: 'spark', parts: burst(8, 2, { col: '#ffc93c', r: 1, life: 16 }) });

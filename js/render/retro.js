@@ -294,7 +294,12 @@ function drawRetro() {
   // jato
   if (state === 'play') {
     ell(px + PW / 2 + 7 + 22 * altT, VIEW_H - py - PH * 0.35 + 9 + 34 * altT, PW * 0.4, 3, 'rgba(0,0,30,.25)');
-    if (!((safeT > 0 || hurtT > 0) && frame % 10 < 5)) blitC(jetSprite(clamp(Math.round(bank * 4), -4, 4), frame % 4 < 2 ? 1 : 0), px + PW / 2, VIEW_H - py - PH / 2);
+    if (!((safeT > 0 || hurtT > 0) && frame % 10 < 5)) {
+      const mp = maneuverPose(), js = jetSprite(clamp(Math.round(bank * 4), -4, 4), frame % 4 < 2 ? 1 : 0);
+      const jcx = Math.round(px + PW / 2), jcy = Math.round(VIEW_H - py - PH / 2 + mp.dy);
+      ctx.save(); ctx.translate(jcx, jcy); ctx.scale(mp.sx * mp.s, mp.sy * mp.s);   // looping / mergulho
+      ctx.drawImage(js, -Math.round(js.width / 2), -Math.round(js.height / 2)); ctx.restore();
+    }
     drawShield(px + PW / 2, VIEW_H - py - PH / 2);
   }
   fxNoLabel = true; fx.forEach(drawExplosion); fxNoLabel = false;

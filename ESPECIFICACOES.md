@@ -835,6 +835,24 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - O Classic, o Modern e o PICO-8 não mudam.
 - Para ajustar: `drawHudBottom()` e `HUD_BOMBS_PER_ROW` (`js/render/frame.js`); o HUD em pixel em `drawRetroHud()` (`js/render/retro.js`).
 
+## Mudanças da versão 34 — looping e mergulho na troca de altitude
+
+### 58. Manobras do jato ao subir e descer (Ocean e Retro Ocean)
+- **Subindo (rasante → acima das nuvens): looping completo**, em 96 quadros (1,6 s).
+  - O jato sobe na tela (até 46 px) e volta.
+  - O desenho vira de cabeça para baixo no meio, porque o nariz passa por cima.
+  - Ele cresce até 40% no topo, por ficar mais perto da câmera.
+- **Descendo (acima das nuvens → rasante): mergulho em parafuso**, em 84 quadros (1,4 s).
+  - O jato dá um giro completo no próprio eixo.
+  - O desenho encurta até 30% da altura, porque o nariz aponta para o mar, e diminui até 75%.
+  - Ele afunda um pouco na tela e volta.
+- **Rastros de condensação:** saem das pontas das asas a cada 2 quadros. Ficam presos ao mundo e se espalham conforme a câmera anda.
+- **Som:** um ronco que sobe no looping e um assobio que desce no mergulho, além do arpejo de altitude.
+- **Durante a manobra o jato está fora do plano de combate:** não atira e não leva dano (tiros, trombadas e caças passam). Ao terminar, tudo volta ao normal.
+- **Onde vale:** em toda troca de altitude, inclusive na subida para a luta com o chefe e na descida depois dela, no vetorial (Ocean) e na pixel art (Retro, escalando por vizinho mais próximo).
+- **Medido:** no meio do looping, um tiro em cima do jato não tirou vida e o gatilho não disparou. Depois da manobra, o tiro voltou.
+- Para ajustar: `maneuverPose()`, `stepManeuver()` e as durações em `setAltitude()` (`js/ocean.js`).
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

@@ -73,7 +73,11 @@ function draw() {
   }
   if (state === 'play') {
     if ((safeT > 0 || hurtT > 0) && frame % 10 < 5) ctx.globalAlpha = 0.35;   // pisca enquanto está protegido
-    drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC * (isOcean() ? 1 + 0.12 * altT : 1), true);   // no alto, mais perto da câmera
+    const mp = isOcean() ? maneuverPose() : { dy: 0, sx: 1, sy: 1, s: 1 };   // looping / mergulho
+    const jcx = px + PW / 2, jcy = VIEW_H - py - PH / 2 + mp.dy;
+    ctx.save(); ctx.translate(jcx, jcy); ctx.scale(mp.sx * mp.s, mp.sy * mp.s); ctx.translate(-jcx, -jcy);
+    drawJet(jcx, jcy - PH / 2, bank, JET_SC * (isOcean() ? 1 + 0.12 * altT : 1), true);   // no alto, mais perto da câmera
+    ctx.restore();
     ctx.globalAlpha = 1;
   }
   if (state === 'play') drawShield(px + PW / 2, VIEW_H - py - PH / 2);

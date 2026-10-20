@@ -61,11 +61,12 @@ function update() {
   // TIRO RÁPIDO: mais balas e mais juntas; TIRO TRIPLO: cada bala sai em leque de três.
   tickPowerups();
   if (safeT > 0) safeT--;
+  if (isOcean()) stepManeuver();
   if (isOcean() && tp.some(t => 'xXbB'.includes(t.key) && t.key.length === 1)) useBomb();   // 2º botão: bomba
   if (hurtT > 0) hurtT--;
   if (fireCool > 0) fireCool--;
   if (!(keys[' '] || keys.z)) { burstT = 0; burstShots = 0; burstLock = false; }   // soltou: rajada nova liberada
-  else if (!burstLock) {
+  else if (!burstLock && !(isOcean() && maneuver)) {               // em manobra o jato não atira
     const maxShots = pw.rapid > 0 ? BURST_SHOTS_RAPID : BURST_SHOTS;
     if (++burstT > BURST_FRAMES || burstShots >= maxShots) burstLock = true;   // acabou a rajada
     else if (fireCool <= 0) {
@@ -166,7 +167,7 @@ function update() {
           else if (hp < 100) { hp = Math.min(100, hp + 0.8); if (frame % 4 === 0) beep(620 + hp * 3, 0.03, 'sine', 0.03); }   // posto: recupera a vida
         }
         else if (o.type === 'pu') collectPowerup(o);                         // coleta imediata
-        else if (safeT > 0 && o.type !== 'house') { /* recém-renascido: atravessa sem bater */ }
+        else if ((safeT > 0 || (isOcean() && maneuver)) && o.type !== 'house') { /* recém-renascido ou em manobra: atravessa sem bater */ }
         else if (!isClassic() && (o.type === 'house' || o.type === 'tank' || o.type === 'carrier')) { /* no chão/no mar: o jato passa por cima */ }
         else if (isOcean() && o.type === 'ship') { /* oceano: o jato sobrevoa os navios (mas eles atiram) */ }
         else if (pw.shield > 0 && o.type !== 'house') {
