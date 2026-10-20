@@ -23,17 +23,23 @@ function genCliffs(blk, prev) {
   const r = mulberry32(blk.seed ^ 0x6d7a11);
   const d = Math.min(blk.s - CLIFF_FROM, 6) / 6;      // 0 → 1 nas seis seções seguintes
   const closing = blk.bridge || blk.b === BLOCKS_PER_SECTION - 2;   // abre o cânion antes da ponte
+  // sorteio dos paredões: o mesmo para as duas margens (espelhados, acompanhando o rio simétrico),
+  // a não ser durante um episódio de assimetria do rio, quando cada lado sorteia o seu
+  let shared = null;
+  const pick = start => ({ roll: r(), width: 14 + r() * (12 + 18 * d), ph: r() * 6.28, start });
   for (const left of [true, false]) {
     const arr = left ? blk.cliffL : blk.cliffR;
     const start = prev ? (left ? prev.cliffL : prev.cliffR)[LINES - 1] : 0;
     const land = i => left ? blk.L[i] : W - blk.R[i];   // terra disponível na linha i
     let target = 0;
+    const p = blk.asym || !shared ? pick(start) : shared;
+    if (!blk.asym && !shared) shared = p;
     const want = blk.b < CALM_BLOCKS ? false                       // zona de respiro depois da ponte
-      : start > 0 ? r() < 0.75 : r() < 0.22 + 0.4 * d;              // continua um paredão ou começa outro
-    const width = 14 + r() * (12 + 18 * d);
+      : p.start > 0 ? p.roll < 0.75 : p.roll < 0.22 + 0.4 * d;     // continua um paredão ou começa outro
+    const width = p.width;
     if (!closing && want) target = Math.min(width, land(LINES - 1) - 8);
     if (target < 8) target = 0;
-    const ph = r() * 6.28;
+    const ph = p.ph;
     for (let i = 0; i < LINES; i++) {
       let w = start + (target - start) * smooth(i / (LINES - 1));
       if (w < 2) { arr[i] = 0; continue; }

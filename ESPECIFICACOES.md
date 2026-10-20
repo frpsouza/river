@@ -716,6 +716,22 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Mapeamento no Android:** A/R2/centro do direcional = atirar · B = bomba · X/Y = −/+ · L1/R1 = ponte anterior/próxima · Start = começar · direcional = setas · analógico esquerdo = movimento contínuo.
 - **Testado com um controle simulado nos 5 modos:** o Start começou o jogo, o analógico moveu o jato e o A atirou em todos eles, e o aviso apareceu. A parte nativa do Android compila, mas ainda precisa ser testada num aparelho com controle.
 
+## Mudanças da versão 27 — rio simétrico com quebras pontuais
+
+### 51. Rio simétrico (Classic, Modern e PICO-8)
+- **Antes:** a cada bloco o rio sorteava largura **e** posição, e serpenteava de um lado para o outro o tempo todo.
+- **Agora:** o rio fica **centralizado e espelhado**. A largura continua sorteada por bloco, e as duas margens alargam e estreitam juntas, como uma respiração.
+  - As ilhas já nascem no centro do rio, então também ficam simétricas.
+  - No moderno, os paredões de rocha passam a ser **espelhados** (mesmo sorteio, mesma largura e mesmo recorte dos dois lados).
+- **Quebras de simetria pontuais:** de vez em quando começa um **episódio de assimetria**.
+  - O rio desvia 28–73 px para um lado durante 1 a 3 blocos e depois volta ao centro.
+  - A chance de começar um episódio é de 14% por bloco no começo e chega a 26% na dificuldade máxima.
+  - Nunca acontece na zona de respiro (início da seção) nem nos 3 blocos antes da ponte, que sempre chega centralizada.
+  - Durante o episódio, cada margem sorteia o seu paredão.
+- **Medido em 30 seções por modo:** ~80% dos blocos simétricos, cerca de 1 episódio de assimetria por seção, com duração média de 2,4 blocos. A largura mínima e a jogabilidade não mudaram.
+- O oceano e o retro não têm margens, por isso não mudam.
+- Para ajustar: o bloco "rio SIMÉTRICO" em `genBlock()` (`js/terrain.js`).
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.

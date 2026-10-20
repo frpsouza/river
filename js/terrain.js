@@ -52,11 +52,17 @@ function genBlock(g) {
     const wMin = 150 - 80 * d;                               // 150 px no início, 70 px na dificuldade máxima
     tw = wMin + (264 - wMin) * Math.pow(rng(), 1 + d);
     if (b === BLOCKS_PER_SECTION - 2) tw = 94;            // afunila antes da ponte
-    tc = 12 + tw / 2 + rng() * (W - 24 - tw);
-    if (b < CALM_BLOCKS) {                                // zona de respiro: largo e quase reto
-      tw = Math.max(tw, 180);
-      tc = prev.endC + (rng() - 0.5) * 24;
-    }
+    if (b < CALM_BLOCKS) tw = Math.max(tw, 180);          // zona de respiro: largo
+    // rio SIMÉTRICO: centralizado, as duas margens alargam e estreitam juntas. De vez em quando
+    // um "episódio" de assimetria (1 a 3 blocos) desvia o rio para um lado e depois ele volta
+    // ao centro — quebra o ritmo. Nunca na zona de respiro nem perto da ponte.
+    const pa = prev.asym;
+    let asym = pa && pa.left > 0 ? { left: pa.left - 1, off: pa.off } : null;
+    if (!asym && b >= CALM_BLOCKS && b < BLOCKS_PER_SECTION - 3 && rng() < 0.14 + 0.12 * d)
+      asym = { left: Math.floor(rng() * 3), off: (rng() < 0.5 ? -1 : 1) * (28 + rng() * 45) };
+    if (b >= BLOCKS_PER_SECTION - 3) asym = null;
+    blk.asym = asym;
+    tc = clamp(W / 2 + (asym ? asym.off : 0), 12 + tw / 2, W - 12 - tw / 2);
     // as margens só podem andar MAXD px por bloco, para o jato conseguir seguir o rio
     const pL = prev.endC - prev.endW / 2, pR = prev.endC + prev.endW / 2;
     const open = b < CALM_BLOCKS ? 60 : MAXD;             // na zona de respiro as margens abrem mais depressa
