@@ -81,7 +81,7 @@ function genBlock(g) {
     }
   }
   blocks.push(blk);   // antes de gerar objetos, que consultam o próprio bloco
-  blk.mtns = genMountains(blk);                       // só no modo moderno (mountains.js)
+  genCliffs(blk, g > 0 ? blocks[g - 1] : null);       // paredões de rocha, só no modo moderno (cliffs.js)
   spawnObjs(blk);
   return blk;
 }

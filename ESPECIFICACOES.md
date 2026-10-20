@@ -14,7 +14,8 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 3 | `audio.js` | bipes sintetizados (Web Audio) |
 | 4 | `terrain.js` | geração procedural do rio: blocos, seções, ponte, ilhas, dificuldade |
 | 5 | `objects.js` | objetos de cada bloco (inimigos, combustível, casas, tanques, balões) e altitude dos helicópteros |
-| 5b | `mountains.js` | montanhas do modo moderno: geração por bloco e colisão (triângulos) |
+| 5b | `cliffs.js` | paredões de rocha do modo moderno, ao longo da beira do rio: geração e colisão |
+| 5c | `powerups.js` | power-ups do modo moderno: sorteio, coleta, efeitos, som, desenho e ícones no painel |
 | 6 | `state.js` | estado da partida e modo de jogo (`mode`): começar, renascer no checkpoint, pontuar, morrer |
 | 7 | `effects.js` | explosões: receitas por tipo, física das partículas e desenho |
 | 8 | `gameover.js` | tela de fim de jogo navegável (rolagem, pontes, velocidade) |
@@ -283,6 +284,37 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - **PWA:** manifesto, ícone próprio e service worker. Instala no Android pelo Chrome e funciona offline quando servido por http(s).
 - **App Android** (`android/`): um WebView em tela cheia, em retrato, com a tela sempre acesa.
 - **Exportação:** `scripts/export-android.sh` copia o jogo para o app e gera `dist/river-raid.apk` quando há JDK 17 e Android SDK. A máquina ainda não tem esses dois. Veja o `ANDROID.md`.
+
+## Mudanças da versão 11 — paredões de rocha, power-ups e APK
+
+### 22. Montanhas viram paredões de rocha ao longo do rio
+- **Antes:** havia picos isolados no meio da terra.
+- **Agora:** as formações rochosas acompanham a beira do rio, como margens mais altas, numa faixa de 14 a 44 px colada na água, do lado da terra.
+  - Onde há paredão dos dois lados, o rio vira um cânion e o jogador precisa voar sobre a água.
+  - Os paredões continuam de um bloco para o outro sem degraus, têm borda recortada e se abrem antes de cada ponte.
+- **Quando aparecem:** a partir da 3ª seção. A chance de começar um paredão vai de 22% a 62%, e a largura cresce com a dificuldade. Um paredão existente continua no bloco seguinte com 75% de chance.
+- **Visual:** topo de rocha claro, face voltada para o rio (escura do lado esquerdo e iluminada do direito), aresta iluminada, pedras salientes vistas de lado e sombra projetada.
+- **Colisão:** a faixa mata o jato e detém o míssil. Casas, tanques e power-ups não nascem dentro dela.
+
+### 23. Power-ups (modo moderno)
+- Aparecem em ~16% dos blocos, flutuando com um halo pulsante. São coletados assim que encostam no avião, sem precisar atirar.
+
+| Power-up | Cor | Efeito |
+|---|---|---|
+| Escudo | azul | 8 s: inimigos e projéteis explodem no escudo (que pisca ao acabar). Não protege de paredões nem da falta de combustível. |
+| Tiro triplo | laranja | 10 s: cada disparo sai em leque de três mísseis |
+| Tiro rápido | amarelo | 10 s: dispara a cada 9 quadros, sem esperar o míssil anterior |
+| Bomba | vermelho | destrói na hora todos os inimigos na tela (com pontos) e os projéteis |
+| Vida extra | verde | +1 vida |
+
+- **Animação de coleta:** clarão, dois anéis (um na cor do power-up e um branco), faíscas coloridas, oito estrelinhas girando e o nome do power-up subindo e sumindo.
+- **Som:** um arpejo de quatro notas próprio de cada um. A bomba desce, e os outros sobem.
+- **Painel:** os efeitos ativos aparecem com ícone e uma barra de tempo restante. O tiro rápido muda a cor dos mísseis.
+- O jogo agora controla vários mísseis ao mesmo tempo (`missiles`).
+
+### 24. APK Android gerado
+- O JDK 17, o Gradle 8.7 e o Android SDK 34 foram instalados na pasta pessoal (`~/.local`, `~/Android/Sdk`), sem `sudo`. As licenças do SDK foram aceitas na instalação.
+- `scripts/export-android.sh` agora gera `dist/river-raid.apk`, com ~100 KB, em modo debug.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

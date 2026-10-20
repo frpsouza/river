@@ -11,7 +11,7 @@ let bank = 0;
 
 let shells = [];
 
-let state, scroll, px, fuel, lives, score, nextLife, checkpoint, missile, fx, dyingT, keys, frame, audio;
+let state, scroll, px, fuel, lives, score, nextLife, checkpoint, missiles = [], fx, dyingT, keys, frame, audio;
 
 function newGame() {
   seed = (Math.random() * 1e9) | 0;
@@ -30,7 +30,7 @@ function respawn() {
   scroll = checkpoint * BH;
   const { b, i } = lineAt(scroll + PLAYER_Y);
   px = (b.L[i] + b.R[i]) / 2 - PW / 2;
-  fuel = 100; missile = null; fx = []; dyingT = 0; shells = [];
+  fuel = 100; missiles = []; fx = []; dyingT = 0; shells = []; resetPowerups();
   bank = 0;
   state = 'play';
 }

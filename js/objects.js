@@ -38,7 +38,7 @@ function spawnObjs(blk) {
       if (left && lmin >= 52) x = 6 + r() * (lmin - w - 12);
       else if (!left && W - rmax >= 52) x = rmax + 6 + r() * (W - rmax - w - 12);
       if (x === null) continue;
-      if (blk.mtns.some(p => x + w > p.x - p.hw && x < p.x + p.hw && Y < p.Y + p.h && Y + h > p.Y)) continue;
+      if (cliffHit(x - 2, x + w + 2, Y, Y + h)) continue;          // nunca dentro de um paredão
       if (type === 'house') blk.objs.push({ type, x, Y, w, h, alive: true, spr: r() < 0.5 ? 'house1' : 'house2' });
       else {
         // tanque na margem: patrulha em terra e atira para o lado do rio
@@ -64,6 +64,7 @@ function spawnObjs(blk) {
   if (blk.g > 3 && r() < 0.18)
     blk.objs.push({ type: 'plane', x: -100, Y: base + 22 * LINE, w: 25, h: 13, alive: true,
       dir: r() < 0.5 ? -1 : 1, active: false, vx: 2.2 + Math.min(blk.s, 10) * 0.1 });
+  spawnPowerup(blk, r);                              // modo moderno (powerups.js)
 }
 
 // altitude do helicóptero: 0,55 (baixo, pequeno) a 1,15 (alto, um pouco maior que o normal).

@@ -59,6 +59,15 @@ function boom(x, y, kind = 'heli', o = {}) {
   beep(f, d, kind === 'balloon' ? 'triangle' : 'sawtooth', 0.06);
 }
 
+function pickupFx(x, y, def) {
+  fx.push({ x, y, t: 60, life: 60, kind: 'pickup', label: def.name, labelCol: def.col, flash: 4,
+    rings: [[hexA(def.col, 0.9), 26, 22, 1], ['rgba(255,255,255,.9)', 14, 14, 1]],
+    parts: [...burst(14, 2.6, { col: def.col, r: 1.3, life: 30 }),
+            ...parts(8, k => P({ x: Math.cos(k * 0.785) * 6, y: Math.sin(k * 0.785) * 6, vx: Math.cos(k * 0.785) * 1.4, vy: Math.sin(k * 0.785) * 1.4,
+              shape: 'star', r: 2.2, vr: 0.2, col: '#ffffff', life: 26, delay: 3 }))] });
+}
+const hexA = (hex, a) => 'rgba(' + [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16)).join(',') + ',' + a + ')';
+
 function stepFx() {
   for (const e of fx) {
     e.t--;
@@ -104,6 +113,8 @@ function drawExplosion(e) {
       else if (p.shape === 'turret') {                                                      // torre do tanque voando
         ctx.beginPath(); ctx.moveTo(-p.r, 1); ctx.quadraticCurveTo(0, -p.r * 1.3, p.r, 1); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#4c5530'; ctx.fillRect(p.r * 0.4, -1, p.r * 1.6, 0.9);
+      } else if (p.shape === 'star') {                                                      // brilho de 4 pontas
+        poly([0, -p.r * 1.6, p.r * 0.4, -p.r * 0.4, p.r * 1.6, 0, p.r * 0.4, p.r * 0.4, 0, p.r * 1.6, -p.r * 0.4, p.r * 0.4, -p.r * 1.6, 0, -p.r * 0.4, -p.r * 0.4], p.col);
       } else if (p.shape === 'shred') {                                                     // retalho do balão
         ctx.beginPath(); ctx.moveTo(-p.r, -p.r * 0.4); ctx.lineTo(p.r, -p.r * 0.8); ctx.lineTo(p.r * 0.6, p.r * 0.7); ctx.closePath(); ctx.fill();
       }
@@ -111,4 +122,12 @@ function drawExplosion(e) {
     }
   }
   ctx.globalAlpha = 1;
+  if (e.label) {                                                     // nome do power-up subindo
+    const q = age / e.life;
+    ctx.globalAlpha = Math.min(1, (1 - q) * 2.2);
+    ctx.font = 'bold 10px Arial, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#0c0f1c'; ctx.fillText(e.label, sx + 0.8, sy - 14 - age * 0.45 + 0.8);
+    ctx.fillStyle = e.labelCol; ctx.fillText(e.label, sx, sy - 14 - age * 0.45);
+    ctx.globalAlpha = 1;
+  }
 }

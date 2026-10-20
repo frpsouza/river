@@ -4,6 +4,8 @@
 // Usa praticamente todos os módulos de lógica (state, terrain, objects, effects, gameover).
 'use strict';
 
+let fireCool = 0;
+
 function update() {
   frame++;
   const tp = taps; taps = [];
@@ -22,7 +24,7 @@ function update() {
   if (state === 'over') { updateOver(tp); return; }
   if (state === 'dying') {
     if (--dyingT <= 0) {
-      if (--lives <= 0) { state = 'over'; overT = 0; overDir = 1; overSpeed = 1.1; overTarget = null; missile = null; shells = []; }
+      if (--lives <= 0) { state = 'over'; overT = 0; overDir = 1; overSpeed = 1.1; overTarget = null; missiles = []; shells = []; resetPowerups(); }
       else respawn();
     }
     return;
@@ -35,9 +37,17 @@ function update() {
   px += steer * 2;
   bank += (steer - bank) * 0.18;                 // inclinação suave das asas
   scroll += sp;
-  if ((keys[' '] || keys.z) && !missile) {
-    missile = { x: px + PW / 2 - 1, Y: scroll + PLAYER_Y + PH };
-    beep(700, 0.08, 'square', 0.03);
+  // disparo: normalmente um míssil por vez; com TIRO RÁPIDO, um a cada 9 quadros;
+  // com TIRO TRIPLO, três em leque
+  tickPowerups();
+  if (fireCool > 0) fireCool--;
+  const canFire = pw.rapid > 0 ? fireCool === 0 : missiles.length === 0;
+  if ((keys[' '] || keys.z) && canFire) {
+    const x = px + PW / 2 - 1, Y = scroll + PLAYER_Y + PH;
+    missiles.push({ x, Y, vx: 0 });
+    if (pw.triple > 0) missiles.push({ x: x - 3, Y: Y - 2, vx: -1.1 }, { x: x + 3, Y: Y - 2, vx: 1.1 });
+    fireCool = 9;
+    beep(pw.rapid > 0 ? 900 : 700, 0.08, 'square', 0.03);
   }
 
   // combustível
@@ -56,9 +66,9 @@ function update() {
       if (b.bridge && !b.broken && i >= 10 && i <= 21) { kill(); return; }
     }
   } else {
-    // moderno: voa por cima de tudo, só não pode sair da tela nem bater nas montanhas
+    // moderno: voa por cima da terra; só não pode sair da tela nem bater num paredão de rocha
     px = clamp(px, 0, W - PW);
-    if (mountainHit(px, px + PW, pBot, pTop)) { kill(); return; }
+    if (cliffHit(px + 2, px + PW - 2, pBot + 2, pTop - 2)) { kill(); return; }
   }
   // checkpoint ao passar pela ponte
   const sec = Math.floor(pBot / BH / BLOCKS_PER_SECTION);
@@ -111,6 +121,10 @@ function update() {
       // colisão com jogador
       if (px1 > o.x + 1 && px0 < o.x + o.w - 1 && pTop > o.Y + 1 && pBot < o.Y + o.h - 1) {
         if (o.type === 'fuel') { fuel = Math.min(100, fuel + 1); if (frame % 4 === 0) beep(500, 0.03, 'sine', 0.03); }
+        else if (o.type === 'pu') collectPowerup(o);                         // coleta imediata
+        else if (pw.shield > 0 && o.type !== 'house' && !(mode === 'modern' && o.type === 'tank')) {
+          o.alive = false; addScore(10); boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);   // o escudo absorve
+        }
         else if (mode === 'modern' && (o.type === 'house' || o.type === 'tank')) { /* no chão: o jato passa por cima */ }
         else if (o.type !== 'house') { o.alive = false; boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o); kill(); return; }
         else { kill(); return; }
@@ -121,24 +135,24 @@ function update() {
   // projéteis dos tanques
   for (const sh of shells) {
     sh.x += sh.vx;
-    if (sh.x > px + 1 && sh.x < px + PW - 1 && sh.Y > pBot && sh.Y < pTop) { sh.dead = true; kill(); }
+    if (sh.x > px + 1 && sh.x < px + PW - 1 && sh.Y > pBot && sh.Y < pTop) { sh.dead = true; if (pw.shield <= 0) kill(); }
   }
   shells = shells.filter(sh => !sh.dead && sh.x > -6 && sh.x < W + 6 && sh.Y > scroll - 10);
   if (state !== 'play') return;
 
-  // míssil
-  if (missile) {
-    missile.Y += 9;
-    const my0 = missile.Y, my1 = missile.Y + 8;
-    let hit = missile.Y > scroll + VIEW_H;
+  // mísseis
+  for (const m of missiles) {
+    m.Y += 9; m.x += m.vx;
+    const my0 = m.Y, my1 = m.Y + 8;
+    let hit = m.Y > scroll + VIEW_H || m.x < -4 || m.x > W + 4;
     const { b, i } = lineAt(my1);
     if (mode === 'classic') {
-      if (missile.x < b.L[i] || missile.x > b.R[i] || (b.IL[i] >= 0 && missile.x > b.IL[i] && missile.x < b.IR[i])) hit = true;
-    } else if (peakHit(missile.x + 1, my1)) hit = true;                  // moderno: só a montanha para o míssil
+      if (m.x < b.L[i] || m.x > b.R[i] || (b.IL[i] >= 0 && m.x > b.IL[i] && m.x < b.IR[i])) hit = true;
+    } else if (cliffHit(m.x, m.x + 2, my1, my1)) hit = true;            // moderno: só o paredão para o míssil
     if (!hit) {
       for (let g = Math.max(0, g0); g <= g1 && !hit; g++) for (const o of blocks[g].objs) {
-        if (!o.alive || o.type === 'house') continue;
-        if (missile.x + 2 > o.x && missile.x < o.x + o.w && my1 > o.Y && my0 < o.Y + o.h) {
+        if (!o.alive || o.type === 'house' || o.type === 'pu') continue;
+        if (m.x + 2 > o.x && m.x < o.x + o.w && my1 > o.Y && my0 < o.Y + o.h) {
           o.alive = false; hit = true;
           addScore({ fuel: 80, ship: 30, heli: 60, plane: 100, tank: 250, balloon: 60 }[o.type]);
           boom(o.x + o.w / 2, o.Y + o.h / 2, o.type, o);
@@ -147,10 +161,11 @@ function update() {
       }
     }
     // a ponte é testada depois dos objetos, para o tanque sobre ela poder ser atingido
-    if (!hit && b.bridge && !b.broken && i >= 10 && i <= 21 && missile.x > b.L[16] - 3 && missile.x < b.R[16] + 3) {
+    if (!hit && b.bridge && !b.broken && i >= 10 && i <= 21 && m.x > b.L[16] - 3 && m.x < b.R[16] + 3) {
       b.broken = true; hit = true; addScore(500);
       boom(b.endC, b.g * BH + 16 * LINE, 'bridge');
     }
-    if (hit) missile = null;
+    m.dead = hit;
   }
+  missiles = missiles.filter(m => !m.dead);
 }

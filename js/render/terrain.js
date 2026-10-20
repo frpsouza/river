@@ -173,17 +173,40 @@ function drawCow(x, y, dir, phase) {
   ctx.restore();
 }
 
-function drawMountains(blk) {
-  // picos de trás primeiro; cada pico: rocha em dois tons, neve no topo, sombra no chão
-  for (const p of [...blk.mtns].sort((a, b) => (b.back ? 1 : 0) - (a.back ? 1 : 0))) {
-    const yb = VIEW_H - (p.Y - scroll), yt = yb - p.h;
-    ell(p.x + p.hw * 0.25, yb + 1, p.hw * 1.05, 2.4, 'rgba(0,0,30,.22)');
-    const rock = p.back ? '#7d8394' : '#9097a8', rockSh = p.back ? '#5f6577' : '#6f7588';
-    poly([p.x - p.hw, yb, p.x, yt, p.x + p.hw, yb], rock);
-    poly([p.x, yt, p.x + p.hw, yb, p.x + p.hw * 0.15, yb], rockSh);
-    const s = 0.34, sx = p.hw * s, sy = yt + p.h * s;                       // neve: terço de cima
-    poly([p.x, yt, p.x + sx, sy, p.x + sx * 0.35, sy - 2.2, p.x - sx * 0.2, sy + 1.2, p.x - sx, sy], '#f5f2ea');
-    poly([p.x, yt, p.x + sx, sy, p.x + sx * 0.35, sy - 2.2, p.x + 0.4, sy - 1], '#ddd8cc');
+function drawCliffs(blk) {
+  // paredão de rocha colado na água: topo claro, face voltada para o rio, borda recortada,
+  // pedras salientes (vistas de lado) e sombra projetada; luz vindo de cima à esquerda
+  const yAt = i => VIEW_H - (blk.g * BH + i * LINE + LINE / 2 - scroll);
+  const yBot = VIEW_H - (blk.g * BH - scroll) + 1, yTop = VIEW_H - ((blk.g + 1) * BH - scroll) - 1;
+  for (const left of [true, false]) {
+    const cw = left ? blk.cliffL : blk.cliffR;
+    if (!cw.some(v => v > 0)) continue;
+    const edge = i => left ? blk.L[i] : blk.R[i];
+    const outer = i => left ? blk.L[i] - cw[i] : blk.R[i] + cw[i];
+    const y = i => i === 0 ? yBot : i === LINES - 1 ? yTop : yAt(i);
+    const band = (fx, gx) => {                                     // polígono entre duas bordas
+      ctx.beginPath();
+      for (let i = 0; i < LINES; i++) i ? ctx.lineTo(fx(i), y(i)) : ctx.moveTo(fx(i), y(i));
+      for (let i = LINES - 1; i >= 0; i--) ctx.lineTo(gx(i), y(i));
+      ctx.closePath();
+    };
+    // sombra: na água (paredão da esquerda) ou na terra atrás (paredão da direita)
+    ctx.fillStyle = 'rgba(8,12,70,.30)';
+    if (left) band(i => edge(i), i => edge(i) + (cw[i] > 0 ? 7 : 0));
+    else band(i => outer(i), i => outer(i) + (cw[i] > 0 ? 6 : 0));
+    ctx.fill();
+    band(i => outer(i), i => edge(i)); ctx.fillStyle = '#9aa1b2'; ctx.fill();          // topo da rocha
+    const face = left ? '#6f7588' : '#b9bfcc';                                          // face para o rio
+    band(i => edge(i) - (left ? Math.min(5, cw[i]) : -Math.min(5, cw[i])), i => edge(i)); ctx.fillStyle = face; ctx.fill();
+    band(i => outer(i), i => outer(i) + (left ? 1 : -1) * Math.min(2, cw[i])); ctx.fillStyle = '#c4c9d4'; ctx.fill();  // aresta iluminada
+    // pedras salientes ao longo do paredão
+    const r = mulberry32(blk.seed ^ (left ? 0x51 : 0x52));
+    for (let i = 2; i < LINES - 2; i += 3 + Math.floor(r() * 3)) {
+      if (cw[i] < 10) continue;
+      const cx = (edge(i) + outer(i)) / 2 + (r() - 0.5) * cw[i] * 0.4, by = yAt(i), hw = 2.5 + r() * 3, h = 4 + r() * 5;
+      poly([cx - hw, by, cx, by - h, cx + hw, by], '#aeb4c3');
+      poly([cx, by - h, cx + hw, by, cx + hw * 0.1, by], '#7d8394');
+    }
   }
 }
 

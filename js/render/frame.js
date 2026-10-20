@@ -14,7 +14,7 @@ function draw() {
   const g0 = Math.max(0, Math.floor(scroll / BH) - 1), g1 = Math.floor((scroll + VIEW_H) / BH) + 1;
   for (let ph = 0; ph < 3; ph++) for (let g = g0; g <= g1; g++) drawTerrain(getBlock(g), ph);
   for (let g = g0; g <= g1; g++) { const blk = getBlock(g); if (blk.bridge) drawBridge(blk); }
-  for (let g = g0; g <= g1 + 1; g++) drawMountains(getBlock(g));   // por cima: picos podem passar do bloco
+  for (let g = g0; g <= g1; g++) drawCliffs(getBlock(g));          // paredões (modo moderno)
   // objetos
   for (let g = g0; g <= g1; g++) for (const o of getBlock(g).objs) {
     if (!o.alive) continue;
@@ -26,6 +26,7 @@ function draw() {
     else if (o.type === 'heli') drawHeli(o.x, sy, o.dir, o.alt || 1);
     else if (o.type === 'tank') drawTank(o.x, sy, o.aim, o.dir);
     else if (o.type === 'balloon') drawBalloon(o.x, sy, o.hue, o.phase);
+    else if (o.type === 'pu') drawPowerup(o, sy);
     else if (o.type === 'plane' && o.active) drawPlane(o.x, sy, o.dir);
   }
   for (const sh of shells) {
@@ -33,14 +34,15 @@ function draw() {
     ell(sh.x, sy, 2.6, 2.6, 'rgba(255,140,40,.35)'); ell(sh.x, sy, 1.4, 1.4, '#1c1c22');
   }
   // míssil
-  if (missile) {
-    const my = VIEW_H - (missile.Y + 8 - scroll);
-    rrect(missile.x - 0.3, my, 2.6, 8, 1.2); ctx.fillStyle = '#ffd23a'; ctx.fill();
-    ell(missile.x + 1, my + 1, 1.3, 1.6, '#ffffff');
+  for (const m of missiles) {
+    const my = VIEW_H - (m.Y + 8 - scroll);
+    rrect(m.x - 0.3, my, 2.6, 8, 1.2); ctx.fillStyle = pw.rapid > 0 ? '#ffe58a' : '#ffd23a'; ctx.fill();
+    ell(m.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
   if (state === 'play' && mode === 'modern')                         // moderno: sombra do jato lá embaixo
     ell(px + PW / 2 + 7, VIEW_H - PLAYER_Y - PH * 0.35 + 9, PW * 0.42, 3, 'rgba(0,0,30,.28)');
   if (state === 'play') drawJet(px + PW / 2, VIEW_H - (PLAYER_Y + PH), bank, JET_SC, true);
+  if (state === 'play') drawShield(px + PW / 2, VIEW_H - PLAYER_Y - PH / 2);
   fx.forEach(drawExplosion);
   drawPanel();
   if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
@@ -65,7 +67,7 @@ function drawTitle() {
   ctx.textAlign = 'center'; ctx.fillStyle = '#ffe45a'; ctx.font = 'bold 24px Arial, sans-serif';
   ctx.fillText('RIVER RAID', W / 2, 104);
   const opts = [['classic', '1  CLÁSSICO', 'margens e ilhas matam, como no Atari'],
-                ['modern', '2  MODERNO', 'voe sobre as margens; cuidado com as montanhas']];
+                ['modern', '2  MODERNO', 'voe sobre as margens · paredões de rocha · power-ups']];
   opts.forEach(([m, name, desc], k) => {
     const y = 128 + k * 42, on = mode === m;
     rrect(32, y, W - 64, 34, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
@@ -86,6 +88,7 @@ function drawPanel() {
   ctx.fillText(String(score).padStart(6, '0'), 10, y0 + 24);
   ctx.font = 'bold 8px Arial, sans-serif'; ctx.fillStyle = mode === 'modern' ? '#9fe0ff' : '#ffc93c';
   ctx.fillText(mode === 'modern' ? 'MODERNO' : 'CLÁSSICO', 12, y0 + 40);
+  drawPowerHud(108, y0 + 4);                                          // power-ups ativos
   // medidor de combustível
   const gx = 74, gy = y0 + 28, gw = 160, f = fuel / 100;
   rrect(gx, gy, gw, 9, 4.5); ctx.fillStyle = '#2b3042'; ctx.fill();

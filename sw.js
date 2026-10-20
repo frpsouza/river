@@ -1,8 +1,8 @@
 // sw.js — service worker do PWA: guarda os arquivos do jogo para jogar offline.
 // Ao mudar o jogo, troque VERSION para os aparelhos baixarem a versão nova.
-const VERSION = 'river-v10';
+const VERSION = 'river-v11';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
-  'js/config.js', 'js/util.js', 'js/audio.js', 'js/terrain.js', 'js/objects.js', 'js/mountains.js', 'js/state.js',
+  'js/config.js', 'js/util.js', 'js/audio.js', 'js/terrain.js', 'js/objects.js', 'js/cliffs.js', 'js/powerups.js', 'js/state.js',
   'js/effects.js', 'js/gameover.js', 'js/update.js', 'js/render/canvas.js', 'js/render/terrain.js',
   'js/render/sprites.js', 'js/render/frame.js', 'js/main.js', 'js/touch.js'];
 self.addEventListener('install', e => e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));

@@ -12,6 +12,9 @@ cp -r index.html manifest.webmanifest sw.js icons js "$WWW"/
 echo "✔ jogo copiado para $WWW"
 
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
+# JDK e Gradle instalados na pasta pessoal (sem sudo), se não houver outros no PATH
+[ -d "$HOME/.local/jdk17" ] && export JAVA_HOME="${JAVA_HOME:-$HOME/.local/jdk17}" && export PATH="$JAVA_HOME/bin:$PATH"
+[ -d "$HOME/.local/gradle-8.7" ] && export PATH="$HOME/.local/gradle-8.7/bin:$PATH"
 if ! command -v java >/dev/null 2>&1 || [ ! -d "$SDK/platforms" ]; then
   echo "⚠ APK não gerado: falta o JDK 17 e/ou o Android SDK (veja ANDROID.md)."
   exit 0
