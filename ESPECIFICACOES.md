@@ -1,7 +1,35 @@
 # River Raid (clone) — especificações e mudanças
 
-Arquivos: `index.html` (página), `game.js` (jogo), `sprites/` (sprites extraídos de `river.png`).
+Arquivos: `index.html` (página), `js/` (o jogo, em módulos — veja **Arquitetura**), `sprites/` (sprites extraídos de `river.png`, só como referência).
 Para jogar: abrir `index.html` no navegador e apertar **Enter**.
+
+## Arquitetura (pasta `js/`)
+
+O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o que faz e de quem depende. São scripts comuns, carregados em ordem pelo `index.html`, e não módulos ES (`import`/`export`). Assim o jogo continua abrindo com dois cliques, direto do disco, sem servidor. Tudo o que um arquivo declara fica visível para os carregados depois dele.
+
+| Ordem | Arquivo | Responsabilidade |
+|---|---|---|
+| 1 | `config.js` | constantes: tamanhos da tela, grade do mapa (linhas, blocos, seções) e escalas dos sprites |
+| 2 | `util.js` | gerador aleatório com semente (`mulberry32`) e `clamp` |
+| 3 | `audio.js` | bipes sintetizados (Web Audio) |
+| 4 | `terrain.js` | geração procedural do rio: blocos, seções, ponte, ilhas, dificuldade |
+| 5 | `objects.js` | objetos de cada bloco (inimigos, combustível, casas, tanques, balões) e altitude dos helicópteros |
+| 6 | `state.js` | estado da partida: começar, renascer no checkpoint, pontuar, morrer |
+| 7 | `effects.js` | explosões: receitas por tipo, física das partículas e desenho |
+| 8 | `gameover.js` | tela de fim de jogo navegável (rolagem, pontes, velocidade) |
+| 9 | `update.js` | um passo da simulação: controles, colisões, inimigos, míssil |
+| 10 | `render/canvas.js` | canvas em 2×, primitivas (`poly`, `ell`, `rrect`, `mix`) e paleta |
+| 11 | `render/terrain.js` | desenho da água, margens, ilhas, ponte e decoração (bosques, campos, vacas) |
+| 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
+| 13 | `render/frame.js` | monta cada quadro (`draw`), painel, telas de título e de fim de jogo |
+| 14 | `main.js` | teclado e laço principal (`update` a 60 passos/s, `draw` a cada quadro) |
+
+**Fluxo de um quadro:** `main.js` chama `update()`, que usa `state`, `terrain`, `objects`, `effects` e `gameover`. Depois chama `draw()`, que usa os módulos de `render/` e o `effects`.
+
+**Por onde começar a ler:**
+1. `config.js` e `terrain.js` mostram como o mapa nasce.
+2. `update.js` mostra as regras do jogo.
+3. `render/frame.js` mostra como tudo aparece na tela.
 
 ## Especificações do jogo
 
@@ -222,6 +250,14 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 - Cada tipo tem também um som próprio.
 - As partículas ficam presas ao mapa e rolam junto com ele.
 - Para ajustar: a tabela `FX` e o `drawExplosion()`.
+
+## Mudanças da versão 9 — código dividido em módulos
+
+### 18. `game.js` dividido em 14 arquivos
+- **Antes:** um único `game.js` com ~960 linhas.
+- **Agora:** 14 arquivos em `js/` e `js/render/`, separando a lógica do jogo do desenho (veja **Arquitetura** no topo). Cada arquivo começa com um cabeçalho didático: o que faz, as funções principais e de quais outros módulos depende.
+- O código foi movido sem mudar nenhuma linha. Saíram apenas os separadores de seção, que viraram os cabeçalhos. O comportamento é o mesmo.
+- Os nomes de arquivo citados nas mudanças anteriores (`game.js`) agora correspondem a estes módulos. Por exemplo, `genBlock()` está em `terrain.js`, `drawJet()` em `render/sprites.js` e `FX` em `effects.js`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
