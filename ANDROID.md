@@ -50,5 +50,5 @@ Ao publicar uma versão nova do PWA, troque `VERSION` em `sw.js` para os aparelh
 | Tela | Botões |
 |---|---|
 | Título | **◀ ▶ modo** alterna Clássico/Moderno · **JOGAR**. Também dá para tocar direto na opção: o primeiro toque escolhe e o segundo começa. |
-| Jogo | **◀ ▶** movem · **▲** acelera · **▼** freia · **FOGO** |
+| Jogo | **◀ ▶** movem · **▲ ▼** aceleram/freiam (clássico) ou sobem/descem (moderno) · **FOGO** |
 | Fim de jogo | **▲ ▼** direção da rolagem · **ponte ▲/▼** · **− +** velocidade · **VOLTAR** |

@@ -44,10 +44,11 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | Tecla | Ação |
 |---|---|
 | ← → (A D) | mover o jato |
-| ↑ (W) | acelerar |
-| ↓ (S) | frear |
+| ↑ (W) | clássico: acelerar · moderno: subir na tela |
+| ↓ (S) | clássico: frear · moderno: descer na tela |
 | Espaço (Z) | atirar (um míssil por vez) |
 | Enter ou Espaço | iniciar (na tela de título) |
+| setas, 1/2 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
 **No fim de jogo** o mapa continua rolando sob o quadro "FIM DE JOGO":
 
@@ -315,6 +316,23 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 ### 24. APK Android gerado
 - O JDK 17, o Gradle 8.7 e o Android SDK 34 foram instalados na pasta pessoal (`~/.local`, `~/Android/Sdk`), sem `sudo`. As licenças do SDK foram aceitas na instalação.
 - `scripts/export-android.sh` agora gera `dist/river-raid.apk`, com ~100 KB, em modo debug.
+
+## Mudanças da versão 12 — voo livre no moderno e clique no título
+
+### 25. Modo moderno: o jato voa livre pela tela
+- **Antes:** o jato ficava preso embaixo, e ↑/↓ só aceleravam ou freavam a rolagem.
+- **Agora, no moderno:**
+  - A câmera anda numa velocidade constante (1,25 × o nível da seção).
+  - ↑/↓ movem o jato na vertical, entre o fundo da tela e 24 px abaixo do topo, a 2 px por quadro, como o movimento lateral.
+  - O jato ocupa qualquer ponto da tela. A sombra no chão, o escudo, o disparo e as colisões acompanham a posição.
+  - Ao renascer, o jato volta para baixo.
+- **No clássico:** nada muda.
+- O consumo de combustível no moderno é constante, porque não há mais aceleração.
+- Para ajustar: a variável `py` (`state.js`) e o bloco "moderno" dos controles em `update.js`.
+
+### 26. Clique do mouse escolhe o modo
+- Na tela de título, clicar numa opção a escolhe, e clicar de novo na opção já escolhida começa o jogo. O cursor vira mãozinha sobre as opções.
+- Antes isso só funcionava com toque. Agora vale para mouse e toque, além das setas e das teclas 1 e 2.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

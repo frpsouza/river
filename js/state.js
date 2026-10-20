@@ -8,6 +8,7 @@
 
 let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens
 let bank = 0;
+let py = PLAYER_Y;                                   // altura do jato acima do fundo da tela (no moderno ele sobe e desce)
 
 let shells = [];
 
@@ -28,7 +29,8 @@ function respawn() {
     spawnObjs(blocks[g]);
   }
   scroll = checkpoint * BH;
-  const { b, i } = lineAt(scroll + PLAYER_Y);
+  py = PLAYER_Y;
+  const { b, i } = lineAt(scroll + py);
   px = (b.L[i] + b.R[i]) / 2 - PW / 2;
   fuel = 100; missiles = []; fx = []; dyingT = 0; shells = []; resetPowerups();
   bank = 0;
@@ -43,5 +45,5 @@ function addScore(n) {
 function kill() {
   if (state !== 'play') return;
   state = 'dying'; dyingT = 70;
-  boom(px + PW / 2, scroll + PLAYER_Y + PH / 2, 'player');
+  boom(px + PW / 2, scroll + py + PH / 2, 'player');
 }

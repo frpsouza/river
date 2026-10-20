@@ -40,9 +40,9 @@ function draw() {
     ell(m.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
   if (state === 'play' && mode === 'modern')                         // moderno: sombra do jato lá embaixo
-    ell(px + PW / 2 + 7, VIEW_H - PLAYER_Y - PH * 0.35 + 9, PW * 0.42, 3, 'rgba(0,0,30,.28)');
-  if (state === 'play') drawJet(px + PW / 2, VIEW_H - (PLAYER_Y + PH), bank, JET_SC, true);
-  if (state === 'play') drawShield(px + PW / 2, VIEW_H - PLAYER_Y - PH / 2);
+    ell(px + PW / 2 + 7, VIEW_H - py - PH * 0.35 + 9, PW * 0.42, 3, 'rgba(0,0,30,.28)');
+  if (state === 'play') drawJet(px + PW / 2, VIEW_H - (py + PH), bank, JET_SC, true);
+  if (state === 'play') drawShield(px + PW / 2, VIEW_H - py - PH / 2);
   fx.forEach(drawExplosion);
   drawPanel();
   if (state === 'over') banner('FIM DE JOGO', 'ESPAÇO para voltar', ['↑ ↓ invertem a rolagem · PgUp/PgDn ou Shift+↑↓: pontes', '− / + velocidade da rolagem: ' + (overSpeed / 1.1).toFixed(2) + '×']);
@@ -67,7 +67,7 @@ function drawTitle() {
   ctx.textAlign = 'center'; ctx.fillStyle = '#ffe45a'; ctx.font = 'bold 24px Arial, sans-serif';
   ctx.fillText('RIVER RAID', W / 2, 104);
   const opts = [['classic', '1  CLÁSSICO', 'margens e ilhas matam, como no Atari'],
-                ['modern', '2  MODERNO', 'voe sobre as margens · paredões de rocha · power-ups']];
+                ['modern', '2  MODERNO', 'voo livre pela tela · paredões de rocha · power-ups']];
   opts.forEach(([m, name, desc], k) => {
     const y = 128 + k * 42, on = mode === m;
     rrect(32, y, W - 64, 34, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
@@ -75,7 +75,7 @@ function drawTitle() {
     ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '9px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 27);
   });
   ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
-  ctx.fillText('setas escolhem · ENTER ou ESPAÇO joga', W / 2, 226);
+  ctx.fillText('setas ou clique escolhem · ENTER, ESPAÇO ou 2º clique joga', W / 2, 226);
 }
 
 function drawPanel() {

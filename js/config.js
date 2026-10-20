@@ -18,7 +18,7 @@ const MAXD = 40;
 
 const smooth = t => t * t * (3 - 2 * t);               // curva suave (sem degraus)
 
-const PLAYER_Y = 6;                                   // jato rente ao painel de placar
+const PLAYER_Y = 6;                                   // altura inicial do jato: rente ao painel de placar
 
 const JET_SC = 1.25;                                  // escalas relativas à casa (parede de 24 px ≈ 10 m)
 

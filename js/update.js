@@ -32,7 +32,16 @@ function update() {
 
   // controles
   const lvl = 1 + Math.min(sectionOf(scroll), 8) * 0.07;       // fica mais rápido a cada seção
-  const sp = (keys.ArrowUp || keys.w ? 1.9 : keys.ArrowDown || keys.s ? 0.6 : 1.1) * lvl;
+  const up = keys.ArrowUp || keys.w, down = keys.ArrowDown || keys.s;
+  let sp;
+  if (mode === 'modern') {
+    // moderno: a câmera anda em velocidade constante e o jato voa livre pela tela (↑↓ movem na vertical)
+    sp = 1.25 * lvl;
+    py = clamp(py + ((up ? 1 : 0) - (down ? 1 : 0)) * 2, PLAYER_Y, VIEW_H - PH - 24);
+  } else {
+    // clássico: o jato fica embaixo; ↑ acelera e ↓ freia a rolagem
+    sp = (up ? 1.9 : down ? 0.6 : 1.1) * lvl;
+  }
   const steer = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0);
   px += steer * 2;
   bank += (steer - bank) * 0.18;                 // inclinação suave das asas
@@ -43,7 +52,7 @@ function update() {
   if (fireCool > 0) fireCool--;
   const canFire = pw.rapid > 0 ? fireCool === 0 : missiles.length === 0;
   if ((keys[' '] || keys.z) && canFire) {
-    const x = px + PW / 2 - 1, Y = scroll + PLAYER_Y + PH;
+    const x = px + PW / 2 - 1, Y = scroll + py + PH;
     missiles.push({ x, Y, vx: 0 });
     if (pw.triple > 0) missiles.push({ x: x - 3, Y: Y - 2, vx: -1.1 }, { x: x + 3, Y: Y - 2, vx: 1.1 });
     fireCool = 9;
@@ -51,12 +60,12 @@ function update() {
   }
 
   // combustível
-  fuel -= 0.04 * (sp > 1.5 * lvl ? 1.2 : 1);
+  fuel -= 0.04 * (mode === 'classic' && sp > 1.5 * lvl ? 1.2 : 1);
   if (fuel < 25 && frame % 20 === 0) beep(300, 0.05, 'square', 0.02);
   if (fuel <= 0) { fuel = 0; kill(); return; }
 
   // colisão com terreno e ponte
-  const pBot = scroll + PLAYER_Y, pTop = pBot + PH;
+  const pBot = scroll + py, pTop = pBot + PH;
   if (mode === 'classic') {
     // clássico: margens, ilhas e ponte inteira matam
     for (let Y = pBot; Y <= pTop; Y += LINE) {

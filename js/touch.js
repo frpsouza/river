@@ -5,7 +5,7 @@
 //
 // Os botões aparecem quando o aparelho tem tela de toque (ou com ?touch=1 na URL).
 // O conjunto muda conforme a tela: título, jogo ou fim de jogo.
-// Na tela de título também dá para tocar direto nas opções de modo, no canvas.
+// Na tela de título dá para clicar ou tocar direto nas opções de modo, no canvas (vale também com mouse).
 //
 // Usa: main.js (keys, taps), state.js (state, mode). Deve ser carregado depois de main.js.
 'use strict';
@@ -48,15 +48,20 @@ if (TOUCH) {
     requestAnimationFrame(watch);
   })();
 
-  // título: tocar numa opção escolhe o modo; tocar de novo na escolhida começa o jogo
-  cv.addEventListener('pointerdown', e => {
-    if (state !== 'title') return;
-    const r = cv.getBoundingClientRect();
-    const y = (e.clientY - r.top) / r.height * (VIEW_H + PANEL_H);
-    const pick = y >= 128 && y < 162 ? 'classic' : y >= 170 && y < 204 ? 'modern' : null;
-    if (!pick) return;
-    if (pick === mode) press('Enter'); else mode = pick;
-    setTimeout(() => release('Enter'), 50);
-  });
   addEventListener('contextmenu', e => e.preventDefault());
 }
+
+// título: clicar (mouse) ou tocar numa opção escolhe o modo; de novo na escolhida, começa o jogo
+const titlePick = e => {
+  const r = cv.getBoundingClientRect();
+  const y = (e.clientY - r.top) / r.height * (VIEW_H + PANEL_H);
+  return y >= 128 && y < 162 ? 'classic' : y >= 170 && y < 204 ? 'modern' : null;
+};
+cv.addEventListener('pointerdown', e => {
+  if (state !== 'title') return;
+  const pick = titlePick(e);
+  if (!pick) return;
+  if (pick === mode) press('Enter'); else mode = pick;
+  setTimeout(() => release('Enter'), 50);
+});
+cv.addEventListener('pointermove', e => { cv.style.cursor = state === 'title' && titlePick(e) ? 'pointer' : 'default'; });
