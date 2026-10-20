@@ -62,9 +62,9 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | Controle | Ação |
 |---|---|
 | analógico esquerdo | mover (analógico: quanto mais inclinado, mais forte) · nos menus, escolher |
-| direcional (d-pad) | setas |
-| A ou RT | atirar · no fim de jogo, voltar |
-| B | soltar bomba (oceano) |
+| direcional em cruz (d-pad) | mover (digital) · nos menus, escolher |
+| A ou RT (gatilho direito) | atirar · no fim de jogo, voltar |
+| B ou LT (gatilho esquerdo) | soltar bomba (oceano e retro; nos outros modos não faz nada) |
 | Start | começar (título) |
 | LB / RB | ponte anterior / próxima (fim de jogo) |
 | X / Y | − / + velocidade da rolagem (fim de jogo) |
@@ -731,6 +731,19 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Medido em 30 seções por modo:** ~80% dos blocos simétricos, cerca de 1 episódio de assimetria por seção, com duração média de 2,4 blocos. A largura mínima e a jogabilidade não mudaram.
 - O oceano e o retro não têm margens, por isso não mudam.
 - Para ajustar: o bloco "rio SIMÉTRICO" em `genBlock()` (`js/terrain.js`).
+
+## Mudanças da versão 28 — cruz e gatilhos no controle
+
+### 52. Direcional em cruz e gatilhos
+- **Direcional em cruz:** move o jato (digital) em todos os modos, além de navegar nos menus.
+  - Controles no mapeamento padrão (botões 12–15) já funcionavam.
+  - Agora também a cruz de controles **fora do padrão**, que chega como eixos: eixos 6/7 ou o "POV" no eixo 9, comum em controles genéricos.
+  - No app Android, a cruz vale tanto como teclas DPAD quanto como eixo HAT.
+- **Gatilho direito (RT/R2):** atirar.
+- **Gatilho esquerdo (LT/L2):** **bomba**, no oceano e no retro. Nos modos sem bomba não faz nada.
+  - No Android os gatilhos são lidos como botão (L2/R2) e também como eixos analógicos (LTRIGGER/RTRIGGER ou BRAKE/GAS), que é como muitos controles os enviam.
+- **Sem conflito entre fontes:** cada tecla do controle guarda quais fontes a seguram (botão, gatilho, cruz em eixo). Assim, A e RT juntos não "soltam" o tiro quando só um deles é solto.
+- **Testado com controles simulados:** a cruz moveu o jato ±40 px em 20 quadros; o RT atirou; A+RT soltando só A manteve o fogo; o LT soltou a bomba no oceano e foi ignorado no clássico; a cruz por eixos (fora do padrão) moveu o jato na diagonal. A parte do Android compila, mas ainda precisa ser testada num aparelho com controle.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

@@ -51,7 +51,7 @@ public class MainActivity extends Activity {
     private static String keyFor(int code) {
         switch (code) {
             case KeyEvent.KEYCODE_BUTTON_A: case KeyEvent.KEYCODE_BUTTON_R2: case KeyEvent.KEYCODE_DPAD_CENTER: return " ";
-            case KeyEvent.KEYCODE_BUTTON_B: case KeyEvent.KEYCODE_BACK: return "b";      // B não fecha o app: é a bomba
+            case KeyEvent.KEYCODE_BUTTON_B: case KeyEvent.KEYCODE_BUTTON_L2: case KeyEvent.KEYCODE_BACK: return "b";   // B / gatilho esq.: bomba (B não fecha o app)
             case KeyEvent.KEYCODE_BUTTON_X: return "-";
             case KeyEvent.KEYCODE_BUTTON_Y: return "+";
             case KeyEvent.KEYCODE_BUTTON_L1: return "PageDown";
@@ -82,8 +82,11 @@ public class MainActivity extends Activity {
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent e) {
         if ((e.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK && e.getAction() == MotionEvent.ACTION_MOVE) {
+            // analógico, cruz (HAT) e gatilhos analógicos (LTRIGGER/BRAKE = bomba, RTRIGGER/GAS = fogo)
+            float lt = Math.max(e.getAxisValue(MotionEvent.AXIS_LTRIGGER), e.getAxisValue(MotionEvent.AXIS_BRAKE));
+            float rt = Math.max(e.getAxisValue(MotionEvent.AXIS_RTRIGGER), e.getAxisValue(MotionEvent.AXIS_GAS));
             web.evaluateJavascript("window.nativeAxes&&nativeAxes(" + e.getAxisValue(MotionEvent.AXIS_X) + "," + e.getAxisValue(MotionEvent.AXIS_Y) + ","
-                + e.getAxisValue(MotionEvent.AXIS_HAT_X) + "," + e.getAxisValue(MotionEvent.AXIS_HAT_Y) + ")", null);
+                + e.getAxisValue(MotionEvent.AXIS_HAT_X) + "," + e.getAxisValue(MotionEvent.AXIS_HAT_Y) + "," + lt + "," + rt + ")", null);
             return true;
         }
         return super.dispatchGenericMotionEvent(e);
