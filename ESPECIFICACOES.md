@@ -36,7 +36,7 @@ Para jogar: abrir `index.html` no navegador e apertar **Enter**.
 | Combustível | atirar destrói; passar por cima reabastece | 80 |
 | Ponte | destruída com um míssil | 500 |
 | Casa | só cenário; o míssil passa, mas bater nela mata | — |
-| Tanque na margem | patrulha em terra e atira projéteis na direção do rio; não dá para acertá-lo | — |
+| Tanque na margem | visto de lado; patrulha em terra e atira projéteis na direção do rio; não dá para acertá-lo | — |
 | Tanque na ponte | atravessa a estrada; dá para acertá-lo sobre o rio, e ele cai se a ponte for destruída | 250 |
 | Balão | flutua devagar, balançando, sobre o rio e a terra | 60 |
 
@@ -45,7 +45,7 @@ Para jogar: abrir `index.html` no navegador e apertar **Enter**.
 - Depois de passar por uma ponte, o jogador recomeça dali ao morrer. Antes disso, recomeça no início da seção.
 
 ### Sprites
-Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, helicóptero (hélice animada), navio, avião, casa com árvore, tanque (esteiras animadas), balão e o jato do jogador. Os PNGs extraídos de `river.png` continuam em `sprites/` como referência, mas o jogo não os usa mais.
+Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, helicóptero (hélice animada), navio, avião, casa com árvore, tanque visto de lado (esteiras e rodas animadas), balão, árvores, cercas, vacas e o jato do jogador. Os PNGs extraídos de `river.png` continuam em `sprites/` como referência, mas o jogo não os usa mais.
 
 ## Mudanças desta versão
 
@@ -110,6 +110,25 @@ Todos os objetos são desenhados em vetor no próprio `game.js`: combustível, h
 ### 8. Balões
 - Balões de ar quente listrados (vermelho e branco ou amarelo), com cesto e sombra deslocada na água, porque estão no ar.
 - Flutuam devagar de um lado para o outro, balançando. Valem 60 pontos, e bater neles mata.
+
+## Mudanças da versão 5 — vista lateral, bosques e campos com vacas
+
+### 9. Tanques vistos de lado
+- **Antes:** os tanques eram vistos de cima.
+- **Agora:** aparecem de perfil, como as casas, com esteira, cinco rodas, casco em dois tons, torre em cúpula com escotilha e canhão. As marcas da esteira andam conforme o tanque se move.
+- O tanque fica virado para onde aponta o canhão: para o rio, na margem, ou para o sentido da marcha, na ponte. O projétil sai da boca do canhão.
+
+### 10. Árvores de lado, bosques e campos com vacas
+- **Antes:** a terra tinha arbustos redondos vistos de cima.
+- **Agora:** as árvores são vistas de lado, com tronco, sombra no chão e copa com luz em cima à esquerda e sombra embaixo à direita. Há dois tipos: copa redonda e pinheiro em três camadas.
+- Cada margem de cada bloco sorteia uma paisagem:
+  - **bosque (40%):** de 8 a 16 árvores agrupadas;
+  - **campo (32%):** um pasto cercado com faixas de capim cortado, de 1 a 4 vacas e árvores nos cantos;
+  - **árvores soltas (28%):** de 2 a 5 árvores espalhadas.
+- As vacas são malhadas, vistas de lado, e de vez em quando abaixam a cabeça para pastar.
+- As ilhas também ganharam árvores de lado.
+- A decoração é gerada uma vez por bloco, sempre igual para o mesmo bloco. Os elementos são desenhados de cima para baixo, para os da frente cobrirem os de trás. Nada é colocado sobre a estrada da ponte.
+- Para ajustar: `getDeco()`, `drawTree()`, `drawField()` e `drawCow()` no `game.js`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

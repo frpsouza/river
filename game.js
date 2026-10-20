@@ -293,7 +293,7 @@ function update() {
           } else if (sy > 40 && sy < VIEW_H - 30 && --o.cool <= 0) {
             // atira na direção do rio
             o.cool = 110 + Math.random() * 90;
-            shells.push({ x: o.aim > 0 ? o.x + o.w + 2 : o.x - 2, Y: o.Y + o.h / 2, vx: o.aim * 1.8 });
+            shells.push({ x: o.aim > 0 ? o.x + o.w + 2 : o.x - 2, Y: o.Y + o.h - 3.4, vx: o.aim * 1.8 });
             beep(220, 0.06, 'square', 0.02);
           }
         }
@@ -430,16 +430,13 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
     shoreStroke(sp, 5, 'rgba(255,255,255,.14)');
     ctx.restore();
   }
-  // arbustos com sombreamento flat
-  const r = mulberry32(blk.seed ^ 0x2b7e15);
-  for (let k = 0; k < 9; k++) {
-    const i = Math.floor(r() * LINES), left = r() < 0.5, rad = 2.8 + r() * 3.4, t = r();
-    const x = left ? 4 + t * (blk.L[i] - 16) : blk.R[i] + 12 + t * (W - blk.R[i] - 16);
-    if ((left && blk.L[i] < 24) || (!left && W - blk.R[i] < 24)) continue;
-    const y = yAt(i);
-    ell(x + 1.2, y + 1.6, rad, rad * 0.8, 'rgba(0,0,0,.18)');
-    ell(x, y, rad, rad, pal.bush);
-    ell(x - rad * 0.28, y - rad * 0.3, rad * 0.58, rad * 0.58, pal.bushHi);
+  // bosques, campos com vacas e árvores soltas (vista de lado, como as casas)
+  const deco = getDeco(blk);
+  for (const f of deco.fields) drawField(f.x0, yAt(f.b), f.x1 - f.x0, yAt(f.a) - yAt(f.b), pal);
+  for (const d of deco.items) {
+    const y = yAt(d.i);
+    if (d.kind === 'cow') drawCow(d.x, y, d.dir, d.phase);
+    else drawTree(d.x, y, d.s, d.kind === 'pine', pal);
   }
   // ilha
   if (blk.IL[15] >= 0) {
@@ -458,12 +455,106 @@ function drawTerrain(blk, phase) {        // fase 0: água/sombras, 1: terra, 2:
     shoreStroke(ring, 4, 'rgba(255,255,255,.14)');
     ctx.restore();
     const cx = (blk.IL[15] + blk.IR[15]) / 2, wI = blk.IR[15] - blk.IL[15];
-    for (const [dx, dy, rd] of [[-0.18, 12, 4.4], [0.16, 18, 3.6], [0.02, 14.5, 3]]) {
-      const x = cx + dx * wI, y = yAt(dy);
-      ell(x + 1, y + 1.4, rd, rd * 0.8, 'rgba(0,0,0,.2)');
-      ell(x, y, rd, rd, PAL.dark.bush); ell(x - rd * 0.28, y - rd * 0.3, rd * 0.58, rd * 0.58, PAL.dark.bushHi);
+    for (const [dx, dy, sc, pine] of [[-0.2, 19, 1, true], [0.14, 17, 0.9, false], [-0.02, 12, 1.15, false], [0.22, 11, 0.85, true]]) {
+      if (wI < 40 && Math.abs(dx) > 0.15) continue;
+      drawTree(cx + dx * wI, yAt(dy), sc, pine, PAL.dark);
     }
   }
+}
+
+function getDeco(blk) {
+  if (blk.deco) return blk.deco;
+  const r = mulberry32(blk.seed ^ 0x2b7e15), fields = [], items = [];
+  const road = i => blk.bridge && i >= 7 && i <= 27;            // não decorar a estrada da ponte
+  for (const left of [true, false]) {
+    const lo = i => left ? 4 : blk.R[i] + 10;                     // faixa de terra livre na linha i
+    const hi = i => left ? blk.L[i] - 10 : W - 4;
+    const tree = (x, i, sc) => {
+      i = clamp(Math.round(i), 1, LINES - 2);
+      if (road(i) || x - 6 * sc < lo(i) || x + 6 * sc > hi(i)) return;
+      items.push({ kind: r() < 0.45 ? 'pine' : 'tree', x, i, s: sc });
+    };
+    const z = r();
+    if (z < 0.4) {
+      // bosque: várias árvores juntas
+      const ci = 6 + r() * 20, i0 = clamp(Math.round(ci), 0, LINES - 1);
+      if (hi(i0) - lo(i0) < 14) continue;
+      const cx = lo(i0) + r() * (hi(i0) - lo(i0)), spread = Math.min(hi(i0) - lo(i0), 60);
+      const n = 8 + Math.floor(r() * 9);
+      for (let k = 0; k < n; k++) tree(cx + (r() - 0.5) * spread, ci + (r() - 0.5) * 16, 0.8 + r() * 0.45);
+    } else if (z < 0.72) {
+      // campo cercado com vacas
+      const a = 2 + Math.floor(r() * 12), bTop = Math.min(LINES - 3, a + 8 + Math.floor(r() * 7));
+      let x0 = -1e9, x1 = 1e9, ok = true;
+      for (let i = a; i <= bTop; i++) { if (road(i)) ok = false; x0 = Math.max(x0, lo(i)); x1 = Math.min(x1, hi(i)); }
+      const w = Math.min(x1 - x0, 34 + r() * 56);
+      if (!ok || w < 30) continue;
+      const fx = x0 + r() * (x1 - x0 - w);
+      fields.push({ x0: fx, x1: fx + w, a, b: bTop });
+      const cows = 1 + Math.floor(r() * Math.min(4, w / 16));
+      for (let k = 0; k < cows; k++)
+        items.push({ kind: 'cow', x: fx + 6 + r() * (w - 16), i: a + 1.5 + r() * (bTop - a - 4), dir: r() < 0.5 ? -1 : 1, phase: r() * 100 });
+      tree(fx - 4, bTop + 0.5, 1); tree(fx + w + 4, a + 2, 0.9);
+    } else {
+      // árvores soltas
+      const n = 2 + Math.floor(r() * 4);
+      for (let k = 0; k < n; k++) { const i = 1 + r() * 29, j = Math.round(i); tree(lo(j) + r() * Math.max(0, hi(j) - lo(j)), i, 0.85 + r() * 0.35); }
+    }
+  }
+  items.sort((p, q) => q.i - p.i);                                // de cima para baixo: os da frente cobrem os de trás
+  return (blk.deco = { fields, items });
+}
+
+function drawTree(x, y, sc, pine, pal) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
+  ell(2.2, 0.4, 5.5, 1.6, 'rgba(0,0,0,.22)');                    // sombra no chão
+  ctx.fillStyle = '#5b3d22'; ctx.fillRect(-0.9, -4, 1.8, 4.2);
+  ctx.fillStyle = '#3f2a17'; ctx.fillRect(0.2, -4, 0.7, 4.2);
+  if (pine) {
+    for (const [ty, hw, hh] of [[-3, 5, 6], [-6.5, 4, 5.5], [-9.8, 2.8, 5]]) {
+      poly([0, ty - hh, hw, ty, -hw, ty], pal.bush);
+      poly([0, ty - hh, 0, ty, -hw, ty], pal.bushHi);             // lado iluminado
+    }
+  } else {
+    ell(0, -8, 5.2, 5, pal.bush);
+    ctx.save(); ctx.beginPath(); ctx.ellipse(0, -8, 5.2, 5, 0, 0, Math.PI * 2); ctx.clip();
+    ell(2.4, -5.6, 4.6, 4, mix(pal.bush, '#000000', 0.22));        // sombra embaixo/direita, dentro da copa
+    ell(-1.6, -9.8, 3, 2.6, pal.bushHi);                           // luz em cima/esquerda
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawField(x, y, w, h, pal) {
+  ctx.save();
+  rrect(x, y, w, h, 3); ctx.fillStyle = pal === PAL.light ? '#9ccf62' : '#5a9a3f'; ctx.fill();
+  ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,.09)';
+  for (let yy = y + 1; yy < y + h; yy += 4) ctx.fillRect(x, yy, w, 1.6);   // faixas de capim cortado
+  ctx.restore();
+  // cerca
+  rrect(x, y, w, h, 3); ctx.strokeStyle = '#8a6a44'; ctx.lineWidth = 0.7; ctx.stroke();
+  ctx.fillStyle = '#6b4f30';
+  for (let xx = x + 2; xx < x + w - 1; xx += 7) { ctx.fillRect(xx, y - 1.4, 0.9, 2.2); ctx.fillRect(xx, y + h - 1.2, 0.9, 2.2); }
+}
+
+function drawCow(x, y, dir, phase) {
+  const graze = Math.sin((frame + phase) * 0.03) > 0.3;          // às vezes abaixa a cabeça para pastar
+  ctx.save(); ctx.translate(x, y); if (dir < 0) ctx.scale(-1, 1);
+  ell(0.5, 0.3, 5, 1.1, 'rgba(0,0,0,.2)');
+  ctx.strokeStyle = '#2a2420'; ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  for (const lx of [-3.2, -1.8, 1.8, 3.2]) { ctx.moveTo(lx, -2.2); ctx.lineTo(lx, 0); }
+  ctx.moveTo(-4.4, -4.6); ctx.lineTo(-5.4, -2.6);                 // rabo
+  ctx.stroke();
+  rrect(-4.4, -5.6, 8.8, 3.8, 1.6); ctx.fillStyle = '#f4f1ea'; ctx.fill();
+  ctx.fillStyle = '#2a2420'; ell(-1.8, -4.4, 1.5, 1, '#2a2420'); ell(1.6, -3.4, 1.1, 0.8, '#2a2420');
+  ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(-4, -2.8, 8, 1);
+  const hy = graze ? -2.4 : -5.8;
+  rrect(3.8, hy, 2.8, 2.4, 0.9); ctx.fillStyle = '#f4f1ea'; ctx.fill();
+  ell(6.1, hy + 1.7, 0.8, 0.7, '#e8a3a0');                        // focinho
+  ctx.fillStyle = '#2a2420'; ctx.fillRect(4.2, hy - 0.7, 0.6, 0.9); ctx.fillRect(5.4, hy - 0.7, 0.6, 0.9);
+  ctx.restore();
 }
 
 function drawBridge(blk) {
@@ -581,23 +672,28 @@ function drawHouse(x, y, variant) {
 }
 
 function drawTank(x, y, aim, dir) {
-  ctx.save(); ctx.translate(x, y);
-  groundShadow(14, 13.5, 14, 2);
-  // esteiras
-  for (const ty of [0, 10.5]) {
-    rrect(0, ty, 26, 3.5, 1.6); ctx.fillStyle = '#2b2f26'; ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,.14)';
-    const off = (frame * 0.5 * dir) % 3;
-    for (let k = -1; k < 10; k++) { const tx = k * 3 + off + 1; if (tx > 1 && tx < 24) ctx.fillRect(tx, ty + 0.6, 1, 2.3); }
-  }
+  // vista lateral, como as casas: esteira com rodas, casco, torre e canhão virado para `aim`
+  ctx.save(); ctx.translate(x + (aim < 0 ? 26 : 0), y); if (aim < 0) ctx.scale(-1, 1);
+  groundShadow(13.5, 13.8, 14, 1.8);
+  // esteira
+  rrect(1, 9, 23, 5, 2.5); ctx.fillStyle = '#2b2f26'; ctx.fill();
+  const roll = ((frame * 0.5 * dir * (aim < 0 ? -1 : 1)) % 2.5 + 2.5) % 2.5;
+  ctx.fillStyle = 'rgba(255,255,255,.18)';
+  for (let tx = 3 + roll; tx < 22; tx += 2.5) ctx.fillRect(tx, 9.2, 0.9, 0.8);
+  for (let k = 0; k < 5; k++) { ell(4.4 + k * 4.1, 11.6, 1.7, 1.7, '#59604a'); ell(4.4 + k * 4.1, 11.6, 0.6, 0.6, '#2b2f26'); }
   // casco
-  rrect(1.5, 2.5, 23, 9, 2); ctx.fillStyle = '#6b7a3a'; ctx.fill();
-  ctx.fillStyle = '#56622e'; ctx.fillRect(1.5, 7.5, 23, 3.4);
-  ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(3, 3.2, 20, 1);
-  // canhão + torre
-  ctx.fillStyle = '#3d4422';
-  if (aim > 0) ctx.fillRect(13, 6, 15, 2); else ctx.fillRect(-2, 6, 15, 2);
-  ell(13, 7, 5, 4.4, '#7d8c45'); ell(13.6, 7.8, 4.2, 3.2, '#66733a'); ell(11.8, 5.6, 2.2, 1.4, 'rgba(255,255,255,.28)');
+  poly([0.5, 9, 25.5, 9, 23, 5.2, 3, 5.2], '#6b7a3a');
+  poly([0.5, 9, 25.5, 9, 24.6, 7.6, 1.2, 7.6], '#56622e');
+  ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(3.4, 5.2, 19.4, 0.8);
+  // canhão
+  ctx.fillStyle = '#3d4422'; ctx.fillRect(15, 2.6, 13, 1.5);
+  ctx.fillRect(26.6, 2.2, 1.6, 2.3);
+  // torre (cúpula)
+  ctx.beginPath(); ctx.moveTo(7, 5.2); ctx.lineTo(7.6, 2.4); ctx.quadraticCurveTo(12, -0.6, 17, 2); ctx.lineTo(18, 5.2); ctx.closePath();
+  ctx.fillStyle = '#7d8c45'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(7.2, 4); ctx.lineTo(18, 4); ctx.lineTo(18, 5.2); ctx.lineTo(7, 5.2); ctx.closePath(); ctx.fillStyle = '#66733a'; ctx.fill();
+  ell(10.6, 1.9, 2.2, 0.7, 'rgba(255,255,255,.3)');
+  ctx.fillStyle = '#3d4422'; ctx.fillRect(10, 0.1, 2.6, 0.8);                // escotilha
   ctx.restore();
 }
 
