@@ -7,6 +7,8 @@
 //   A / RT (gatilho dir.)  FOGO (e, no fim de jogo, voltar)
 //   B / LT (gatilho esq.)  BOMBA (oceano e retro; nos outros modos não faz nada)
 //   Start ................ ENTER (começa o jogo)
+//   − / Select / Back .... ESC (volta ao menu principal, em qualquer modo)
+//   no título, QUALQUER botão ou gatilho (menos o direcional) começa o jogo
 //   LB / RB .............. ponte anterior / próxima (fim de jogo)
 //   X / Y ................ − / + velocidade da rolagem (fim de jogo)
 // Segue o mapeamento "standard" dos navegadores (Xbox, PlayStation e a maioria dos genéricos).
@@ -15,7 +17,7 @@
 'use strict';
 
 let gpad = { x: 0, y: 0 }, gpConnected = false;
-const GP_BUTTONS = { 0: ' ', 1: 'b', 6: 'b', 7: ' ', 9: 'Enter', 12: 'ArrowUp', 13: 'ArrowDown', 14: 'ArrowLeft', 15: 'ArrowRight',
+const GP_BUTTONS = { 0: ' ', 1: 'b', 6: 'b', 7: ' ', 8: 'Escape', 9: 'Enter', 12: 'ArrowUp', 13: 'ArrowDown', 14: 'ArrowLeft', 15: 'ArrowRight',
                      4: 'PageDown', 5: 'PageUp', 2: '-', 3: '+' };
 const gpStickPrev = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 
@@ -48,7 +50,7 @@ const gpHold = {};
 function padKey(k, on, src = 'btn') {
   const set = gpHold[k] || (gpHold[k] = new Set()), was = set.size > 0;
   if (on) set.add(src); else set.delete(src);
-  if (set.size > 0 && !was) { keys[k] = true; taps.push({ key: k, shift: false }); }
+  if (set.size > 0 && !was) { keys[k] = true; taps.push({ key: k, shift: false, pad: true }); }   // pad: veio do controle
   if (set.size === 0 && was) keys[k] = false;
 }
 function padHat(hx, hy, src) {                        // cruz como eixos → setas

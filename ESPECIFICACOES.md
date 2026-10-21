@@ -83,7 +83,8 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | ↓ (S) | clássico: frear · moderno: descer na tela |
 | Espaço (Z) | atirar em rajada de 10 tiros (até 1 s); para outra rajada, solte e aperte de novo |
 | X ou B | soltar uma bomba do estoque (modo oceano) |
-| Enter ou Espaço | iniciar (na tela de título) |
+| Espaço, Z, X ou Enter | iniciar (na tela de título) |
+| Esc | voltar ao menu principal (de qualquer lugar, em todos os modos) |
 | setas, 1–7 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
 **Com joystick/controle (gamepad)** — vale para **todos os modos** (Classic, Modern, Ocean, Retro Ocean, PICO-8), no título e no fim de jogo, no navegador e no app Android:
@@ -94,7 +95,8 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | direcional em cruz (d-pad) | mover (digital) · nos menus, escolher |
 | A ou RT (gatilho direito) | atirar · no fim de jogo, voltar |
 | B ou LT (gatilho esquerdo) | soltar bomba (oceano e retro; nos outros modos não faz nada) |
-| Start | começar (título) |
+| Start ou qualquer botão/gatilho | começar (título; só o direcional não começa) |
+| − (Select / Back) | voltar ao menu principal, como o Esc |
 | LB / RB | ponte anterior / próxima (fim de jogo) |
 | X / Y | − / + velocidade da rolagem (fim de jogo) |
 
@@ -102,7 +104,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 
 | Tecla | Ação |
 |---|---|
-| Espaço | voltar ao título |
+| Espaço ou Esc | voltar ao título |
 | ↑ / ↓ | rolar para a frente / para trás (inverte a direção) |
 | PgUp ou Shift+↑ | ir para a próxima ponte |
 | PgDn ou Shift+↓ | voltar para a ponte anterior |
@@ -972,6 +974,17 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Catálogo:** +20 gráficos (navio, caça, helicóptero e balão PICO-8 vistos de cima, power-ups e bomba do HUD, tiro, e as telas dos dois modos), num total de 156.
 - **Conferido:** um teste sem janela jogou 9.000 quadros em cada um dos 7 modos, sem erros. No OCEAN - PICO-8 os chefes caem como no Ocean.
 - Para ajustar: `drawPico()` / `drawPicoHud()` (`js/render/pico.js`); `drawPicoOcean()`, `drawPicoOceanHud()`, `PO_S` e os sprites `*_P8` (`js/render/pico-ocean.js`).
+
+## Mudanças da versão 40 — teclas padronizadas em todos os modos
+
+### 64. Esc volta ao menu; Espaço, Z, X e qualquer botão do controle começam
+- **Esc:** volta ao menu principal de qualquer lugar (jogando, no fim de jogo), nos 7 modos.
+- **Botão − do controle** (Select / Back, botão 8 do mapeamento padrão; `KEYCODE_BUTTON_SELECT` no Android): faz o mesmo que o Esc.
+- **Começar o jogo, na tela de título:**
+  - teclado: Espaço, Z, X ou Enter;
+  - controle: qualquer botão ou gatilho (A, B, X, Y, LB, RB, LT, RT, Start). O direcional e o analógico continuam escolhendo o modo, e o − não começa.
+- **Como funciona:** os toques que vêm do controle chegam marcados (`pad: true` em `padKey()`), e a tela de título aceita qualquer um deles, menos as setas e o Esc. A volta ao menu fica no começo de `update()`.
+- **Textos:** o rodapé do menu e a ajuda da página mostram as teclas novas.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

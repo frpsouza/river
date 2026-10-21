@@ -11,6 +11,8 @@ const BURST_FRAMES = 60, BURST_SHOTS = 10, BURST_GAP = 4, BURST_SHOTS_RAPID = 15
 function update() {
   frame++;
   const tp = taps; taps = [];
+  // ESC (ou o botão − do controle): volta ao menu principal de qualquer lugar, em todos os modos
+  if (state !== 'title' && tp.some(t => t.key === 'Escape')) { state = 'title'; freezeT = 0; return; }
   if (state === 'title') {
     for (const t of tp) {
       const M = MODES, k = M.indexOf(mode);
@@ -18,7 +20,8 @@ function update() {
       if (t.key === 'ArrowUp' || t.key === 'ArrowLeft') mode = M[(k + M.length - 1) % M.length];
       if (t.key >= '1' && t.key <= String(M.length)) mode = M[+t.key - 1];
     }
-    if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame();
+    // começa o jogo: ENTER, ESPAÇO, Z ou X no teclado; no controle, qualquer botão ou gatilho (menos o direcional)
+    if (tp.some(t => ['Enter', ' ', 'z', 'Z', 'x', 'X'].includes(t.key) || (t.pad && !t.key.startsWith('Arrow') && t.key !== 'Escape'))) newGame();
     return;
   }
 

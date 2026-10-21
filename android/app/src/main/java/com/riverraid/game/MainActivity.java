@@ -57,6 +57,7 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_BUTTON_L1: return "PageDown";
             case KeyEvent.KEYCODE_BUTTON_R1: return "PageUp";
             case KeyEvent.KEYCODE_BUTTON_START: return "Enter";
+            case KeyEvent.KEYCODE_BUTTON_SELECT: case KeyEvent.KEYCODE_ESCAPE: return "Escape";   // botão − / Select: menu principal
             case KeyEvent.KEYCODE_DPAD_UP: return "ArrowUp";
             case KeyEvent.KEYCODE_DPAD_DOWN: return "ArrowDown";
             case KeyEvent.KEYCODE_DPAD_LEFT: return "ArrowLeft";
