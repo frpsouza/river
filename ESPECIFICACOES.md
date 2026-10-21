@@ -1021,6 +1021,45 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Conferido:** um teste sem janela jogou 9.000 quadros em cada um dos 8 modos, sem erros; no OCEAN EX os chefes caem como no Ocean.
 - Para ajustar: tabela `EX` e `exDraw()`/`exBoss()`/`exCloud()`/`exSea()` (`js/render/ocean-ex.js`); escalas em `scripts/preparar-ocean-ex.py`.
 
+## Mudanças da versão 43 — cartuchos PICO-8 de verdade (.p8)
+
+### 67. `pico8/river.p8` e `pico8/ocean.p8`
+- **O que é:** os modos PICO-8 do jogo, reescritos em Lua como cartuchos que rodam no próprio PICO-8. Dois cartuchos, porque um só não cabe no limite de 8.192 tokens:
+  - `river.p8`: **CLASSIC** e **MODERN**, escolhidos no menu do cartucho (⬆️⬇️);
+  - `ocean.p8`: **OCEAN**.
+- **Tela:** 128×128, proporção 1:1. O mapa ocupa a tela toda e o **HUD fica embaixo, desenhado por cima do cenário**, com contorno preto para ler em qualquer fundo:
+  - placar;
+  - vidas (rio) ou bombas (oceano);
+  - barra de combustível (CLASSIC) ou de vida (MODERN e OCEAN);
+  - power-ups ativos com o tempo restante;
+  - no oceano, a barra do chefe fica no topo.
+- **Escala:** tudo em pixels do PICO-8. Uma linha do mapa = 1 pixel, um bloco = 32 linhas, uma seção = 16 blocos. Larguras e velocidades são as do modo PICO-8 do navegador divididas por 2. O jogo roda a 60 quadros por segundo (`_update60`).
+- **O que veio do jogo do navegador:**
+  - **Rio:** rio simétrico com episódios de assimetria, ilhas, ponte com tanque na estrada, paredões de rocha (MODERN) e a mesma pixel art de `render/pico.js`;
+  - **Rio, jogo:** rajada de 10 tiros, combustível, checkpoint na ponte, power-ups do MODERN, decoração (bosques, campos com vacas);
+  - **Oceano:** ilhas dos 4 tipos, navios, helicópteros que perseguem, balsas de reparo, porta-aviões que lançam caças, as 8 esquadrilhas acrobáticas e os 4 chefes com suas defesas;
+  - **Oceano, voo:** rasante × acima das nuvens, com looping e mergulho, e a bomba com onda de choque.
+- **Simplificações (para caber nos tokens):**
+  - no oceano, a canhoneira troca os foguetes teleguiados por tiros mirados, e o dirigível troca as minas por uma rajada em anel;
+  - os navios andam na horizontal;
+  - as torres do dirigível absorvem os tiros que acertam o casco;
+  - a bomba não tem "orçamento" e atinge tudo o que está na tela;
+  - não há avião cruzando a tela no oceano;
+  - o fim de jogo não deixa rolar o mapa pelas pontes.
+- **Controles:** setas para voar, 🅾️ (Z) para atirar e começar, ❎ (X) para a bomba no oceano. "main menu" no menu de pausa volta ao título. O recorde de cada modo fica salvo (`cartdata`).
+- **Números do PICO-8:** o PICO-8 só conta até 32.767. Por isso:
+  - os pontos são guardados em dezenas (a tela mostra o 0 final);
+  - a origem do mundo avança 256 blocos quando a rolagem passa de 8.192;
+  - os blocos que ficaram para trás são descartados.
+- **Como gerar:** `python3 scripts/gerar-p8.py`. O script junta o código (`pico8/*.lua`) com a folha de sprites (`__gfx__`, montada a partir da pixel art; os caças do oceano vêm em 16 rotações prontas) e os sons (`__sfx__`). Para editar, mexa nos `.lua` ou no script e gere de novo.
+- **Conferido (teste sem janela no PICO-8 0.2.7):**
+  - 3.000 quadros no MODERN e partidas no CLASSIC;
+  - os 4 chefes derrotados em sequência;
+  - fim de jogo → recorde → menu → nova partida;
+  - CPU entre 11% e 25% do quadro;
+  - tokens: cerca de 6.500 (rio) e 7.800 (oceano), de 8.192.
+- **Android e catálogo:** não mudam (o jogo do navegador não foi alterado).
+
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.
 - O som são só bipes simples.
