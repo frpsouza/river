@@ -158,7 +158,7 @@ function drawTitle() {
   });
   ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
   ctx.font = '10px Arial, sans-serif';
-  ctx.fillText('arrows/click: choose · SPACE, Z, X, ENTER: play · ESC: menu', W / 2, TITLE_OPT_Y + opts.length * TITLE_OPT_GAP + 12);
+  ctx.fillText('arrows/click: choose · SPACE, Z, X, ENTER: play · Q: menu', W / 2, TITLE_OPT_Y + opts.length * TITLE_OPT_GAP + 12);
 }
 
 // HUD dos modos de voo livre: no topo, por cima do cenário (pílulas translúcidas)

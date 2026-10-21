@@ -11,8 +11,8 @@ const BURST_FRAMES = 60, BURST_SHOTS = 10, BURST_GAP = 4, BURST_SHOTS_RAPID = 15
 function update() {
   frame++;
   const tp = taps; taps = [];
-  // ESC (ou o botão − do controle): volta ao menu principal de qualquer lugar, em todos os modos
-  if (state !== 'title' && tp.some(t => t.key === 'Escape')) { state = 'title'; freezeT = 0; return; }
+  // Q (ou LB + LT do controle por 1 s, que chega como Escape): volta ao menu principal de qualquer lugar, em todos os modos
+  if (state !== 'title' && tp.some(t => t.key === 'q' || t.key === 'Q' || (t.pad && t.key === 'Escape'))) { state = 'title'; freezeT = 0; return; }
   if (state === 'title') {
     for (const t of tp) {
       const M = MODES, k = M.indexOf(mode);

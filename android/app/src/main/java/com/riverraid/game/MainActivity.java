@@ -48,6 +48,11 @@ public class MainActivity extends Activity {
             || (src & InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD;
     }
 
+    // LB e LT seguem também com o nome, para o combo LB + LT (1 s) = menu principal
+    private static String comboName(int code) {
+        return code == KeyEvent.KEYCODE_BUTTON_L1 ? ",'LB'" : code == KeyEvent.KEYCODE_BUTTON_L2 ? ",'LT'" : "";
+    }
+
     private static String keyFor(int code) {
         switch (code) {
             case KeyEvent.KEYCODE_BUTTON_A: case KeyEvent.KEYCODE_BUTTON_R2: case KeyEvent.KEYCODE_DPAD_CENTER: return " ";
@@ -57,7 +62,7 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_BUTTON_L1: return "PageDown";
             case KeyEvent.KEYCODE_BUTTON_R1: return "PageUp";
             case KeyEvent.KEYCODE_BUTTON_START: return "Enter";
-            case KeyEvent.KEYCODE_BUTTON_SELECT: case KeyEvent.KEYCODE_ESCAPE: return "Escape";   // botão − / Select: menu principal
+            case KeyEvent.KEYCODE_ESCAPE: return "Escape";
             case KeyEvent.KEYCODE_DPAD_UP: return "ArrowUp";
             case KeyEvent.KEYCODE_DPAD_DOWN: return "ArrowDown";
             case KeyEvent.KEYCODE_DPAD_LEFT: return "ArrowLeft";
@@ -73,7 +78,7 @@ public class MainActivity extends Activity {
             if (k != null) {
                 boolean down = e.getAction() == KeyEvent.ACTION_DOWN;
                 if (!down || e.getRepeatCount() == 0)
-                    web.evaluateJavascript("window.nativePad&&nativePad('" + k + "'," + down + ")", null);
+                    web.evaluateJavascript("window.nativePad&&nativePad('" + k + "'," + down + comboName(e.getKeyCode()) + ")", null);
                 return true;
             }
         }

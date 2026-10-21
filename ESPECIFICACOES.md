@@ -84,7 +84,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | Espaço (Z) | atirar em rajada de 10 tiros (até 1 s); para outra rajada, solte e aperte de novo |
 | X ou B | soltar uma bomba do estoque (modo oceano) |
 | Espaço, Z, X ou Enter | iniciar (na tela de título) |
-| Esc | voltar ao menu principal (de qualquer lugar, em todos os modos) |
+| Q | voltar ao menu principal (de qualquer lugar, em todos os modos) |
 | setas, 1–7 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
 **Com joystick/controle (gamepad)** — vale para **todos os modos** (Classic, Modern, Ocean, Retro Ocean, PICO-8), no título e no fim de jogo, no navegador e no app Android:
@@ -96,7 +96,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | A ou RT (gatilho direito) | atirar · no fim de jogo, voltar |
 | B ou LT (gatilho esquerdo) | soltar bomba (oceano e retro; nos outros modos não faz nada) |
 | Start ou qualquer botão/gatilho | começar (título; só o direcional não começa) |
-| − (Select / Back) | voltar ao menu principal, como o Esc |
+| LB + LT juntos por 1 s | voltar ao menu principal, como o Q |
 | LB / RB | ponte anterior / próxima (fim de jogo) |
 | X / Y | − / + velocidade da rolagem (fim de jogo) |
 
@@ -104,7 +104,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 
 | Tecla | Ação |
 |---|---|
-| Espaço ou Esc | voltar ao título |
+| Espaço ou Q | voltar ao título |
 | ↑ / ↓ | rolar para a frente / para trás (inverte a direção) |
 | PgUp ou Shift+↑ | ir para a próxima ponte |
 | PgDn ou Shift+↓ | voltar para a ponte anterior |
@@ -979,12 +979,21 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 
 ### 64. Esc volta ao menu; Espaço, Z, X e qualquer botão do controle começam
 - **Esc:** volta ao menu principal de qualquer lugar (jogando, no fim de jogo), nos 7 modos.
-- **Botão − do controle** (Select / Back, botão 8 do mapeamento padrão; `KEYCODE_BUTTON_SELECT` no Android): faz o mesmo que o Esc.
+- **No controle:** segurar **LB + LT juntos por 1 s** faz o mesmo que o Esc (versão 41; na 40 era o botão −).
 - **Começar o jogo, na tela de título:**
   - teclado: Espaço, Z, X ou Enter;
-  - controle: qualquer botão ou gatilho (A, B, X, Y, LB, RB, LT, RT, Start). O direcional e o analógico continuam escolhendo o modo, e o − não começa.
+  - controle: qualquer botão ou gatilho (A, B, X, Y, LB, RB, LT, RT, Start). O direcional e o analógico continuam escolhendo o modo.
 - **Como funciona:** os toques que vêm do controle chegam marcados (`pad: true` em `padKey()`), e a tela de título aceita qualquer um deles, menos as setas e o Esc. A volta ao menu fica no começo de `update()`.
 - **Textos:** o rodapé do menu e a ajuda da página mostram as teclas novas.
+
+## Mudanças da versão 41 — menu principal: Q no teclado, LB + LT por 1 s no controle
+
+### 65. Combo de ombro e gatilho esquerdos
+- **No controle, segurar LB + LT juntos por 1 s** volta ao menu principal (o mesmo que a tecla Q), em qualquer lugar e em todos os modos. Substitui o botão −, que muitos controles não têm ou põem em lugares diferentes.
+- **De onde vem cada um:** o LT pode chegar como botão (navegador), como gatilho analógico ou como tecla L2 (app Android). O LB chega como botão ou como tecla L1. O jogo guarda cada origem separadamente (`comboHold`), conta 60 passos (1 s, em `stepCombo()`) e dispara o Esc uma vez só.
+- **Teclado:** a tecla do menu principal passou de **Esc** para **Q** (o Esc não faz mais nada). Internamente o combo continua chegando como `Escape`, marcado como vindo do controle.
+- **Efeito colateral:** apertar LT ainda solta uma bomba no oceano, e LB pula ponte no fim de jogo, como antes.
+- **App Android:** as teclas L1/L2 vão para o JavaScript com o nome do botão (`nativePad(k, down, 'LB' | 'LT')`). O Select deixou de ser Esc.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

@@ -7,7 +7,7 @@
 //   A / RT (gatilho dir.)  FOGO (e, no fim de jogo, voltar)
 //   B / LT (gatilho esq.)  BOMBA (oceano e retro; nos outros modos não faz nada)
 //   Start ................ ENTER (começa o jogo)
-//   − / Select / Back .... ESC (volta ao menu principal, em qualquer modo)
+//   LB + LT juntos por 1 s  menu principal, como a tecla Q (em qualquer modo)
 //   no título, QUALQUER botão ou gatilho (menos o direcional) começa o jogo
 //   LB / RB .............. ponte anterior / próxima (fim de jogo)
 //   X / Y ................ − / + velocidade da rolagem (fim de jogo)
@@ -17,11 +17,23 @@
 'use strict';
 
 let gpad = { x: 0, y: 0 }, gpConnected = false;
-const GP_BUTTONS = { 0: ' ', 1: 'b', 6: 'b', 7: ' ', 8: 'Escape', 9: 'Enter', 12: 'ArrowUp', 13: 'ArrowDown', 14: 'ArrowLeft', 15: 'ArrowRight',
+const GP_BUTTONS = { 0: ' ', 1: 'b', 6: 'b', 7: ' ', 9: 'Enter', 12: 'ArrowUp', 13: 'ArrowDown', 14: 'ArrowLeft', 15: 'ArrowRight',
                      4: 'PageDown', 5: 'PageUp', 2: '-', 3: '+' };
 const gpStickPrev = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 
+// LB + LT segurados juntos por 1 s = ESC (menu principal). Cada um tem várias origens (botão,
+// gatilho analógico, app Android), então guardamos quem está segurando cada um.
+const ESC_HOLD = 60;                                   // passos de 1/60 s
+const comboHold = { LB: new Set(), LT: new Set() };
+let comboT = 0;
+const comboSet = (b, src, on) => { if (on) comboHold[b].add(src); else { comboHold[b].delete(src); if (!comboHold[b].size) comboT = 0; } };   // soltou: zera
+function stepCombo() {
+  if (comboHold.LB.size && comboHold.LT.size) { if (++comboT === ESC_HOLD) taps.push({ key: 'Escape', shift: false, pad: true }); }
+  else comboT = 0;
+}
+
 function pollGamepad() {
+  stepCombo();
   if (nativePadActive) return;                         // no app Android o controle chega pelo Java (nativePad/nativeAxes)
   const list = typeof navigator !== 'undefined' && navigator.getGamepads ? navigator.getGamepads() : [];
   const gp = Array.from(list || []).find(g => g && g.connected);
@@ -31,6 +43,8 @@ function pollGamepad() {
   const held = {};
   gp.buttons.forEach((b, i) => { const k = GP_BUTTONS[i]; if (k) held[k] = held[k] || b.pressed || b.value > 0.5; });
   for (const [k, on] of Object.entries(held)) padKey(k, on, 'btn');
+  const pr = i => !!gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.5);
+  comboSet('LB', 'btn', pr(4)); comboSet('LT', 'btn', pr(6));
   // direcional em cruz que chega como eixos (controles fora do mapeamento padrão): eixos 6/7, ou o "POV" no eixo 9
   if (gp.mapping !== 'standard') {
     let hx = gp.axes[6] || 0, hy = gp.axes[7] || 0;
@@ -72,12 +86,13 @@ function applyAxes(ax, ay) {
 // ---------- app Android: o MainActivity.java repassa os eventos do controle para cá ----------
 // (o WebView nem sempre expõe a Gamepad API; assim o controle funciona em qualquer aparelho)
 let nativePadActive = false;
-window.nativePad = (k, down) => { nativePadActive = true; setConnected(true, 'Android'); padKey(k, down, 'key'); };
+window.nativePad = (k, down, btn) => { nativePadActive = true; setConnected(true, 'Android'); padKey(k, down, 'key'); if (btn) comboSet(btn, 'key', down); };
 window.nativeAxes = (x, y, hx, hy, lt, rt) => {
   nativePadActive = true; setConnected(true, 'Android');
   applyAxes(x, y);
   padHat(hx, hy, 'hat');                              // cruz que chega como eixo (HAT)
   padKey(' ', rt > 0.5, 'rt'); padKey('b', lt > 0.5, 'lt');   // gatilhos analógicos: direito = fogo, esquerdo = bomba
+  comboSet('LT', 'axis', lt > 0.5);
 };
 
 // ---------- aviso de conexão e botões de toque ----------
