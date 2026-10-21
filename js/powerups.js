@@ -94,6 +94,7 @@ function resetPowerups() { pw = { shield: 0, triple: 0, rapid: 0 }; bombs = BOMB
 
 // ---- desenho ----
 function drawPowerup(o, sy) {
+  if (isEx() && exDraw('pu_' + o.kind, o.x, sy + Math.sin(frame * 0.08 + o.phase) * 1.5)) return;   // OCEAN EX
   const def = PU[o.kind], t = frame * 0.08 + o.phase;
   const x = o.x, y = sy + Math.sin(t) * 1.5, s = PU_SIZE, c = x + s / 2, m = y + s / 2;
   ell(c + 4, sy + s + 5, 6, 1.5, 'rgba(0,0,30,.22)');                          // sombra (flutua)

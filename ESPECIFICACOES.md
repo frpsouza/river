@@ -54,6 +54,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 11 | `render/terrain.js` | desenho da água, margens, ilhas, ponte e decoração (bosques, campos, vacas) |
 | 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
 | 12b | `render/ocean.js` | desenho do oceano (vetorial, vista de cima): aviões, chefes e barra de vida, porta-aviões, nuvens |
+| 12c | `render/ocean-ex.js` | modo OCEAN EX: troca as peças do desenho vetorial do oceano por imagens detalhadas (`assets/ocean-ex/`), com âncoras iguais às do catálogo |
 | 13c | `render/pico.js` | modos CLASSIC e MODERN - PICO-8: 128×128 com a paleta de 16 cores, sprites em pixel art e fonte 3×5 (no moderno: paredões, power-ups, sombra, escudo, barra de vida) |
 | 13d | `render/pico-ocean.js` | modo OCEAN - PICO-8: a lógica do oceano desenhada a 0,4× (área de 96×128 + coluna de HUD de 32 px), unidades em pixel art de 16 cores e o resto em vetor pixelizado na paleta |
 | 13b | `render/retro.js` | modo Retro Oceano: pixel art em 240×320, quadros intermediários, paleta de 32 cores com pontilhado e fonte bitmap 5×7 |
@@ -85,7 +86,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | X ou B | soltar uma bomba do estoque (modo oceano) |
 | Espaço, Z, X ou Enter | iniciar (na tela de título) |
 | Q | voltar ao menu principal (de qualquer lugar, em todos os modos) |
-| setas, 1–7 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
+| setas, 1–8 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
 **Com joystick/controle (gamepad)** — vale para **todos os modos** (Classic, Modern, Ocean, Retro Ocean, PICO-8), no título e no fim de jogo, no navegador e no app Android:
 
@@ -994,6 +995,31 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Teclado:** a tecla do menu principal passou de **Esc** para **Q** (o Esc não faz mais nada). Internamente o combo continua chegando como `Escape`, marcado como vindo do controle.
 - **Efeito colateral:** apertar LT ainda solta uma bomba no oceano, e LB pula ponte no fim de jogo, como antes.
 - **App Android:** as teclas L1/L2 vão para o JavaScript com o nome do botão (`nativePad(k, down, 'LB' | 'LT')`). O Select deixou de ser Esc.
+
+## Mudanças da versão 42 — modo OCEAN EX (gráficos detalhados)
+
+### 66. 8 OCEAN EX
+- **O que é:** o modo Ocean com os gráficos redesenhados da pasta `novos/`. A lógica é a mesma (240×320, chefes, altitude, bombas, HUD embaixo); só o desenho muda.
+- **Peças com imagem:**
+  - jato (5 inclinações);
+  - navio de cima (normal e disparando) e porta-aviões, com a barra de vida e o clarão de acerto por cima;
+  - caças das esquadrilhas, que continuam girando e dando parafuso;
+  - helicóptero (encolhe quando voa baixo), balões, balsa de combustível e os 5 power-ups;
+  - os 4 chefes: a canhoneira com e sem escudo, o dirigível blindado e sem torres (as torres já destruídas ganham marcas queimadas), o interceptador com o rastro e a linha de mira da investida;
+  - foguete, mina, tiro inimigo e míssil;
+  - as 4 nuvens (esticadas até a caixa de cada nuvem) e a textura do mar, que rola com o mundo em ladrilhos espelhados, sem emenda.
+- **Continuam vetoriais:** ilhas (geradas pelo jogo), explosões (as do catálogo têm só 4 quadros), sombras das nuvens e o HUD.
+- **Como funciona:** cada imagem de `novos/` tem o mesmo enquadramento do PNG do catálogo. Por isso cada uma tem uma âncora fixa: o ponto que a função vetorial recebe, na mesma chamada usada no catálogo (tabela `EX` em `js/render/ocean-ex.js`). As funções de desenho (`drawJet`, `drawShipTop`, `drawBoss`, `drawClouds`…) perguntam primeiro `isEx() && exDraw(...)`. Se a imagem ainda não carregou, desenham em vetor.
+- **Preparação:** `python3 scripts/preparar-ocean-ex.py` (requer Pillow) lê `novos/` e grava `assets/ocean-ex/`:
+  - reduz para 3 pixels por unidade do jogo: 33 imagens, cerca de 1,2 MB (eram 13 MB);
+  - tira o mar de fundo das nuvens, usando o canal vermelho como transparência.
+  
+  Para trocar um gráfico, substitua o PNG em `novos/` e rode o script de novo.
+- **Offline e Android:** as imagens entram no cache do `sw.js` e na cópia para o APK (`scripts/export-android.sh` agora copia `assets/`).
+- **Menu:** 8 opções (teclas 1 a 8), um pouco mais compactas.
+- **Catálogo:** + 2 telas (OCEAN EX rasante e acima das nuvens). O catálogo espera as imagens carregarem antes de desenhar.
+- **Conferido:** um teste sem janela jogou 9.000 quadros em cada um dos 8 modos, sem erros; no OCEAN EX os chefes caem como no Ocean.
+- Para ajustar: tabela `EX` e `exDraw()`/`exBoss()`/`exCloud()`/`exSea()` (`js/render/ocean-ex.js`); escalas em `scripts/preparar-ocean-ex.py`.
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

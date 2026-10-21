@@ -269,7 +269,7 @@ function run() {
   // ======================= TELAS COMPLETAS =======================
   group('telas', 'Telas completas', 'Uma captura de cada modo, com HUD.');
   mode = 'classic'; state = 'title'; blocks = null; draw();
-  item('telas', 'tela_titulo', 'Tela de título', 'Escolha dos 7 modos.', '—', wholeCanvas(1));
+  item('telas', 'tela_titulo', 'Tela de título', 'Escolha dos 8 modos.', '—', wholeCanvas(1));
   const shot = (m, id, name, setup, up = 1) => { mode = m; newGame(); state = 'play'; sim(240); if (setup) setup(); state = 'play'; draw(); item('telas', id, name, '', name.split(' — ')[0], wholeCanvas(up)); };
   shot('classic', 'tela_classic', 'CLASSIC — rio com combustível e painel embaixo');
   shot('modern', 'tela_modern', 'MODERN — voo livre e HUD no topo');
@@ -277,6 +277,8 @@ function run() {
   shot('ocean', 'tela_ocean_alto', 'OCEAN — acima das nuvens', () => { altT = 1; altTarget = 1; });
   shot('retro', 'tela_retro', 'RETRO OCEAN — pixel art 240×320', null, 2);
   shot('pico', 'tela_pico', 'CLASSIC - PICO-8 — 128×128, 16 cores', null, 4);
+  shot('oceanex', 'tela_oceanex_rasante', 'OCEAN EX — gráficos detalhados, voo rasante', () => { altT = 0; altTarget = 0; });
+  shot('oceanex', 'tela_oceanex_alto', 'OCEAN EX — acima das nuvens', () => { altT = 1; altTarget = 1; });
   shot('pmodern', 'tela_pmodern', 'MODERN - PICO-8 — paredões, power-ups e vida', null, 4);
   shot('pocean', 'tela_pocean_rasante', 'OCEAN - PICO-8 — rasante, HUD na coluna da direita', () => { altT = 0; altTarget = 0; }, 4);
   shot('pocean', 'tela_pocean_alto', 'OCEAN - PICO-8 — acima das nuvens', () => { altT = 1; altTarget = 1; }, 4);
@@ -284,4 +286,5 @@ function run() {
   document.getElementById('out').textContent = JSON.stringify({ groups: GROUPS, items: OUT });
 }
 
-setTimeout(() => { try { run(); } catch (e) { document.getElementById('out').textContent = JSON.stringify({ error: String(e), stack: e.stack }); } }, 300);
+// espera as imagens do OCEAN EX (assets/ocean-ex) carregarem antes de desenhar
+setTimeout(() => exReady.then(() => { try { run(); } catch (e) { document.getElementById('out').textContent = JSON.stringify({ error: String(e), stack: e.stack }); } }), 300);

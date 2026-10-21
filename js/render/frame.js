@@ -19,6 +19,7 @@ function draw() {
   const zs = isOcean() ? 1 - 0.28 * smooth(altT) : 1, ext = VIEW_H * (1 / zs - 1) / 2;
   if (zs < 1) { ctx.save(); ctx.translate(W / 2, VIEW_H / 2); ctx.scale(zs, zs); ctx.translate(-W / 2, -VIEW_H / 2); }
   const g0 = Math.max(0, Math.floor((scroll - ext) / BH) - 1), g1 = Math.floor((scroll + VIEW_H + ext) / BH) + 1;
+  if (isEx()) exSea(ext);                                          // OCEAN EX: textura do mar
   for (let ph = 0; ph < 6; ph++) for (let g = g0; g <= g1; g++) drawTerrain(getBlock(g), ph);
   for (let g = g0; g <= g1; g++) { const blk = getBlock(g); if (blk.bridge) drawBridge(blk); }
   for (let g = g0; g <= g1; g++) drawCliffs(getBlock(g));          // paredões (modo moderno)
@@ -64,6 +65,7 @@ function draw() {
   // míssil
   for (const m of missiles) {
     const my = VIEW_H - (m.Y + 8 - scroll);
+    if (isEx() && exDraw('missil', m.x, my)) continue;            // OCEAN EX
     rrect(m.x - 0.3, my, 2.6, 8, 1.2); ctx.fillStyle = pw.rapid > 0 ? '#ffe58a' : '#ffd23a'; ctx.fill();
     ell(m.x + 1, my + 1, 1.3, 1.6, '#ffffff');
   }
@@ -96,6 +98,7 @@ function draw() {
 // projétil dos tanques: bem visível, com contraste laranja/branco/vermelho
 // (rastro atrás, halo vermelho pulsando, corpo laranja com contorno escuro e núcleo branco)
 function drawShell(sh, sy) {
+  if (isEx() && exShell(sh, sy)) return;                                         // OCEAN EX
   if (sh.kind === 'rocket') {                                        // foguete teleguiado: corpo, aletas e chama
     const a = Math.atan2(-sh.vy, sh.vx);
     ctx.save(); ctx.translate(sh.x, sy); ctx.rotate(a);
@@ -134,7 +137,7 @@ function banner(a, b, c) {
   lines.forEach((t, k) => ctx.fillText(t, W / 2, 196 + k * 13));
 }
 
-const TITLE_OPT_Y = 92, TITLE_OPT_GAP = 30, TITLE_OPT_H = 27;   // topo da 1ª opção de modo, distância entre elas e altura
+const TITLE_OPT_Y = 88, TITLE_OPT_GAP = 27, TITLE_OPT_H = 24;   // topo da 1ª opção de modo, distância entre elas e altura
 
 function drawTitle() {
   ctx.fillStyle = PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
@@ -149,12 +152,13 @@ function drawTitle() {
                 ['retro', '4  RETRO OCEAN', 'the ocean in pixel art, 240×320'],
                 ['pico', '5  CLASSIC - PICO-8', 'classic mode at 128×128, 16-color palette'],
                 ['pmodern', '6  MODERN - PICO-8', 'modern mode at 128×128, 16-color palette'],
-                ['pocean', '7  OCEAN - PICO-8', 'ocean mode at 128×128, 16-color palette']];
+                ['pocean', '7  OCEAN - PICO-8', 'ocean mode at 128×128, 16-color palette'],
+                ['oceanex', '8  OCEAN EX', 'the ocean with detailed hand-painted graphics']];
   opts.forEach(([m, name, desc], k) => {
     const y = TITLE_OPT_Y + k * TITLE_OPT_GAP, on = mode === m;
     rrect(32, y, W - 64, TITLE_OPT_H, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
-    ctx.fillStyle = on ? '#26334f' : '#e8ecf5'; ctx.font = 'bold 12px Arial, sans-serif'; ctx.fillText(name, W / 2, y + 12);
-    ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '8.5px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 23);
+    ctx.fillStyle = on ? '#26334f' : '#e8ecf5'; ctx.font = 'bold 11px Arial, sans-serif'; ctx.fillText(name, W / 2, y + 11);
+    ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '8px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 20.5);
   });
   ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
   ctx.font = '10px Arial, sans-serif';

@@ -25,7 +25,8 @@ function drawBoss(B) {
     const s = bossFallScale(B);
     ctx.save(); ctx.translate(B.x, B.y); ctx.rotate(B.fall.rot); ctx.scale(s, s); ctx.translate(-B.x, -B.y);
   }
-  if (B.kind === 'gunship') drawGunship(B);
+  if (isEx() && exBoss(B)) { /* OCEAN EX: imagem detalhada */ }
+  else if (B.kind === 'gunship') drawGunship(B);
   else if (B.kind === 'airship') drawAirship(B);
   else if (B.kind === 'interceptor') drawInterceptor(B);
   else drawBomber(B);
@@ -151,6 +152,7 @@ function drawBossBar(B) {
 }
 
 function drawCarrier(x, y, dir, o) {
+  if (isEx() && exCarrier(x, y, dir, o)) return;                                // OCEAN EX
   // porta-aviões visto de cima: casco, convés com pista, ilha de comando e caças estacionados
   const L = o.w, H = o.h;
   ctx.save(); ctx.translate(x + (dir > 0 ? 0 : L), y); if (dir < 0) ctx.scale(-1, 1);   // proa para `dir`
@@ -234,6 +236,7 @@ function drawClouds(mult = 1, below = false) {
   forClouds((c, y) => {
     if (y - 300 > VIEW_H || y + 40 < -300) return;
     const over = !below && state === 'play' && c.puffs.some(([dx, dy, r, st]) => Math.abs(jx - c.x - dx) < r + 4 && Math.abs(jy - y - dy) < r * st + 4);
+    if (isEx() && exCloud(c, y, (over ? Math.min(0.45, c.alpha) : c.alpha) * mult)) return;   // OCEAN EX
     ctx.globalAlpha = (over ? Math.min(0.45, c.alpha) : c.alpha) * mult;
     for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx, y + dy + r * 0.25, r, r * 0.85 * st, '#d6e2f0');   // base sombreada
     for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx - r * 0.12, y + dy - r * 0.08, r * 0.9, r * 0.78 * st, '#ffffff');
@@ -257,6 +260,7 @@ function drawCloudDeck(mult) {
   const g0 = Math.max(0, Math.floor((scroll - 120) / BH)), g1 = Math.floor((scroll + VIEW_H + 40) / BH);
   for (let g = g0; g <= g1; g++) for (const c of getDeck(getBlock(g))) {
     const y = VIEW_H - (c.Y - scroll);
+    if (isEx() && exCloud(c, y, 0.82 * mult)) continue;           // OCEAN EX
     ctx.globalAlpha = 0.82 * mult;
     for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx, y + dy + r * 0.25, r, r * 0.85 * st, '#d6e2f0');
     for (const [dx, dy, r, st] of c.puffs) ell(c.x + dx - r * 0.12, y + dy - r * 0.08, r * 0.9, r * 0.78 * st, '#ffffff');

@@ -7,8 +7,8 @@
 'use strict';
 
 let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens · 'ocean' · 'retro' · versões PICO-8
-const MODES = ['classic', 'modern', 'ocean', 'retro', 'pico', 'pmodern', 'pocean'];   // ordem do menu (teclas 1 a 7)
-const isOcean = () => mode === 'ocean' || mode === 'retro' || mode === 'pocean';   // retro e OCEAN - PICO-8 usam toda a lógica do oceano
+const MODES = ['classic', 'modern', 'ocean', 'retro', 'pico', 'pmodern', 'pocean', 'oceanex'];   // ordem do menu (teclas 1 a 8)
+const isOcean = () => mode === 'ocean' || mode === 'retro' || mode === 'pocean' || mode === 'oceanex';   // retro, OCEAN - PICO-8 e OCEAN EX usam toda a lógica do oceano
 const isModern = () => mode === 'modern' || mode === 'pmodern';                    // MODERN - PICO-8 usa a lógica do moderno
 const isPico = () => mode === 'pico' || mode === 'pmodern' || mode === 'pocean';   // desenhados em 128×128, paleta de 16 cores
 const pyMin = () => isOcean() ? OCEAN_PY_MIN : PLAYER_Y;      // altura mínima do jato (acima do HUD de baixo no oceano)

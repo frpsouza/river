@@ -21,6 +21,7 @@ const SCREENS = {                                    // [w, h, css w, css h, pix
   pmodern: [128, 128, 512, 512, true, 'pico'],
   pocean:  [128, 128, 512, 512, true, 'pico'],
   ocean: [240 * SCALE, 320 * SCALE, 480, 640, false, ''],
+  oceanex: [240 * SCALE, 320 * SCALE, 480, 640, false, ''],   // mesmo desenho do ocean, com as imagens de render/ocean-ex.js
 };
 let screenOn = null;
 function syncCanvas() {

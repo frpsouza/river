@@ -1,10 +1,11 @@
 // sw.js — service worker do PWA: guarda os arquivos do jogo para jogar offline.
 // Ao mudar o jogo, troque VERSION para os aparelhos baixarem a versão nova.
-const VERSION = 'river-v41';
+const VERSION = 'river-v42';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
   'js/config.js', 'js/util.js', 'js/audio.js', 'js/terrain.js', 'js/objects.js', 'js/cliffs.js', 'js/powerups.js', 'js/ocean/world.js', 'js/ocean/squads.js', 'js/ocean/bosses.js', 'js/ocean/altitude.js', 'js/ocean/bombs.js', 'js/ocean/update.js', 'js/state.js',
   'js/effects.js', 'js/gameover.js', 'js/update.js', 'js/render/canvas.js', 'js/render/terrain.js',
-  'js/render/sprites.js', 'js/render/ocean.js', 'js/render/frame.js', 'js/render/retro.js', 'js/render/pico.js', 'js/render/pico-ocean.js', 'js/main.js', 'js/gamepad.js', 'js/touch.js'];
+  'js/render/sprites.js', 'js/render/ocean.js', 'js/render/ocean-ex.js', 'js/render/frame.js', 'js/render/retro.js', 'js/render/pico.js', 'js/render/pico-ocean.js', 'js/main.js', 'js/gamepad.js', 'js/touch.js',
+  'assets/ocean-ex/balao_cima_0.png', 'assets/ocean-ex/balao_cima_1.png', 'assets/ocean-ex/caca_vermelho.png', 'assets/ocean-ex/chefe_bombardeiro.png', 'assets/ocean-ex/chefe_canhoneira.png', 'assets/ocean-ex/chefe_canhoneira_escudo.png', 'assets/ocean-ex/chefe_dirigivel.png', 'assets/ocean-ex/chefe_dirigivel_avariado.png', 'assets/ocean-ex/chefe_interceptador.png', 'assets/ocean-ex/combustivel_cima.png', 'assets/ocean-ex/foguete.png', 'assets/ocean-ex/heli_cima.png', 'assets/ocean-ex/jato_vetor_dir.png', 'assets/ocean-ex/jato_vetor_dir_max.png', 'assets/ocean-ex/jato_vetor_esq.png', 'assets/ocean-ex/jato_vetor_esq_max.png', 'assets/ocean-ex/jato_vetor_nivel.png', 'assets/ocean-ex/mar_ondas.png', 'assets/ocean-ex/mina.png', 'assets/ocean-ex/missil.png', 'assets/ocean-ex/navio_cima.png', 'assets/ocean-ex/navio_cima_disparo.png', 'assets/ocean-ex/nuvem_bank.png', 'assets/ocean-ex/nuvem_puff.png', 'assets/ocean-ex/nuvem_tower.png', 'assets/ocean-ex/nuvem_wisp.png', 'assets/ocean-ex/porta_avioes.png', 'assets/ocean-ex/pu_bomb.png', 'assets/ocean-ex/pu_life.png', 'assets/ocean-ex/pu_rapid.png', 'assets/ocean-ex/pu_shield.png', 'assets/ocean-ex/pu_triple.png', 'assets/ocean-ex/tiro_inimigo.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k))))));
 self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));

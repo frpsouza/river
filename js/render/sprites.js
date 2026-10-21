@@ -50,6 +50,7 @@ function drawShip(x, y, dir) {
 
 const PLANE_PAL = { top: '#9fe0ff', bottom: '#4aa8e0', body: '#6cc8f2', belly: '#4aa8e0' };
 function drawPlane(x, y, dir, pal = PLANE_PAL) {
+  if (isEx() && pal === FLIER_PAL && exDraw('caca_vermelho', x, y + Math.sin(frame * 0.3) * 0.4, 1, dir < 0 ? 20 * SC.plane : 0)) return;   // OCEAN EX
   ctx.save(); ctx.translate(x + (dir < 0 ? 20 * SC.plane : 0), y + Math.sin(frame * 0.3) * 0.4); ctx.scale(dir < 0 ? -SC.plane : SC.plane, SC.plane);
   poly([13, 5, 4, 0, 2, 0, 6, 5], pal.top);             // asa de cima (luz)
   poly([13, 5, 4, 10, 2, 10, 6, 5], pal.bottom);        // asa de baixo (sombra)
@@ -104,6 +105,7 @@ function drawBalloon(x, y, hue, phase) {
 }
 
 function drawJet(cx, top, bk, s, flame) {
+  if (isEx() && exJet(cx, top, bk, s)) return;                                 // OCEAN EX: imagem detalhada
   ctx.save(); ctx.translate(cx, top); ctx.scale(s, s);
   const th = bk * 0.9, c = Math.cos(th), sn = Math.sin(th);
   const spR = 2.3 + 5.5 * c * (1 - 0.3 * sn), spL = 2.3 + 5.5 * c * (1 + 0.3 * sn);   // asa de baixo encurta
@@ -126,6 +128,7 @@ function drawJet(cx, top, bk, s, flame) {
 // em planta (top-down), no mesmo tamanho das versões de lado (mesmas áreas de colisão).
 
 function drawFuelTop(x, y) {
+  if (isEx() && exDraw('combustivel_cima', x, y)) return;                        // OCEAN EX
   // balsa de combustível: casco claro com dois tanques redondos vermelhos
   ctx.save(); ctx.translate(x, y);
   ell(11, 15, 9, 13, 'rgba(0,0,40,.18)');
@@ -143,6 +146,7 @@ function drawFuelTop(x, y) {
 }
 
 function drawShipTop(x, y, dir, aim = 0, flash = 0) {
+  if (isEx() && exDraw(flash > 0 ? 'navio_cima_disparo' : 'navio_cima', x, y, 1, dir < 0 ? 43 : 0)) return;   // OCEAN EX
   // navio de patrulha visto de cima: casco afilado na proa, convés, ponte de comando e canhão
   const L = 43, H = 14;
   ctx.save(); ctx.translate(x + (dir > 0 ? 0 : L), y); if (dir < 0) ctx.scale(-1, 1);   // proa para `dir`
@@ -163,6 +167,7 @@ function drawShipTop(x, y, dir, aim = 0, flash = 0) {
 }
 
 function drawHeliTop(x, y, dir, alt = 1) {
+  if (isEx() && exDraw('heli_cima', x, y, alt, dir > 0 ? 27 : 0)) return;        // OCEAN EX (a imagem olha para a esquerda)
   // helicóptero visto de cima: cabine em gota, cauda, disco do rotor girando; sombra longe = alto
   const k = alt, w = 27 * k, h = 19 * k, cx = x + w / 2, cy = y + h / 2;
   ell(cx + 10 * alt, cy + 12 * alt, 8 * k, 4 * k, 'rgba(0,0,30,' + (0.3 - alt * 0.12).toFixed(2) + ')');
@@ -184,6 +189,7 @@ function drawHeliTop(x, y, dir, alt = 1) {
 }
 
 function drawBalloonTop(x, y, hue, phase) {
+  if (isEx() && exDraw('balao_cima_' + (hue ? 1 : 0), x, y + Math.sin(frame * 0.05 + phase) * 1.2)) return;   // OCEAN EX
   // balão visto de cima: círculo em gomos coloridos, cesto no centro; sombra bem longe (está alto)
   const r = 12, cx = x + 12, cy = y + 14 + Math.sin(frame * 0.05 + phase) * 1.2;
   ell(cx + 18, cy + 26, r * 0.8, r * 0.55, 'rgba(0,0,30,.16)');
