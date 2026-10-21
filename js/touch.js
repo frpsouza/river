@@ -93,7 +93,7 @@ const titlePick = e => {
   const r = cv.getBoundingClientRect();
   const y = (e.clientY - r.top) / r.height * SCREEN_H;
   const k = Math.floor((y - TITLE_OPT_Y) / TITLE_OPT_GAP), off = (y - TITLE_OPT_Y) % TITLE_OPT_GAP;
-  return y >= TITLE_OPT_Y && off < 32 && k < 5 ? ['classic', 'modern', 'ocean', 'retro', 'pico'][k] : null;
+  return y >= TITLE_OPT_Y && off < TITLE_OPT_H && k < MODES.length ? MODES[k] : null;
 };
 cv.addEventListener('pointerdown', e => {
   if (state !== 'title') return;

@@ -134,29 +134,31 @@ function banner(a, b, c) {
   lines.forEach((t, k) => ctx.fillText(t, W / 2, 196 + k * 13));
 }
 
-const TITLE_OPT_Y = 96, TITLE_OPT_GAP = 36;          // topo da 1ª opção de modo e distância entre elas
+const TITLE_OPT_Y = 92, TITLE_OPT_GAP = 30, TITLE_OPT_H = 27;   // topo da 1ª opção de modo, distância entre elas e altura
 
 function drawTitle() {
   ctx.fillStyle = PAL.water; ctx.fillRect(0, 0, W, VIEW_H);
   ctx.fillStyle = PAL.dark.land; ctx.fillRect(0, 0, 70, VIEW_H); ctx.fillRect(W - 70, 0, 70, VIEW_H);
-  drawJet(W / 2, 326, 0, 1.2, true);
-  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 52, W - 32, 266, 8); ctx.fill();
+  drawJet(W / 2, 334, 0, 1.2, true);
+  ctx.fillStyle = 'rgba(8,10,25,.78)'; rrect(16, 52, W - 32, 272, 8); ctx.fill();
   ctx.textAlign = 'center'; ctx.fillStyle = '#ffe45a'; ctx.font = 'bold 24px Arial, sans-serif';
   ctx.fillText('RIVER RAID', W / 2, 82);
   const opts = [['classic', '1  CLASSIC', 'banks and islands are deadly, like the Atari original'],
                 ['modern', '2  MODERN', 'free flight · rock walls · power-ups'],
                 ['ocean', '3  OCEAN', 'open sea · carriers · squadrons · bosses · clouds'],
                 ['retro', '4  RETRO OCEAN', 'the ocean in pixel art, 240×320'],
-                ['pico', '5  CLASSIC - PICO-8', 'classic mode at 128×128, 16-color palette']];
+                ['pico', '5  CLASSIC - PICO-8', 'classic mode at 128×128, 16-color palette'],
+                ['pmodern', '6  MODERN - PICO-8', 'modern mode at 128×128, 16-color palette'],
+                ['pocean', '7  OCEAN - PICO-8', 'ocean mode at 128×128, 16-color palette']];
   opts.forEach(([m, name, desc], k) => {
     const y = TITLE_OPT_Y + k * TITLE_OPT_GAP, on = mode === m;
-    rrect(32, y, W - 64, 32, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
-    ctx.fillStyle = on ? '#26334f' : '#e8ecf5'; ctx.font = 'bold 13px Arial, sans-serif'; ctx.fillText(name, W / 2, y + 14);
-    ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '9px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 26);
+    rrect(32, y, W - 64, TITLE_OPT_H, 6); ctx.fillStyle = on ? '#ffc93c' : 'rgba(255,255,255,.08)'; ctx.fill();
+    ctx.fillStyle = on ? '#26334f' : '#e8ecf5'; ctx.font = 'bold 12px Arial, sans-serif'; ctx.fillText(name, W / 2, y + 12);
+    ctx.fillStyle = on ? '#26334f' : 'rgba(255,255,255,.6)'; ctx.font = '8.5px Arial, sans-serif'; ctx.fillText(desc, W / 2, y + 23);
   });
   ctx.fillStyle = '#fff'; ctx.font = '11px Arial, sans-serif';
   ctx.font = '10px Arial, sans-serif';
-  ctx.fillText('arrows or click to choose · ENTER or 2nd click to play', W / 2, TITLE_OPT_Y + opts.length * TITLE_OPT_GAP + 16);
+  ctx.fillText('arrows or click to choose · ENTER or 2nd click to play', W / 2, TITLE_OPT_Y + opts.length * TITLE_OPT_GAP + 12);
 }
 
 // HUD dos modos de voo livre: no topo, por cima do cenário (pílulas translúcidas)

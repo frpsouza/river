@@ -18,6 +18,8 @@ cv.width = W * SCALE; cv.height = SCREEN_H * SCALE;
 const SCREENS = {                                    // [w, h, css w, css h, pixelado?, renderizador]
   retro: [240, 320, 480, 640, true, 'retro'],
   pico:  [128, 128, 512, 512, true, 'pico'],
+  pmodern: [128, 128, 512, 512, true, 'pico'],
+  pocean:  [128, 128, 512, 512, true, 'pico'],
   ocean: [240 * SCALE, 320 * SCALE, 480, 640, false, ''],
 };
 let screenOn = null;

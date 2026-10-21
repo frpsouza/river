@@ -1,24 +1,27 @@
-// render/pico.js — MODO "CLASSIC - PICO-8": o clássico em 128×128 com a paleta de 16 cores
-// A lógica é a do modo clássico rodando numa escala interna 2× (256×224 unidades); aqui tudo
+// render/pico.js — MODOS "CLASSIC - PICO-8" e "MODERN - PICO-8": 128×128 com a paleta de 16 cores
+// (o "OCEAN - PICO-8" tem renderizador próprio, em render/pico-ocean.js, e usa as peças daqui)
+// A lógica é a do modo clássico (ou do moderno) rodando numa escala interna 2× (256×224 unidades); aqui tudo
 // é desenhado pela metade, direto em pixels: área de jogo de 128×112 e HUD de 16 px embaixo.
 // Cada linha do mapa (2 unidades) vira exatamente 1 pixel, então margens, ilhas e pontes são
 // desenhadas linha a linha, nítidas. Os sprites são pixel art pequena feita à mão, só com as
 // 16 cores da paleta; o jato tem 5 quadros de inclinação e o helicóptero 2 de rotor.
-// Textos numa fonte 3×5 própria.
+// Textos numa fonte 3×5 própria. No MODERN - PICO-8 entram também os paredões de rocha, os
+// power-ups, a sombra do jato, o escudo e a barra de vida no lugar do combustível.
 //
-// Usa: lógica do clássico (terrain, objects, update…) e getDeco (render/terrain.js).
+// Usa: lógica do clássico/moderno (terrain, objects, cliffs, update…), getDeco (render/terrain.js).
 'use strict';
 
 // paleta de 16 cores do PICO-8 (índices 0–15)
 const P8 = ['#000000', '#1d2b53', '#7e2553', '#008751', '#ab5236', '#5f574f', '#c2c3c7', '#fff1e8',
             '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'];
 const P8RGB = P8.map(h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16)));
-const p8near = hex => {                                  // cor qualquer → cor mais próxima da paleta
+const p8idx = hex => {                                   // cor qualquer → índice da cor mais próxima da paleta
   const [r, g, b] = [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16) || 0);
   let best = 0, bd = 1e9;
   P8RGB.forEach(([R, G, B], k) => { const d = (r - R) ** 2 + (g - G) ** 2 + (b - B) ** 2; if (d < bd) { bd = d; best = k; } });
-  return P8[best];
+  return best;
 };
+const p8near = hex => P8[p8idx(hex)];
 const PICO_VIEW = 112;                                   // altura da área de jogo em pixels
 
 const px8 = (x, y, w, h, c) => { ctx.fillStyle = P8[c]; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
@@ -57,6 +60,29 @@ const BALLOON_P8 = [['...8888...', '..877888..', '.88777888.', '.88777888.', '.8
 const TREE_P8 = { round: ['.t.', 'ttt', 'ttt', '.4.'], pine: ['.t.', '.t.', 'ttt', 'ttt', '.4.'] };
 const treeP8 = (pine, land) => { const t = land === LAND_LIGHT ? '3' : 'b'; const key = 'tree' + pine + t; return p8(key, TREE_P8[pine ? 'pine' : 'round'].map(r => r.replace(/t/g, t))); };
 const COW_P8 = ['777.', '707.', '.5.5'];
+// sombra do jato (moderno e oceano): a silhueta em azul-escuro
+const jetShadowP8 = lvl => p8('jsh' + Math.abs(lvl), PJET[Math.abs(lvl)].map(r => r.replace(/[^.]/g, '1')), lvl < 0);
+// power-ups: caixa 7×7 (borda escura, ícone branco 5×5) e versão mini 5×5 para o HUD
+const PU_P8C = { shield: ['c', '1'], triple: ['9', '4'], rapid: ['a', '9'], bomb: ['8', '2'], life: ['b', '3'] };
+const PU_P8I = {
+  shield: ['.###.', '#####', '#####', '.###.', '..#..'], triple: ['#.#.#', '#.#.#', '#.#.#', '#.#.#', '#.#.#'],
+  rapid: ['..#..', '.###.', '#.#.#', '..#..', '.###.'], bomb: ['...#.', '.###.', '#####', '#####', '.###.'],
+  life: ['..#..', '..#..', '#####', '..#..', '..#..'],
+};
+const puMiniP8 = kind => p8('pum' + kind, PU_P8I[kind].map(r => r.replace(/#/g, '7').replace(/\./g, PU_P8C[kind][0])));
+function puP8(kind, lit) {
+  const [c, d] = PU_P8C[kind], b = lit ? '7' : d, ic = PU_P8I[kind];
+  const rows = ['.' + b.repeat(5) + '.'].concat(ic.map(r => b + r.replace(/#/g, '7').replace(/\./g, c) + b), ['.' + b.repeat(5) + '.']);
+  return p8('pu' + kind + (lit ? 1 : 0), rows);
+}
+// bomba do HUD (acesa / gasta)
+const BOMB_P8 = ['...a.', '.888.', '87888', '88888', '.888.'];
+const bombP8 = on => on ? p8('bomb1', BOMB_P8) : p8('bomb0', BOMB_P8.map(r => r.replace(/[8a]/g, '5').replace(/7/g, '6')));
+// anel de pixels (escudo)
+function ringP8(cx, cy, r, c) {
+  const n = Math.ceil(r * 7);
+  for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2; px8(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1, 1, c); }
+}
 
 // ---------- fonte 3×5 ----------
 const F35 = {
@@ -69,6 +95,7 @@ const F35 = {
   'U': '505|505|505|505|077', 'V': '505|505|505|777|020', 'W': '505|505|505|777|777', 'X': '505|505|020|505|505', 'Y': '505|505|777|020|777',
   'Z': '777|005|020|500|777', ' ': '000|000|000|000|000', ':': '000|020|000|020|000', '/': '005|005|020|500|500', '+': '000|020|777|020|000',
   '-': '000|000|777|000|000', '.': '000|000|000|000|020', '!': '020|020|020|000|020', '▲': '000|020|777|000|000', '▼': '000|777|020|000|000',
+  '♥': '505|777|777|020|000',
 };
 function ptxt(str, x, y, c = 7, align = 'left') {
   const s = [...String(str).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '')];
@@ -81,6 +108,7 @@ function ptxt(str, x, y, c = 7, align = 'left') {
 
 // ---------- quadro ----------
 function drawPico() {
+  if (isOcean()) return drawPicoOcean();                  // OCEAN - PICO-8: render/pico-ocean.js
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
   const sY = Y => (VIEW_H - (Y - scroll)) / 2;            // mundo → linha de pixel
   // terreno, uma linha de pixel por linha do mapa
@@ -93,6 +121,9 @@ function drawPico() {
     if (h % 7 === 0) { const wx = L + 3 + (h >>> 8) % Math.max(1, R - L - 8); px8(wx, r, 3, 1, 7); }
     px8(0, r, L, 1, land); px8(R, r, 128 - R, 1, land);
     px8(L - 1, r, 1, 1, edge); px8(R, r, 1, 1, edge);                  // beirada
+    const cl = Math.round(b.cliffL[i] / 2), cr = Math.round(b.cliffR[i] / 2);   // paredões de rocha (moderno)
+    if (cl > 0) { px8(L - cl, r, cl, 1, 5); px8(L - cl - 1, r, 1, 1, 0); px8(L - 1, r, 1, 1, 6); if (h % 5 === 1) px8(L - cl + (h >>> 9) % cl, r, 1, 1, 13); }
+    if (cr > 0) { px8(R, r, cr, 1, 5); px8(R + cr, r, 1, 1, 0); px8(R, r, 1, 1, 6); if (h % 5 === 2) px8(R + (h >>> 9) % cr, r, 1, 1, 13); }
     if (b.IR[i] > b.IL[i]) { const a = Math.round(b.IL[i] / 2), c = Math.round(b.IR[i] / 2); px8(a, r, c - a, 1, 3); px8(a, r, 1, 1, 1); px8(c - 1, r, 1, 1, 1); }
     if (b.bridge && i >= 10 && i <= 21) {                              // estrada e ponte
       px8(0, r, 128, 1, i === 10 || i === 21 ? 6 : 5);
@@ -126,6 +157,7 @@ function drawPico() {
     else if (o.type === 'tank') putB(p8('tank', TANK_P8, o.aim < 0), cx, by);
     else if (o.type === 'balloon') putB(p8('bal' + o.hue, BALLOON_P8[o.hue ? 1 : 0]), cx, by + Math.round(Math.sin(frame * 0.05 + o.phase)));
     else if (o.type === 'plane' && o.active) put(p8('plane', PLANE_P8, o.dir < 0), cx, cy);
+    else if (o.type === 'pu') put(puP8(o.kind, frame % 30 < 6), cx, cy + Math.round(Math.sin(frame * 0.08 + o.phase)));
     else if (o.type === 'heli') {
       const s = p8('heli' + ((frame >> 2) % 2), HELI_P8[(frame >> 2) % 2].concat(HELI_BODY), o.dir > 0), k = o.alt || 1;
       ctx.drawImage(s, Math.round(cx - s.width * k / 2), Math.round(by - s.height * k), Math.round(s.width * k), Math.round(s.height * k));
@@ -148,8 +180,18 @@ function drawPico() {
       ctx.fillStyle = p8near(p.col); ctx.fillRect(Math.round(cx + p.x / 2), Math.round(cy + p.y / 2), 1, 1);
     }
   }
-  // jato
-  if (state === 'play') put(jetP8(clamp(Math.round(bank * 2), -2, 2)), (px + PW / 2) / 2, (VIEW_H - py - PH / 2) / 2);
+  // jato (moderno: com sombra no chão, pisca quando protegido, escudo em volta)
+  if (state === 'play') {
+    const lvl = clamp(Math.round(bank * 2), -2, 2), jx = (px + PW / 2) / 2, jy = (VIEW_H - py - PH / 2) / 2;
+    if (!isClassic()) put(jetShadowP8(lvl), jx + 4, jy + 5);
+    if (isClassic() || !((safeT > 0 || hurtT > 0) && frame % 10 < 5)) put(jetP8(lvl), jx, jy);
+    if (pw.shield > 0 && !(pw.shield < 90 && frame % 10 < 5)) ringP8(jx, jy, 7 + (frame >> 3) % 2, 12);
+  }
+  // rótulos dos power-ups (moderno), subindo
+  if (!isClassic()) for (const e of fx) if (e.label) {
+    const age = e.life - e.t, w = e.label.length * 4 - 1; if (age > e.life * 0.8 && frame % 4 < 2) continue;
+    ptxt(e.label, clamp(e.x / 2, w / 2 + 1, 127 - w / 2), Math.round(sY(e.y) - 9 - age * 0.25), p8idx(e.labelCol || '#ffffff'), 'center');
+  }
   drawPicoHud();
 }
 
@@ -160,13 +202,28 @@ function drawPicoHud() {
   // vidas (o jato em jogo não conta)
   const n = Math.min(lives - (state === 'play' ? 1 : 0), 5);
   for (let k = 0; k < n; k++) ctx.drawImage(jetP8(0), 126 - (k + 1) * 6, 114, 5, 5);   // mini-jatos
-  // combustível: E [■■■■■■····] F, vermelho e piscando quando está no fim
-  const f = clamp(fuel / 100, 0, 1), low = f < 0.25;
-  ptxt('E', 2, 121, 6); ptxt('F', 47, 121, 6);
-  px8(6, 121, 40, 5, 1);
-  if (!(low && frame % 20 < 10)) px8(6, 121, Math.round(40 * f), 5, low ? 8 : 10);
-  px8(6 + Math.round(40 * f), 120, 1, 7, 7);
-  ptxt('PICO-8', 126, 121, 13, 'right');
+  if (isClassic()) {
+    // combustível: E [■■■■■■····] F, vermelho e piscando quando está no fim
+    const f = clamp(fuel / 100, 0, 1), low = f < 0.25;
+    ptxt('E', 2, 121, 6); ptxt('F', 47, 121, 6);
+    px8(6, 121, 40, 5, 1);
+    if (!(low && frame % 20 < 10)) px8(6, 121, Math.round(40 * f), 5, low ? 8 : 10);
+    px8(6 + Math.round(40 * f), 120, 1, 7, 7);
+    ptxt('PICO-8', 126, 121, 13, 'right');
+  } else {
+    // moderno: ♥ [barra de vida] e os power-ups ativos (ícone + tempo restante)
+    const f = clamp(hp / 100, 0, 1), low = f < 0.25;
+    ptxt('♥', 2, 121, 8);
+    px8(6, 121, 40, 5, 1);
+    if (!(low && frame % 20 < 10)) px8(6, 121, Math.max(1, Math.round(40 * f)), 5, f > 0.5 ? 11 : f > 0.25 ? 10 : 8);
+    let ix = 52;
+    for (const k of ['shield', 'triple', 'rapid']) {
+      if (pw[k] <= 0) continue;
+      ctx.drawImage(puMiniP8(k), ix, 121); px8(ix, 127, Math.max(1, Math.round(5 * pw[k] / PU[k].dur)), 1, parseInt(PU_P8C[k][0], 16));
+      ix += 8;
+    }
+    ptxt('MODERN', 126, 121, 13, 'right');
+  }
   if (state === 'over') {
     px8(14, 34, 100, 44, 0); px8(15, 35, 98, 42, 1);
     ptxt('GAME OVER', 64, 39, 10, 'center');

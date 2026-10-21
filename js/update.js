@@ -13,14 +13,10 @@ function update() {
   const tp = taps; taps = [];
   if (state === 'title') {
     for (const t of tp) {
-      const M = ['classic', 'modern', 'ocean', 'retro', 'pico'], k = M.indexOf(mode);
+      const M = MODES, k = M.indexOf(mode);
       if (t.key === 'ArrowDown' || t.key === 'ArrowRight') mode = M[(k + 1) % M.length];
       if (t.key === 'ArrowUp' || t.key === 'ArrowLeft') mode = M[(k + M.length - 1) % M.length];
-      if (t.key === '1') mode = 'classic';
-      if (t.key === '2') mode = 'modern';
-      if (t.key === '3') mode = 'ocean';
-      if (t.key === '4') mode = 'retro';
-      if (t.key === '5') mode = 'pico';
+      if (t.key >= '1' && t.key <= String(M.length)) mode = M[+t.key - 1];
     }
     if (tp.some(t => t.key === 'Enter' || t.key === ' ')) newGame();
     return;

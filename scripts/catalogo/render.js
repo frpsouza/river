@@ -73,6 +73,8 @@ function run() {
   for (const [a, n] of [[0, 'rumo 0°'], [0.4, 'rumo 23°'], [Math.PI / 2, 'rumo 90°']])
     item('navios', 'navio_pixel_' + Math.round(a * 57.3), 'Navio pixel — ' + n, 'Um dos 32 rumos pré-girados. shipSprite().', 'Retro Ocean', pix(shipSprite(-a), 6));
   item('navios', 'navio_pico', 'Navio PICO-8', 'Navio de lado em pixel, 18×6. SHIP_P8.', 'CLASSIC - PICO-8', pix(p8('ship', SHIP_P8), 12));
+  for (const [a, n] of [[0, 'rumo 0°'], [Math.PI / 4, 'rumo 45°'], [Math.PI / 2, 'rumo 90°']])
+    item('navios', 'navio_pico_cima_' + Math.round(a * 57.3), 'Navio PICO-8 de cima — ' + n, 'Uma das 16 rotações (vizinho mais próximo). SHIPTOP_P8 + p8rot().', 'OCEAN - PICO-8', pix(p8rot('shipT', SHIPTOP_P8, -a), 12));
   item('navios', 'porta_avioes', 'Porta-aviões', 'Casco cinza, convés com pista tracejada, ilha de comando e caças estacionados; lança caças. drawCarrier().', 'Ocean', cap(130, 34, 4, () => drawCarrier(32, 3, 1, { w: 96, h: 28, hp: 10, maxHp: 10, flash: 0 })));
   item('navios', 'porta_avioes_avariado', 'Porta-aviões — avariado', 'Com barra de vida (4 de 10). drawCarrier(hp = 4).', 'Ocean', cap(130, 40, 4, () => drawCarrier(32, 9, 1, { w: 96, h: 28, hp: 4, maxHp: 10, flash: 0 })));
 
@@ -83,6 +85,7 @@ function run() {
   item('helis', 'heli_cima_baixo', 'Helicóptero — de cima, voando baixo', 'Menor e com sombra mais perto. drawHeliTop(alt = 0,6).', 'Ocean', cap(44, 44, 5, () => { frame = 2; drawHeliTop(8, 10, -1, 0.6); }));
   for (let f = 0; f < 4; f++) item('helis', 'heli_pixel_q' + f, 'Helicóptero pixel — rotor quadro ' + (f + 1), 'Um dos 4 quadros do rotor. heliSprite().', 'Retro Ocean', pix(heliSprite(-1, f), 6));
   for (let f = 0; f < 2; f++) item('helis', 'heli_pico_q' + f, 'Helicóptero PICO-8 — rotor quadro ' + (f + 1), 'HELI_P8 + HELI_BODY.', 'CLASSIC - PICO-8', pix(p8('heli' + f, HELI_P8[f].concat(HELI_BODY)), 12));
+  for (let f = 0; f < 2; f++) item('helis', 'heli_pico_cima_q' + f, 'Helicóptero PICO-8 de cima — rotor ' + (f ? '+' : '×'), 'heliTopP8().', 'OCEAN - PICO-8', pix(heliTopP8(-1, f), 12));
 
   // ======================= AVIÕES =======================
   group('avioes', 'Aviões e caças', 'Aviões que cruzam a tela e os caças das esquadrilhas.');
@@ -92,6 +95,8 @@ function run() {
     item('avioes', 'caca_pixel_' + Math.round(a * 57.3), 'Caça pixel — rotação ' + n, 'Uma das 32 rotações pré-calculadas. fighterSprite().', 'Retro Ocean', pix(fighterSprite(a, 0), 6));
   for (let r = 1; r <= 4; r++) item('avioes', 'caca_pixel_parafuso' + r, 'Caça pixel — parafuso, quadro ' + r, 'Quadros do giro no próprio eixo. fighterSprite(roll = ' + r + ').', 'Retro Ocean', pix(fighterSprite(Math.PI / 2, r), 6));
   item('avioes', 'aviao_pico', 'Avião PICO-8', 'PLANE_P8.', 'CLASSIC - PICO-8', pix(p8('plane', PLANE_P8), 12));
+  for (const [a, n] of [[0, '0°'], [Math.PI / 4, '45°'], [Math.PI / 2, '90°']])
+    item('avioes', 'caca_pico_' + Math.round(a * 57.3), 'Caça PICO-8 — rotação ' + n, 'Uma das 16 rotações. FIGHTER_P8 + p8rot().', 'OCEAN - PICO-8', pix(p8rot('fighter', FIGHTER_P8, a), 12));
 
   // ======================= TANQUES =======================
   group('tanques', 'Tanques', 'Tanques de guerra vistos de lado, na margem ou atravessando a ponte.');
@@ -106,6 +111,7 @@ function run() {
     item('baloes', 'balao_cima_' + h, 'Balão ' + c + ' — visto de cima', 'Gomos e cesto no centro; sombra longe. drawBalloonTop().', 'Ocean', cap(48, 50, 5, () => { frame = 0; drawBalloonTop(4, 2, h, 0); }));
     item('baloes', 'balao_pixel_' + h, 'Balão ' + c + ' — pixel', 'Um dos quadros de gomos girando. balloonSprite().', 'Retro Ocean', pix(balloonSprite(h, 0), 6));
     item('baloes', 'balao_pico_' + h, 'Balão ' + c + ' — PICO-8', 'BALLOON_P8.', 'CLASSIC - PICO-8', pix(p8('bal' + h, BALLOON_P8[h]), 12));
+    item('baloes', 'balao_pico_cima_' + h, 'Balão ' + c + ' — PICO-8 de cima', 'Gomos girando (2 quadros). balloonTopP8().', 'OCEAN - PICO-8', pix(balloonTopP8(h, 0), 14));
   }
 
   // ======================= CHEFES =======================
@@ -127,10 +133,12 @@ function run() {
   item('itens', 'combustivel_cima', 'Balsa de combustível — de cima', 'Dois tanques redondos marcados "F". drawFuelTop().', 'Ocean', cap(22, 32, 6, () => drawFuelTop(1, 1)));
   item('itens', 'combustivel_pixel', 'Balsa de combustível — pixel', 'fuelSprite().', 'Retro Ocean', pix(fuelSprite(), 6));
   item('itens', 'combustivel_pico', 'Tambor de combustível — PICO-8', 'FUEL_P8.', 'CLASSIC - PICO-8', pix(p8('fuel', FUEL_P8), 12));
+  item('itens', 'bomba_hud_pico', 'Bomba do HUD — PICO-8', 'Acesa e gasta. bombP8().', 'OCEAN - PICO-8', cap(14, 7, 12, () => { ctx.drawImage(bombP8(true), 1, 1); ctx.drawImage(bombP8(false), 8, 1); }, '#000000'));
   const PUN = { shield: 'Escudo', triple: 'Tiro triplo', rapid: 'Tiro rápido', bomb: 'Bomba', life: 'Vida extra / reparo' };
   for (const k of Object.keys(PUN)) {
     item('itens', 'pu_' + k, 'Power-up: ' + PUN[k], 'Quadrado com ícone e halo pulsando. drawPowerup().', 'Modern, Ocean', cap(34, 34, 6, () => { frame = 0; drawPowerup(fake({ x: 10, kind: k }), 10); }));
     item('itens', 'pu_pixel_' + k, 'Power-up pixel: ' + PUN[k], 'puSprite().', 'Retro Ocean', pix(puSprite(k, false), 8));
+    item('itens', 'pu_pico_' + k, 'Power-up PICO-8: ' + PUN[k], 'Caixa 7×7 com ícone. puP8().', 'MODERN / OCEAN - PICO-8', pix(puP8(k, false), 12));
   }
 
   // ======================= PROJÉTEIS =======================
@@ -139,6 +147,7 @@ function run() {
   item('projeteis', 'tiro_inimigo', 'Tiro inimigo', 'Rastro amarelo→vermelho, halo vermelho, corpo laranja e núcleo branco. drawShell().', 'todos', cap(30, 16, 8, () => { frame = 3; drawShell({ x: 20, vx: 1.6, vy: 0 }, 8); }));
   item('projeteis', 'foguete', 'Foguete teleguiado', 'Persegue o jato (canhoneira). drawShell(kind = rocket).', 'Ocean', cap(30, 16, 8, () => { frame = 1; drawShell({ x: 16, vx: 1.6, vy: 0, kind: 'rocket' }, 8); }));
   item('projeteis', 'mina', 'Mina flutuante', 'Esfera com espetos e luz piscando (dirigível). drawShell(kind = mine).', 'Ocean', cap(20, 20, 8, () => { frame = 3; drawShell({ x: 10, vx: 0, vy: 0, kind: 'mine' }, 10); }));
+  item('projeteis', 'tiro_pico', 'Tiro inimigo — PICO-8', 'Cruz 3×3 piscando (2 quadros). BULLET_P8.', 'OCEAN - PICO-8', pix(p8('bul0', BULLET_P8[0]), 14));
   item('projeteis', 'tiro_pixel', 'Tiro inimigo — pixel', 'bulletSprite().', 'Retro Ocean', pix(bulletSprite(0), 10));
 
   // ======================= CENÁRIO =======================
@@ -260,7 +269,7 @@ function run() {
   // ======================= TELAS COMPLETAS =======================
   group('telas', 'Telas completas', 'Uma captura de cada modo, com HUD.');
   mode = 'classic'; state = 'title'; blocks = null; draw();
-  item('telas', 'tela_titulo', 'Tela de título', 'Escolha dos 5 modos.', '—', wholeCanvas(1));
+  item('telas', 'tela_titulo', 'Tela de título', 'Escolha dos 7 modos.', '—', wholeCanvas(1));
   const shot = (m, id, name, setup, up = 1) => { mode = m; newGame(); state = 'play'; sim(240); if (setup) setup(); state = 'play'; draw(); item('telas', id, name, '', name.split(' — ')[0], wholeCanvas(up)); };
   shot('classic', 'tela_classic', 'CLASSIC — rio com combustível e painel embaixo');
   shot('modern', 'tela_modern', 'MODERN — voo livre e HUD no topo');
@@ -268,6 +277,9 @@ function run() {
   shot('ocean', 'tela_ocean_alto', 'OCEAN — acima das nuvens', () => { altT = 1; altTarget = 1; });
   shot('retro', 'tela_retro', 'RETRO OCEAN — pixel art 240×320', null, 2);
   shot('pico', 'tela_pico', 'CLASSIC - PICO-8 — 128×128, 16 cores', null, 4);
+  shot('pmodern', 'tela_pmodern', 'MODERN - PICO-8 — paredões, power-ups e vida', null, 4);
+  shot('pocean', 'tela_pocean_rasante', 'OCEAN - PICO-8 — rasante, HUD na coluna da direita', () => { altT = 0; altTarget = 0; }, 4);
+  shot('pocean', 'tela_pocean_alto', 'OCEAN - PICO-8 — acima das nuvens', () => { altT = 1; altTarget = 1; }, 4);
 
   document.getElementById('out').textContent = JSON.stringify({ groups: GROUPS, items: OUT });
 }

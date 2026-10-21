@@ -54,7 +54,8 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | 11 | `render/terrain.js` | desenho da água, margens, ilhas, ponte e decoração (bosques, campos, vacas) |
 | 12 | `render/sprites.js` | sprites vetoriais flat: combustível, helicóptero, navio, avião, casa, tanque, balão, jato |
 | 12b | `render/ocean.js` | desenho do oceano (vetorial, vista de cima): aviões, chefes e barra de vida, porta-aviões, nuvens |
-| 13c | `render/pico.js` | modo CLASSIC - PICO-8: o clássico em 128×128 com a paleta de 16 cores, sprites em pixel art e fonte 3×5 |
+| 13c | `render/pico.js` | modos CLASSIC e MODERN - PICO-8: 128×128 com a paleta de 16 cores, sprites em pixel art e fonte 3×5 (no moderno: paredões, power-ups, sombra, escudo, barra de vida) |
+| 13d | `render/pico-ocean.js` | modo OCEAN - PICO-8: a lógica do oceano desenhada a 0,4× (área de 96×128 + coluna de HUD de 32 px), unidades em pixel art de 16 cores e o resto em vetor pixelizado na paleta |
 | 13b | `render/retro.js` | modo Retro Oceano: pixel art em 240×320, quadros intermediários, paleta de 32 cores com pontilhado e fonte bitmap 5×7 |
 | 13 | `render/frame.js` | monta cada quadro (`draw`), painel, telas de título e de fim de jogo |
 | 14 | `main.js` | teclado e laço principal (`update` a 60 passos/s, `draw` a cada quadro) |
@@ -83,7 +84,7 @@ O jogo é dividido em módulos pequenos, cada um com um cabeçalho explicando o 
 | Espaço (Z) | atirar em rajada de 10 tiros (até 1 s); para outra rajada, solte e aperte de novo |
 | X ou B | soltar uma bomba do estoque (modo oceano) |
 | Enter ou Espaço | iniciar (na tela de título) |
-| setas, 1–5 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
+| setas, 1–7 ou clique | escolher o modo na tela de título (clicar de novo na opção escolhida começa) |
 
 **Com joystick/controle (gamepad)** — vale para **todos os modos** (Classic, Modern, Ocean, Retro Ocean, PICO-8), no título e no fim de jogo, no navegador e no app Android:
 
@@ -951,6 +952,26 @@ Baseado no moderno: voo livre pela tela, power-ups e combustível. O jato sobrev
 - **Esquerda, acima do placar:** a barra de vida, agora com **60% do comprimento antigo** (Ocean: 87 → 52 px; Retro: 151 → 91 px). A altitude (`▲ HIGH` / `▼ LOW`) fica logo depois da barra, e os power-ups ativos logo acima dela.
 - **Direita, embaixo:** as bombas, alinhadas à direita. A contagem anda para a esquerda até a **metade da tela** e então continua na linha de cima (Ocean: 8 por linha; Retro: 12 por linha).
 - Para ajustar: `HUD_HP_W` e `drawHudBottom()` (`js/render/frame.js`); `drawRetroHud()` (`js/render/retro.js`).
+
+## Mudanças da versão 39 — MODERN - PICO-8 e OCEAN - PICO-8
+
+### 63. Dois modos novos no menu (teclas 6 e 7)
+- **6 MODERN - PICO-8:** a lógica do modo moderno em 128×128, com a paleta de 16 cores. A lógica roda em 256×224 unidades, desenhada pela metade, igual ao CLASSIC - PICO-8.
+  - **Paredões de rocha:** linha a linha, em cinza, com a beirada clara do lado da água e a sombra preta do lado da terra.
+  - **Power-ups:** caixas 7×7 com ícone branco; o nome sobe na fonte 3×5 quando é coletado.
+  - **Jato:** tem sombra azul-escura no chão, pisca quando está protegido e mostra o escudo como um anel de pixels.
+  - **HUD embaixo (16 px):** placar e vidas na 1ª linha; ♥ com a barra de vida, os power-ups ativos (ícone e tempo restante) e "MODERN" na 2ª.
+- **7 OCEAN - PICO-8:** a MESMA lógica do Ocean e do Retro Ocean (240×320), desenhada a 0,4×. A área de jogo tem 96×128 pixels, e uma coluna de 32 px à direita guarda o HUD.
+  - **HUD:** placar; ♥ com a vida; ▲ HIGH / ▼ LOW; power-ups ativos com o tempo; bombas embaixo, alinhadas à direita, 4 por linha, subindo de linha.
+  - **Unidades em pixel art de 16 cores:** jato (5 quadros), caças e navios vistos de cima (16 rotações com pixels duros), helicóptero (rotor em 2 quadros), balão (gomos girando), balsa de combustível, power-ups, tiros e mísseis.
+  - **O que é grande, em vetor reduzido:** ilhas, porta-aviões, chefes, nuvens, foguetes, minas e explosões. O quadro é então convertido para a paleta do PICO-8 com pontilhado ordenado (Bayer 4×4), a mesma técnica do Retro Ocean.
+  - **O mar:** já é pintado na cor 12 da paleta. O azul do oceano não tem par entre as 16 cores e virava um pontilhado esverdeado.
+  - **Chefe:** a barra de vida fica no topo da área de jogo, com o nome sobre um fundo preto.
+- **Menu:** 7 opções, mais compactas (`TITLE_OPT_GAP`, `TITLE_OPT_H`). A lista de modos (`MODES`, em `state.js`) é a mesma para o teclado (setas e teclas 1 a 7), o clique e o toque.
+- **Lógica:** só ganhou os auxiliares `isModern()` e `isPico()`. `isOcean()` agora inclui o `pocean`, e os paredões usam `isModern()`.
+- **Catálogo:** +20 gráficos (navio, caça, helicóptero e balão PICO-8 vistos de cima, power-ups e bomba do HUD, tiro, e as telas dos dois modos), num total de 156.
+- **Conferido:** um teste sem janela jogou 9.000 quadros em cada um dos 7 modos, sem erros. No OCEAN - PICO-8 os chefes caem como no Ocean.
+- Para ajustar: `drawPico()` / `drawPicoHud()` (`js/render/pico.js`); `drawPicoOcean()`, `drawPicoOceanHud()`, `PO_S` e os sprites `*_P8` (`js/render/pico-ocean.js`).
 
 ## Observações
 - Testei sem navegador com um robô simples, e a geração do mapa não gerou erros. Conferi o visual por captura de tela, mas não joguei uma partida inteira. A dificuldade só se avalia jogando.

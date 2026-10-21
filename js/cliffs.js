@@ -19,7 +19,7 @@ const CLIFF_FROM = 2;                                 // seção a partir da qua
 
 function genCliffs(blk, prev) {
   blk.cliffL = new Float32Array(LINES); blk.cliffR = new Float32Array(LINES);
-  if (mode !== 'modern' || blk.s < CLIFF_FROM) return;
+  if (!isModern() || blk.s < CLIFF_FROM) return;
   const r = mulberry32(blk.seed ^ 0x6d7a11);
   const d = Math.min(blk.s - CLIFF_FROM, 6) / 6;      // 0 → 1 nas seis seções seguintes
   const closing = blk.bridge || blk.b === BLOCKS_PER_SECTION - 2;   // abre o cânion antes da ponte

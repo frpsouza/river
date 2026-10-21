@@ -6,8 +6,11 @@
 // Usa: terrain.js, objects.js, effects.js (boom).
 'use strict';
 
-let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens · 'ocean' · 'retro'
-const isOcean = () => mode === 'ocean' || mode === 'retro';   // o retro usa toda a lógica do oceano
+let mode = 'classic';                               // 'classic': terra mata · 'modern': voa sobre as margens · 'ocean' · 'retro' · versões PICO-8
+const MODES = ['classic', 'modern', 'ocean', 'retro', 'pico', 'pmodern', 'pocean'];   // ordem do menu (teclas 1 a 7)
+const isOcean = () => mode === 'ocean' || mode === 'retro' || mode === 'pocean';   // retro e OCEAN - PICO-8 usam toda a lógica do oceano
+const isModern = () => mode === 'modern' || mode === 'pmodern';                    // MODERN - PICO-8 usa a lógica do moderno
+const isPico = () => mode === 'pico' || mode === 'pmodern' || mode === 'pocean';   // desenhados em 128×128, paleta de 16 cores
 const pyMin = () => isOcean() ? OCEAN_PY_MIN : PLAYER_Y;      // altura mínima do jato (acima do HUD de baixo no oceano)
 const isClassic = () => mode === 'classic' || mode === 'pico'; // o PICO-8 usa toda a lógica do clássico
 let bank = 0;
@@ -20,10 +23,10 @@ let shells = [];
 let state, scroll, px, fuel, lives, score, nextLife, checkpoint, missiles = [], fx, dyingT, keys, frame, audio;
 
 function newGame() {
-  // retro: 240×320 de verdade · pico: lógica em 256×224, desenhada pela metade = 128×112 + HUD de 16 px
-  // ocean e retro: MESMA área de jogo (240×320), só o desenho muda (vetorial em 2× × pixel art em 1×)
-  W = isOcean() ? 240 : mode === 'pico' ? 256 : W_NORMAL;
-  VIEW_H = mode === 'pico' ? 224 : isClassic() ? SCREEN_H - PANEL_H : isOcean() ? 320 : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
+  // retro: 240×320 de verdade · pico e pmodern: lógica em 256×224, desenhada pela metade = 128×112 + HUD de 16 px
+  // ocean, retro e pocean: MESMA área de jogo (240×320), só o desenho muda (vetorial em 2× · pixel art em 1× · PICO-8 a 0,4×)
+  W = isOcean() ? 240 : isPico() ? 256 : W_NORMAL;
+  VIEW_H = isOcean() ? 320 : isPico() ? 224 : isClassic() ? SCREEN_H - PANEL_H : isOcean() ? 320 : SCREEN_H;   // voo livre: sem painel, HUD sobre o cenário
   newOceanGame();
   seed = (Math.random() * 1e9) | 0;
   rng = mulberry32(seed);
